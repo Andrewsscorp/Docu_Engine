@@ -977,7 +977,7 @@ async def upload_inicial_documento(
     groups_res = await db.execute(text("SELECT id, name FROM groups WHERE tenant_id = :t ORDER BY name"), {"t": tenant_id})
     grupos = groups_res.all()
     
-    return templates.TemplateResponse("modals/routing_modal.html", {
+    return templates.TemplateResponse(request=request, name="modals/routing_modal.html", context={
         "request": request,
         "document_id": doc_id,
         "document_name": safe_name,
