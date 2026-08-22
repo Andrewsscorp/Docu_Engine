@@ -893,6 +893,7 @@ async def asignar_documento(
 
 import os
 import uuid
+import hashlib
 import json
 import asyncio
 from werkzeug.utils import secure_filename
@@ -932,9 +933,10 @@ async def upload_inicial_documento(
         
     # 2. Insert into documents as DRAFT
     mime = archivo.content_type or "application/octet-stream"
+    file_hash = hashlib.sha256(content).hexdigest()
     query = text("""
-        INSERT INTO documents (id, tenant_id, file_name, file_path, uploaded_by, status, is_private, mime_type, file_size_bytes)
-        VALUES (:id, :t, :fn, :path, :uid, 'DRAFT', FALSE, :mime, :size)
+        INSERT INTO documents (id, tenant_id, file_name, file_path, uploaded_by, status, is_private, mime_type, file_size_bytes, file_hash)
+        VALUES (:id, :t, :fn, :path, :uid, 'DRAFT', FALSE, :mime, :size, :hash)
         RETURNING id
     """)
     doc_id = str(uuid.uuid4())
@@ -945,7 +947,8 @@ async def upload_inicial_documento(
         "path": disk_filename,
         "uid": user_id,
         "mime": mime,
-        "size": file_size
+        "size": file_size,
+        "hash": file_hash
     })
     await db.commit()
     
