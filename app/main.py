@@ -88,6 +88,7 @@ app.include_router(rbac.router)
 app.include_router(documents.router)
 app.include_router(settings.router)
 app.include_router(editor.router)
+app.include_router(notifications.router)
 
 
 @app.on_event("startup")

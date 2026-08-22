@@ -821,3 +821,72 @@ async def get_kpis(request: Request, db=Depends(get_db_session)):
         </div>
     '''
     return HTMLResponse(html)
+
+@router.post("/{doc_id}/asignar")
+async def asignar_documento(
+    doc_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db_session)
+):
+    """
+    Endpoint de Transacción Dual:
+    1. Inserta en la DB (tareas_asignaciones).
+    2. Dispara evento a Novu.
+    """
+    # Este endpoint debería recibir un body (JSON o Form) con los detalles.
+    # Como es un POST desde HTMX, probablemente sea un form.
+    form_data = await request.form()
+    asignado_a = form_data.get("asignado_a")
+    etiqueta_accion = form_data.get("etiqueta_accion", "Revisión General")
+    tiempo_respuesta = form_data.get("tiempo_respuesta_esperado")
+    
+    if not asignado_a or not tiempo_respuesta:
+        return HTMLResponse("<div class='text-red-500'>Faltan datos requeridos</div>", status_code=400)
+        
+    asignado_por = getattr(request.state, "user_id", None)
+    if not asignado_por:
+        return HTMLResponse("No autenticado", status_code=401)
+        
+    # 1. DB Insert
+    try:
+        await db.execute(
+            text("""
+                INSERT INTO tareas_asignaciones 
+                (id_documento, asignado_por, asignado_a, etiqueta_accion, tiempo_respuesta_esperado)
+                VALUES 
+                (:doc_id, :asignado_por, :asignado_a, :etiqueta_accion, :tiempo_respuesta)
+            """),
+            {
+                "doc_id": doc_id,
+                "asignado_por": asignado_por,
+                "asignado_a": asignado_a,
+                "etiqueta_accion": etiqueta_accion,
+                "tiempo_respuesta": tiempo_respuesta
+            }
+        )
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        return HTMLResponse(f"<div class='text-red-500'>Error en base de datos: {str(e)}</div>", status_code=500)
+        
+    # 2. Trigger Novu
+    from app.services.novu_client import novu_client
+    
+    # Podríamos buscar el nombre del remitente y del doc, pero usaremos dummies para el MVP
+    payload = {
+        "remitente_nombre": "Auditor Asignador", 
+        "documento_titulo": f"Documento {doc_id}",
+        "etiqueta_color": "#EF4444" if "Urgente" in etiqueta_accion else "#3B82F6",
+        "etiqueta_texto": etiqueta_accion,
+        "fecha_limite": str(tiempo_respuesta),
+        "url_accion": f"/api/v1/documentos/{doc_id}/drawer"
+    }
+    
+    # Disparamos sin bloquear el response
+    # En producción usaríamos un BackgroundTask
+    import asyncio
+    asyncio.create_task(
+        novu_client.trigger_event("WORKFLOW_DOCUMENTO_ASIGNADO", asignado_a, payload)
+    )
+    
+    return HTMLResponse("<div class='text-green-500 p-2 bg-green-50 rounded'>Documento asignado y notificación enviada correctamente.</div>")

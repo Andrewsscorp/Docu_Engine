@@ -1,0 +1,46 @@
+﻿{% for notif in notificaciones %}
+<div class="p-4 border-b border-gray-100 hover:bg-white transition-colors cursor-pointer"
+     hx-get="{{ notif.payload.url_accion | default('#') }}"
+     hx-target="#drawer-content"
+     @click="notifOpen = false; $dispatch('open-drawer', '{{ notif.payload.doc_id }}')">
+    <div class="flex items-start gap-3">
+        <!-- Avatar Remitente -->
+        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
+            {{ notif.payload.remitente_nombre[:2].upper() if notif.payload.remitente_nombre else '??' }}
+        </div>
+        
+        <div class="flex-1 min-w-0">
+            <!-- Título y Etiqueta -->
+            <div class="flex justify-between items-start mb-1">
+                <p class="text-sm font-bold text-gray-800 truncate" style="font-family: 'Poppins', sans-serif;">
+                    {{ notif.payload.documento_titulo | default('Documento sin título') }}
+                </p>
+                <!-- Timestamp simple -->
+                <span class="text-xs text-gray-400 whitespace-nowrap ml-2">Ahora</span>
+            </div>
+            
+            <div class="flex items-center gap-2 mb-2">
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold" 
+                      style="background-color: {{ notif.payload.etiqueta_color }}20; color: {{ notif.payload.etiqueta_color }}">
+                    {{ notif.payload.etiqueta_texto | default('Asignación') }}
+                </span>
+            </div>
+            
+            <!-- SLA Semáforo con Alpine -->
+            <div x-data="{ 
+                limite: new Date('{{ notif.payload.fecha_limite }}').getTime(),
+                ahora: Date.now(),
+                get faltanHoras() { return (this.limite - this.ahora) / (1000 * 60 * 60); },
+                get colorClase() {
+                    if(this.faltanHoras < 0) return 'text-red-600 bg-red-50'; // Vencido
+                    if(this.faltanHoras < 2) return 'text-yellow-600 bg-yellow-50'; // Menos de 2h
+                    return 'text-green-600 bg-green-50'; // A tiempo
+                }
+            }" class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium" :class="colorClase">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span x-text="faltanHoras < 0 ? 'Vencido' : (faltanHoras < 2 ? 'Por vencer' : 'A tiempo')"></span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}

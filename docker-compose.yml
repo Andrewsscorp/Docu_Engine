@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   db:
     image: postgres:15
@@ -9,12 +8,11 @@ services:
       POSTGRES_PASSWORD: superadmin_password
       POSTGRES_DB: docuengine
     ports:
-      - "5432:5432"
+    - 5432:5432
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    - postgres_data:/var/lib/postgresql/data
+    - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
-
   ocr_worker:
     build:
       context: .
@@ -23,31 +21,86 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:superadmin_password@db:5432/docuengine
     depends_on:
-      - db
+    - db
     restart: unless-stopped
-
   document_server:
     image: onlyoffice/documentserver:latest
     container_name: docuengine-document-server
     environment:
-      - JWT_ENABLED=true
-      - JWT_SECRET=docuengine_super_secret_jwt_onlyoffice_key
-      - JWT_HEADER=Authorization
+    - JWT_ENABLED=true
+    - JWT_SECRET=docuengine_super_secret_jwt_onlyoffice_key
+    - JWT_HEADER=Authorization
     ports:
-      - "8080:80"
+    - 8080:80
     restart: unless-stopped
-
   collabora:
     build:
       context: .
       dockerfile: Dockerfile.collabora
     container_name: docuengine-collabora
     environment:
-      - aliasgroup1=http://host.docker.internal:8555
-      - extra_params=--o:ssl.enable=false --o:ssl.termination=false
+    - aliasgroup1=http://host.docker.internal:8555
+    - extra_params=--o:ssl.enable=false --o:ssl.termination=false
     ports:
-      - "9980:9980"
+    - 9980:9980
     restart: unless-stopped
-
+  novu-redis:
+    image: redis:alpine
+    container_name: docuengine_novu_redis
+    restart: unless-stopped
+    ports:
+    - 6379:6379
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+  novu-mongodb:
+    image: mongo:latest
+    container_name: docuengine_novu_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: supersecretmongo
+    volumes:
+    - mongodb_data:/data/db
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+  novu-api:
+    image: ghcr.io/novuhq/novu/api:latest
+    container_name: docuengine_novu_api
+    restart: unless-stopped
+    environment: &id001
+      NODE_ENV: production
+      MONGO_URL: mongodb://root:supersecretmongo@novu-mongodb:27017/novu?authSource=admin
+      REDIS_HOST: novu-redis
+      REDIS_PORT: '6379'
+      JWT_SECRET: docuengine_novu_jwt_secret_key_12345
+      PORT: '3000'
+      FRONT_BASE_URL: http://localhost:3000
+      DISABLE_USER_REGISTRATION: 'true'
+    depends_on:
+    - novu-redis
+    - novu-mongodb
+    ports:
+    - 3000:3000
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+  novu-worker:
+    image: ghcr.io/novuhq/novu/worker:latest
+    container_name: docuengine_novu_worker
+    restart: unless-stopped
+    environment: *id001
+    depends_on:
+    - novu-redis
+    - novu-mongodb
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 volumes:
-  postgres_data:
+  postgres_data: null
+  mongodb_data: null
