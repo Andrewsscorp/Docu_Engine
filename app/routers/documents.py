@@ -931,18 +931,33 @@ async def upload_inicial_documento(
     with open(file_path, "wb") as f:
         f.write(content)
         
-    # 2. Insert into documents as DRAFT
+    # 2. Find fallback group_id since it is NOT NULL in DB
+    group_id = None
+    query_fallback = text("SELECT id FROM groups WHERE tenant_id = :t AND name = 'General' LIMIT 1")
+    res_group = await db.execute(query_fallback, {"t": tenant_id})
+    row = res_group.fetchone()
+    if row:
+        group_id = row.id
+    else:
+        # Just grab the first group available
+        res_group = await db.execute(text("SELECT id FROM groups WHERE tenant_id = :t LIMIT 1"), {"t": tenant_id})
+        row = res_group.fetchone()
+        if row:
+            group_id = row.id
+
+    # 3. Insert into documents as DRAFT
     mime = archivo.content_type or "application/octet-stream"
     file_hash = hashlib.sha256(content).hexdigest()
     query = text("""
-        INSERT INTO documents (id, tenant_id, file_name, file_path, uploaded_by, status, is_private, mime_type, file_size_bytes, file_hash)
-        VALUES (:id, :t, :fn, :path, :uid, 'DRAFT', FALSE, :mime, :size, :hash)
+        INSERT INTO documents (id, tenant_id, group_id, file_name, file_path, uploaded_by, status, is_private, mime_type, file_size_bytes, file_hash)
+        VALUES (:id, :t, :gid, :fn, :path, :uid, 'DRAFT', FALSE, :mime, :size, :hash)
         RETURNING id
     """)
     doc_id = str(uuid.uuid4())
     await db.execute(query, {
         "id": doc_id,
         "t": tenant_id,
+        "gid": group_id,
         "fn": safe_name,
         "path": disk_filename,
         "uid": user_id,
