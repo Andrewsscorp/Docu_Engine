@@ -950,7 +950,7 @@ async def upload_inicial_documento(
     file_hash = hashlib.sha256(content).hexdigest()
     query = text("""
         INSERT INTO documents (id, tenant_id, group_id, file_name, file_path, uploaded_by, status, is_private, mime_type, file_size_bytes, file_hash)
-        VALUES (:id, :t, :gid, :fn, :path, :uid, 'DRAFT', FALSE, :mime, :size, :hash)
+        VALUES (:id, :t, :gid, :fn, :path, :uid, 'PENDING', FALSE, :mime, :size, :hash)
         RETURNING id
     """)
     doc_id = str(uuid.uuid4())
