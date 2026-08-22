@@ -39,3 +39,7 @@ WHERE NOT EXISTS (SELECT 1 FROM etiquetas_maestras WHERE nombre = 'Para Corregir
 INSERT INTO etiquetas_maestras (nombre, color_fondo, color_texto, es_sistema)
 SELECT 'Devuelto', 'bg-amber-100', 'text-amber-700', TRUE
 WHERE NOT EXISTS (SELECT 1 FROM etiquetas_maestras WHERE nombre = 'Devuelto');
+
+-- Otorgar permisos al rol de la API
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE etiquetas_maestras TO docuengine_api;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE documento_etiquetas TO docuengine_api;
