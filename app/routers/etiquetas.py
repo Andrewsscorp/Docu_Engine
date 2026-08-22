@@ -41,7 +41,7 @@ def get_row_html(et, uso_count):
                     </button>
         '''
 
-    kebab_menu += '''
+    kebab_menu += f'''
                 </li>
                 <li>
                     <button hx-get="/api/v1/etiquetas/{et.id_etiqueta}/permisos" 
@@ -52,17 +52,17 @@ def get_row_html(et, uso_count):
                     </button>
                 </li>
                 <li>
-                    <button x-data="{ clicking: false }" 
+                    <button x-data="{{ clicking: false }}" 
                         @click.prevent="
                             if(clicking) return; 
                             clicking = true; 
                             open = false; 
-                            Swal.fire({
+                            Swal.fire({{
                                 title: 'Módulo de Automatización',
                                 text: 'Las reglas de disparo hacia Novu estarán habilitadas en la v2.0.',
                                 icon: 'info',
                                 confirmButtonColor: '#4f46e5'
-                            }); 
+                            }}); 
                             setTimeout(() => clicking = false, 1000);
                         " class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center transition-colors">
                         <span class="mr-2 text-amber-500">⚡</span> Automatización
