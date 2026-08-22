@@ -353,7 +353,7 @@ async def get_etiqueta_permisos(id: str, request: Request, db: AsyncSession = De
         permitted = {r.id_rol for r in perm_res.all()}
         
         html_out = f"""
-        <form hx-post="/api/v1/etiquetas/{id}/permisos" hx-target="#modal-permisos-content" hx-swap="innerHTML">
+        <form hx-post="/api/v1/etiquetas/{id}/permisos" hx-target="#modal-permisos-content" hx-swap="innerHTML" class="p-6">
             <p class="text-sm text-gray-600 mb-4">
                 Seleccione los roles que tendr&aacute;n permiso para asignar y remover la etiqueta <strong>{et.nombre}</strong>.
             </p>
