@@ -91,6 +91,7 @@
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
             <span x-show="sidebarOpen" x-transition.opacity>Documentos</span>
         </li>
+        <!-- MENUS_DINAMICOS_LI -->
         <li @click="currentView = 'settings'" title="Ajustes"
             class="px-5 py-3.5 rounded-2xl cursor-pointer font-medium transition-all flex items-center gap-4 whitespace-nowrap overflow-hidden"
             :class="currentView === 'settings' ? 'bg-gradient-to-r from-primary to-[#868CFF] text-white shadow-lg shadow-primary/40' : 'text-gray-400 hover:text-white hover:bg-white/5'">
@@ -130,7 +131,7 @@
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
         </button>
         <div>
-            <h1 class="text-[28px] font-bold text-textmain leading-tight" x-text="currentView === 'dashboard' ? 'Resumen de Documentos' : (currentView === 'explorer' ? 'Documentos' : (currentView === 'users' ? 'Gestion de Usuarios y Roles' : 'Panel de Ajustes'))"></h1>
+            <h1 class="text-[28px] font-bold text-textmain leading-tight" x-text="currentView === 'dashboard' ? 'Resumen de Documentos' : (currentView === 'explorer' ? 'Documentos' : (currentView === 'users' ? 'Gestion de Usuarios y Roles' : (currentView === 'notifications' ? 'Centro de Notificaciones' : (currentView === 'tags' ? 'Gestión de Etiquetas' : 'Panel de Ajustes'))))"></h1>
             <p class="text-sm font-medium text-textmuted mt-0.5" x-show="currentView === 'dashboard'">Gestiona y accede rapidamente a todos tus documentos</p>
         </div>
     </div>
@@ -422,6 +423,29 @@
         <div class="flex justify-center items-center py-12">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
+    </div>
+</section>
+
+
+<!-- NOTIFICATIONS VIEW -->
+<section x-show="currentView === 'notifications'" x-transition.opacity.duration.300ms x-cloak>
+    <div class="bg-white p-12 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center min-h-[400px]">
+        <div class="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Próximamente</h2>
+        <p class="text-gray-500 text-center max-w-md">El centro de notificaciones y asignaciones de documentos estará disponible en futuras actualizaciones.</p>
+    </div>
+</section>
+
+<!-- TAGS VIEW -->
+<section x-show="currentView === 'tags'" x-transition.opacity.duration.300ms x-cloak>
+    <div class="bg-white p-12 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center min-h-[400px]">
+        <div class="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Próximamente</h2>
+        <p class="text-gray-500 text-center max-w-md">El módulo de gestión de etiquetas estará disponible en futuras actualizaciones.</p>
     </div>
 </section>
 

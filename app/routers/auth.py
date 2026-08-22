@@ -368,7 +368,28 @@ async def get_dashboard(request: Request, db: AsyncSession = Depends(get_db_sess
         else:
             html = html.replace("<!-- MENUS_DINAMICOS_LICENCIA -->", "")
             
-        html = html.replace("<!-- MENUS_DINAMICOS_LI -->", "")
+
+        html = html.replace("<!-- MENUS_DINAMICOS_LICENCIA -->", "")
+        
+        # Inyectar modulos laterales (Notificaciones y Etiquetas) segun permisos
+        dinamicos_li = ""
+        if rbac.check_permission(tenant_id, role_id, "notificaciones:ver") or is_sa:
+            dinamicos_li += '''<li @click="currentView = 'notifications'" title="Notificaciones"
+            class="px-5 py-3.5 rounded-2xl cursor-pointer font-medium transition-all flex items-center gap-4 whitespace-nowrap overflow-hidden"
+            :class="currentView === 'notifications' ? 'bg-gradient-to-r from-primary to-[#868CFF] text-white shadow-lg shadow-primary/40' : 'text-gray-400 hover:text-white hover:bg-white/5'">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+            <span x-show="sidebarOpen" x-transition.opacity>Notificaciones</span>
+        </li>'''
+        if rbac.check_permission(tenant_id, role_id, "etiquetas:ver") or is_sa:
+            dinamicos_li += '''<li @click="currentView = 'tags'" title="Etiquetas"
+            class="px-5 py-3.5 rounded-2xl cursor-pointer font-medium transition-all flex items-center gap-4 whitespace-nowrap overflow-hidden"
+            :class="currentView === 'tags' ? 'bg-gradient-to-r from-primary to-[#868CFF] text-white shadow-lg shadow-primary/40' : 'text-gray-400 hover:text-white hover:bg-white/5'">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+            <span x-show="sidebarOpen" x-transition.opacity>Etiquetas</span>
+        </li>'''
+        
+        html = html.replace("<!-- MENUS_DINAMICOS_LI -->", dinamicos_li)
+
 
             
         return HTMLResponse(content=html)
