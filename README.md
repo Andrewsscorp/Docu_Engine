@@ -1,8 +1,8 @@
-﻿# DocuEngine 🚀
+# DocuEngine 🚀
 
 ¡Bienvenido a **DocuEngine**! Un sistema de gestión documental moderno, rápido y seguro, diseñado para entornos empresariales. Combina un potente backend asíncrono con una interfaz de usuario reactiva y ultraligera.
 
-![DocuEngine UI](https://github.com/Andrewsscorp/Docu_Engine/assets/placeholder-dashboard.png)
+<img src="https://ui-avatars.com/api/?name=Docu+Engine&background=4318FF&color=fff&rounded=true&size=256" align="right" />
 
 ## 🌟 Características Principales
 
