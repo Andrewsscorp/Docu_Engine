@@ -44,19 +44,10 @@ def get_row_html(et, uso_count):
     kebab_menu += '''
                 </li>
                 <li>
-                    <button x-data="{ clicking: false }" 
-                        @click.prevent="
-                            if(clicking) return; 
-                            clicking = true; 
-                            open = false; 
-                            Swal.fire({
-                                title: 'Permisos RBAC',
-                                text: 'El módulo de permisos estará disponible en la v2.0.',
-                                icon: 'info',
-                                confirmButtonColor: '#4f46e5'
-                            }); 
-                            setTimeout(() => clicking = false, 1000);
-                        " class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center transition-colors">
+                    <button hx-get="/api/v1/etiquetas/{et.id_etiqueta}/permisos" 
+                            hx-target="#modal-permisos-content" 
+                            @click="open = false; window.dispatchEvent(new Event('abrirmodalpermisos'))"
+                            class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center transition-colors">
                         <span class="mr-2">🛡️</span> Permisos
                     </button>
                 </li>
@@ -342,3 +333,121 @@ async def get_etiquetas_dropdown(request: Request, db: AsyncSession = Depends(ge
         return HTMLResponse(content=html_out)
     except Exception as e:
         return HTMLResponse(f"<option value=''>Error: {str(e)}</option>")
+
+
+@router.get("/{id}/permisos", response_class=HTMLResponse)
+async def get_etiqueta_permisos(id: str, request: Request, db: AsyncSession = Depends(get_db_session)):
+    try:
+        # Check if etiqueta exists
+        res = await db.execute(text("SELECT id_etiqueta, nombre, es_sistema FROM etiquetas_maestras WHERE id_etiqueta = :id"), {"id": id})
+        et = res.fetchone()
+        if not et:
+            return HTMLResponse("<div class='text-red-500'>Etiqueta no encontrada</div>", status_code=404)
+            
+        # Get all roles
+        roles_res = await db.execute(text("SELECT id_rol, nombre, descripcion FROM roles ORDER BY nombre"))
+        roles = roles_res.all()
+        
+        # Get currently permitted roles
+        perm_res = await db.execute(text("SELECT id_rol FROM etiqueta_roles_permitidos WHERE id_etiqueta = :id"), {"id": id})
+        permitted = {r.id_rol for r in perm_res.all()}
+        
+        html_out = f"""
+        <form hx-post="/api/v1/etiquetas/{id}/permisos" hx-target="#modal-permisos-content" hx-swap="innerHTML">
+            <p class="text-sm text-gray-600 mb-4">
+                Seleccione los roles que tendr&aacute;n permiso para asignar y remover la etiqueta <strong>{et.nombre}</strong>.
+            </p>
+            
+            <div class="space-y-3 mb-6 bg-gray-50 p-4 rounded-lg border border-gray-100">
+        """
+        
+        for r in roles:
+            checked = "checked" if r.id_rol in permitted else ""
+            is_admin = r.nombre in ['Administrador', 'Revisor Fiscal']
+            # If system tag, force admin checkbox checked and disabled visually, but we will enforce it in backend too.
+            disabled_str = ""
+            if et.es_sistema and is_admin:
+                checked = "checked"
+                disabled_str = 'onclick="return false;" readonly'
+                
+            html_out += f"""
+                <label class="flex items-start gap-3 p-2 hover:bg-white rounded transition-colors cursor-pointer">
+                    <div class="flex items-center h-5">
+                        <input type="checkbox" name="roles_ids" value="{r.id_rol}" {checked} {disabled_str} class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-medium text-gray-800">{r.nombre}</span>
+                        <span class="text-xs text-gray-500">{r.descripcion or ''}</span>
+                    </div>
+                </label>
+            """
+            
+        html_out += """
+            </div>
+            
+            <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700 flex gap-2 mb-6">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                Si no selecciona ningún rol, esta etiqueta será Pública y cualquier usuario podrá utilizarla.
+            </div>
+            
+            <div class="flex justify-end gap-3 mt-4">
+                <button type="button" @click="showPermisosModal = false" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors">Guardar Permisos</button>
+            </div>
+        </form>
+        """
+        return HTMLResponse(content=html_out)
+    except Exception as e:
+        return HTMLResponse(f"<div class='text-red-500'>Error: {str(e)}</div>")
+
+@router.post("/{id}/permisos", response_class=HTMLResponse)
+async def update_etiqueta_permisos(id: str, request: Request, roles_ids: list[str] = Form(default=[]), db: AsyncSession = Depends(get_db_session)):
+    user_id = getattr(request.state, "user_id", None)
+    try:
+        async with db.begin():
+            # Obtener etiqueta
+            res = await db.execute(text("SELECT id_etiqueta, es_sistema FROM etiquetas_maestras WHERE id_etiqueta = :id"), {"id": id})
+            et = res.fetchone()
+            if not et:
+                raise HTTPException(status_code=404, detail="Etiqueta no encontrada")
+                
+            # Si es etiqueta de sistema, forzar Administrador / Revisor Fiscal
+            if et.es_sistema:
+                admin_res = await db.execute(text("SELECT id_rol FROM roles WHERE nombre IN ('Administrador', 'Revisor Fiscal')"))
+                admin_roles = [r.id_rol for r in admin_res.all()]
+                for ar in admin_roles:
+                    if str(ar) not in roles_ids:
+                        roles_ids.append(str(ar))
+            
+            # Borrar permisos actuales
+            await db.execute(text("DELETE FROM etiqueta_roles_permitidos WHERE id_etiqueta = :id"), {"id": id})
+            
+            # Bulk insert nuevos permisos si hay
+            if roles_ids:
+                insert_query = text("INSERT INTO etiqueta_roles_permitidos (id_etiqueta, id_rol) VALUES (:id_etiqueta, :id_rol)")
+                valores = [{"id_etiqueta": id, "id_rol": rid} for rid in roles_ids]
+                await db.execute(insert_query, valores)
+                
+            # Audit log
+            detalles = json.dumps({"etiqueta_id": id, "nuevos_roles": roles_ids})
+            await db.execute(text("""
+                INSERT INTO audit_rbac_logs (accion, usuario_id, ip_origen, detalles) 
+                VALUES ('PERMISOS_ETIQUETA_ACTUALIZADOS', :user, :ip, :detalles)
+            """), {"user": user_id, "ip": request.client.host if request.client else 'unknown', "detalles": detalles})
+            
+        # Success response
+        response = HTMLResponse(content="")
+        response.headers["HX-Trigger"] = json.dumps({
+            "cerrarModalPermisos": True,
+            "toastexito": {
+                "mensaje": "Permisos actualizados con rigor forense."
+            }
+        })
+        return response
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return HTMLResponse(f"<div class='text-red-500'>Error al guardar permisos: {str(e)}</div>")
+
