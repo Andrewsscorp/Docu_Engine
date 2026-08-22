@@ -18,8 +18,8 @@ def get_row_html(et, uso_count):
         enlace_uso = f'''<span class="text-gray-400 text-sm">Aplicada en 0 documentos</span>'''
     
     kebab_menu = f'''
-    <td class="py-3 px-4 text-right relative" x-data="{{ open: false }}">
-        <button @click="open = !open" @click.away="open = false" class="p-2 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors">
+    <td class="py-3 px-4 text-right relative" x-data="{{ open: false }}" @click.outside="open = false">
+        <button @click="open = !open" class="p-2 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14a2 2 0 100-4 2 2 0 000 4zm0-6a2 2 0 100-4 2 2 0 000 4zm0 12a2 2 0 100-4 2 2 0 000 4z"></path></svg>
         </button>
 
@@ -36,7 +36,7 @@ def get_row_html(et, uso_count):
         '''
     else:
         kebab_menu += f'''
-                    <button @click.prevent="open=false; document.body.dispatchEvent(new CustomEvent('edit-tag', {{detail: {{id: '{et.id_etiqueta}', nombre: '{et.nombre}', bg: '{et.color_fondo}', text: '{et.color_texto}', cat: '{et.categoria}'}}}}))" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center transition-colors">
+                    <button @click.prevent="open=false; window.dispatchEvent(new CustomEvent('edit-tag', {{detail: {{id: '{et.id_etiqueta}', nombre: '{et.nombre}', bg: '{et.color_fondo}', text: '{et.color_texto}', cat: '{et.categoria}'}}}}))" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center transition-colors">
                         <span class="mr-2">✏️</span> Editar
                     </button>
         '''

@@ -706,18 +706,7 @@
 
     <!-- El Modal de Edición de Etiquetas -->
     <div x-show="showEditModal" x-transition.opacity style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-sm bg-gray-900/50" 
-         @edit-tag.window="
-            showEditModal = true; 
-            editTagId = $event.detail.id; 
-            tagName = $event.detail.nombre; 
-            currentBg = $event.detail.bg; 
-            currentText = $event.detail.text; 
-            tagCat = $event.detail.cat;
-            selectedTheme = themes.find(t => t.bg === currentBg)?.id || 'indigo';
-         "
-         @click.self="showEditModal = false">
-         
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in-up" x-data="{ 
+         x-data="{ 
             editTagId: '',
             tagName: '',
             currentBg: 'bg-indigo-100',
@@ -732,7 +721,20 @@
                 { id: 'purple', bg: 'bg-purple-100', text: 'text-purple-700', label: 'Púrpura' },
                 { id: 'slate', bg: 'bg-slate-100', text: 'text-slate-700', label: 'Pizarra' }
             ]
-        }" @change-theme="currentBg = $event.detail.bg; currentText = $event.detail.text">
+         }"
+         @edit-tag.window="
+            showEditModal = true; 
+            editTagId = $event.detail.id; 
+            tagName = $event.detail.nombre; 
+            currentBg = $event.detail.bg; 
+            currentText = $event.detail.text; 
+            tagCat = $event.detail.cat;
+            selectedTheme = themes.find(t => t.bg === currentBg)?.id || 'indigo';
+         "
+         @click.self="showEditModal = false">
+         
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in-up" 
+             @change-theme="currentBg = $event.detail.bg; currentText = $event.detail.text">
             
             <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-slate-50">
                 <h3 class="font-bold text-lg text-slate-800">Editar Etiqueta</h3>
