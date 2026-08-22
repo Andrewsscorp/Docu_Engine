@@ -42,13 +42,37 @@ def get_row_html(et, uso_count):
     kebab_menu += '''
                 </li>
                 <li>
-                    <button @click.prevent="open=false; Swal.fire('Próximamente', 'El módulo de permisos RBAC estará disponible en la versión 2.0', 'info')" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center">
+                    <button x-data="{ clicking: false }" 
+                        @click.prevent="
+                            if(clicking) return; 
+                            clicking = true; 
+                            open = false; 
+                            Swal.fire({
+                                title: 'Permisos RBAC',
+                                text: 'El módulo de permisos estará disponible en la v2.0.',
+                                icon: 'info',
+                                confirmButtonColor: '#4f46e5'
+                            }); 
+                            setTimeout(() => clicking = false, 1000);
+                        " class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center">
                         <span class="mr-2">🛡️</span> Permisos
                     </button>
                 </li>
                 <li>
-                    <button @click.prevent="open=false; Swal.fire('Próximamente', 'El módulo de automatizaciones estará disponible en la versión 2.0', 'info')" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center">
-                        <span class="mr-2">⚡</span> Automatización
+                    <button x-data="{ clicking: false }" 
+                        @click.prevent="
+                            if(clicking) return; 
+                            clicking = true; 
+                            open = false; 
+                            Swal.fire({
+                                title: 'Módulo de Automatización',
+                                text: 'Las reglas de disparo hacia Novu estarán habilitadas en la v2.0.',
+                                icon: 'info',
+                                confirmButtonColor: '#4f46e5'
+                            }); 
+                            setTimeout(() => clicking = false, 1000);
+                        " class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center">
+                        <span class="mr-2 text-amber-500">⚡</span> Automatización
                     </button>
                 </li>
                 <li class="border-t border-slate-100">
@@ -56,7 +80,7 @@ def get_row_html(et, uso_count):
     
     if not et.es_sistema:
         kebab_menu += f'''
-                    <button hx-delete="/api/v1/etiquetas/{et.id_etiqueta}" hx-confirm="¿Seguro que deseas desactivar esta etiqueta?" hx-target="closest tr" hx-swap="outerHTML" class="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center">
+                    <button hx-delete="/api/v1/etiquetas/{et.id_etiqueta}" hx-confirm="¿Está completamente seguro de desactivar esta etiqueta del sistema?" hx-target="closest tr" hx-swap="delete" class="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center font-medium transition-colors">
                         <span class="mr-2">🗑️</span> Desactivar
                     </button>
         '''
@@ -160,56 +184,91 @@ async def update_etiqueta(
     client_ip = request.client.host if request.client else "unknown"
     
     try:
-        result = await db.execute(text("SELECT COUNT(*) FROM documento_etiquetas WHERE id_etiqueta = :id"), {"id": id})
-        uso_count = result.scalar()
-        
-        if uso_count > 0:
-            detalles = json.dumps({"etiqueta_id": id, "intento_cambio_nombre": nombre, "razon_bloqueo": f"En uso por {uso_count} documentos"})
-            await db.execute(text("""
-                INSERT INTO audit_rbac_logs (accion, usuario_id, ip_origen, detalles) 
-                VALUES ('INTENTO_ALTERACION_ETIQUETA_BLOQUEADO', :user, :ip, :detalles)
-            """), {"user": user_id, "ip": client_ip, "detalles": detalles})
-            await db.commit()
+        async with db.begin():
+            # Bloqueo de fila para evitar condiciones de carrera (Race Conditions)
+            query_etiqueta = text("SELECT * FROM etiquetas_maestras WHERE id_etiqueta = :id FOR UPDATE")
+            etiqueta_res = await db.execute(query_etiqueta, {"id": id})
+            if not etiqueta_res.fetchone():
+                raise HTTPException(status_code=404, detail="Etiqueta no encontrada")
+
+            # Conteo forense de uso
+            result_uso = await db.execute(text("SELECT COUNT(1) FROM documento_etiquetas WHERE id_etiqueta = :id"), {"id": id})
+            uso_count = result_uso.scalar()
             
-            response = HTMLResponse(content="") 
-            response.headers["HX-Trigger"] = "mostrarAlertaInmutabilidad"
+            if uso_count > 0:
+                detalles = json.dumps({"etiqueta_id": id, "intento_cambio_nombre": nombre, "razon_bloqueo": f"En uso por {uso_count} documentos"})
+                await db.execute(text("""
+                    INSERT INTO audit_rbac_logs (accion, usuario_id, ip_origen, detalles) 
+                    VALUES ('INTENTO_EDICION_BLOQUEADO', :user, :ip, :detalles)
+                """), {"user": user_id, "ip": client_ip, "detalles": detalles})
+                
+                response = HTMLResponse(content="") 
+                # Retornar JSON serializado en el header
+                response.headers["HX-Trigger"] = json.dumps({
+                    "alertaForense": {
+                        "mensaje": "Etiqueta sellada criptográficamente por uso en documentos."
+                    }
+                })
+                return response
+                
+            result = await db.execute(text("""
+                UPDATE etiquetas_maestras 
+                SET nombre = :nombre, color_fondo = :color_fondo, color_texto = :color_texto, categoria = :categoria 
+                WHERE id_etiqueta = :id 
+                RETURNING id_etiqueta, nombre, color_fondo, color_texto, es_sistema, categoria
+            """), {"id": id, "nombre": nombre, "color_fondo": color_fondo, "color_texto": color_texto, "categoria": categoria})
+            et = result.fetchone()
+            
+            response = HTMLResponse(content=get_row_html(et, 0))
+            response.headers["HX-Trigger"] = "closeModal"
             return response
             
-        result = await db.execute(text("""
-            UPDATE etiquetas_maestras 
-            SET nombre = :nombre, color_fondo = :color_fondo, color_texto = :color_texto, categoria = :categoria 
-            WHERE id_etiqueta = :id 
-            RETURNING id_etiqueta, nombre, color_fondo, color_texto, es_sistema, categoria
-        """), {"id": id, "nombre": nombre, "color_fondo": color_fondo, "color_texto": color_texto, "categoria": categoria})
-        et = result.fetchone()
-        
-        if not et:
-            return HTMLResponse(status_code=404)
-            
-        await db.commit()
-        response = HTMLResponse(content=get_row_html(et, 0))
-        response.headers["HX-Trigger"] = "closeModal"
-        return response
-        
+    except HTTPException:
+        raise
     except Exception as e:
-        await db.rollback()
+        import traceback
+        traceback.print_exc()
         return HTMLResponse(f"Error: {str(e)}", status_code=500)
 
 @router.delete("/{id}", response_class=HTMLResponse)
 async def delete_etiqueta(id: str, request: Request, db: AsyncSession = Depends(get_db_session)):
     try:
-        result = await db.execute(text("SELECT es_sistema FROM etiquetas_maestras WHERE id_etiqueta = :id"), {"id": id})
-        row = result.fetchone()
-        if not row:
-            return HTMLResponse(status_code=404)
-        if row.es_sistema:
-            return HTMLResponse("No puedes eliminar una etiqueta de sistema", status_code=403)
+        async with db.begin():
+            # Verificar si existe y si es de sistema
+            result = await db.execute(text("SELECT es_sistema FROM etiquetas_maestras WHERE id_etiqueta = :id"), {"id": id})
+            row = result.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="Etiqueta no encontrada")
+                
+            if row.es_sistema:
+                return HTMLResponse("No puedes eliminar una etiqueta de sistema", status_code=403)
+                
+            # Verificar si hay SLA pendientes vivos
+            query_tareas = text("""
+                SELECT COUNT(1) FROM tareas_asignaciones ta
+                JOIN documento_etiquetas de ON ta.id_documento = de.id_documento
+                WHERE de.id_etiqueta = :id AND ta.estado IN ('PENDIENTE', 'EN_PROGRESO')
+            """)
+            tareas_vivas = await db.execute(query_tareas, {"id": id})
             
-        await db.execute(text("UPDATE etiquetas_maestras SET estado_activa = FALSE WHERE id_etiqueta = :id"), {"id": id})
-        await db.commit()
+            if tareas_vivas.scalar() > 0:
+                response = HTMLResponse(content="")
+                response.headers["HX-Trigger"] = json.dumps({
+                    "alertaBloqueo": {
+                        "mensaje": "No se puede desactivar. Hay tareas en progreso que dependen de esta etiqueta."
+                    }
+                })
+                return response
+                
+            # Soft Delete
+            await db.execute(text("UPDATE etiquetas_maestras SET estado_activa = FALSE WHERE id_etiqueta = :id"), {"id": id})
+            
         return HTMLResponse(content="")
+    except HTTPException:
+        raise
     except Exception as e:
-        await db.rollback()
+        import traceback
+        traceback.print_exc()
         return HTMLResponse(f"Error: {str(e)}", status_code=500)
 
 @router.get("/dropdown", response_class=HTMLResponse)

@@ -533,7 +533,9 @@
 
 <!-- TAGS VIEW -->
 
-<section x-show="currentView === 'tags'" @mostraralertainmutabilidad.window="Swal.fire({icon: 'error', title: 'Operación Denegada', text: 'El servidor ha bloqueado la transacción. La etiqueta es inmutable.'})" x-transition.opacity.duration.300ms x-cloak class="min-h-[calc(100vh-140px)] bg-white rounded-3xl p-8 card-shadow border border-gray-100 flex flex-col relative" x-data="{ showModal: false, selectedTheme: null, tagName: '', showEditModal: false }">
+<section x-show="currentView === 'tags'" 
+         @alertaforense.window="Swal.fire({icon: 'error', title: 'Protección Forense', text: .detail.mensaje})"
+         @alertabloqueo.window="Swal.fire({icon: 'error', title: 'Bloqueo de SLA', text: .detail.mensaje})"  x-transition.opacity.duration.300ms x-cloak class="min-h-[calc(100vh-140px)] bg-white rounded-3xl p-8 card-shadow border border-gray-100 flex flex-col relative" x-data="{ showModal: false, selectedTheme: null, tagName: '', showEditModal: false }">
     
     
     <!-- Pestañas de Categoría (HTMX + Alpine) -->
