@@ -828,7 +828,22 @@
     <!-- Global Auth Status Poller for Forced Expulsion -->
     <div hx-get="/api/v1/auth/status" hx-trigger="every 1s" hx-swap="innerHTML" id="auth-status-container"></div>
     <div id="contenedor-modal-editor" style="position: relative; z-index: 2147483647 !important;"></div>
+
+<script>
+    document.body.addEventListener('htmx:responseError', function(event) {
+        let msg = "Ocurrió un error en el servidor.";
+        if (event.detail.xhr.status === 403) msg = "Acceso denegado (403).";
+        else if (event.detail.xhr.status === 500) msg = "Error interno del servidor (500). Revisa los logs. ¿Ejecutaste las migraciones SQL?";
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de Red / Servidor',
+            text: msg
+        });
+    });
+</script>
 </body>
+
 
 </html>
 
