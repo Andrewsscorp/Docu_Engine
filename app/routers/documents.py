@@ -931,15 +931,16 @@ async def upload_inicial_documento(
     with open(file_path, "wb") as f:
         f.write(content)
         
-    # 2. Find fallback group_id since it is NOT NULL in DB
+    # 2. Find fallback group_id that the user ACTUALLY belongs to
+    # because Row-Level Security (RLS) blocks inserting a document for a group you don't belong to!
     group_id = None
-    query_fallback = text("SELECT id FROM groups WHERE tenant_id = :t AND name = 'General' LIMIT 1")
-    res_group = await db.execute(query_fallback, {"t": tenant_id})
+    query_fallback = text("SELECT group_id FROM user_groups WHERE user_id = :uid LIMIT 1")
+    res_group = await db.execute(query_fallback, {"uid": user_id})
     row = res_group.fetchone()
     if row:
-        group_id = row.id
+        group_id = row.group_id
     else:
-        # Just grab the first group available
+        # Fallback to any group if superadmin
         res_group = await db.execute(text("SELECT id FROM groups WHERE tenant_id = :t LIMIT 1"), {"t": tenant_id})
         row = res_group.fetchone()
         if row:
