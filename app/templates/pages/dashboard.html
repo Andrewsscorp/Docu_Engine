@@ -457,15 +457,79 @@
 
 
 <!-- NOTIFICATIONS VIEW -->
-<section x-show="currentView === 'notifications'" x-transition.opacity.duration.300ms x-cloak>
-    <div class="bg-white p-12 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center min-h-[400px]">
-        <div class="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">
-            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+
+<section x-show="currentView === 'notifications'" x-transition.opacity.duration.300ms x-cloak class="min-h-[calc(100vh-140px)] bg-slate-50 rounded-3xl p-8 card-shadow border border-gray-100 flex flex-col">
+    
+    <!-- Encabezado de la Vista -->
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-semibold text-slate-800" style="font-family: 'Poppins', sans-serif;">Buzón de Revisiones</h1>
+        
+        <!-- Píldoras de Estadísticas Rápidas -->
+        <div class="flex gap-3">
+            <div class="px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm border border-red-100/50">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                3 Urgentes
+            </div>
+            <div class="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm border border-amber-100/50">
+                12 Pendientes
+            </div>
+            <div class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm border border-emerald-100/50">
+                42 Completadas
+            </div>
         </div>
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">Próximamente</h2>
-        <p class="text-gray-500 text-center max-w-md">El centro de notificaciones y asignaciones de documentos estará disponible en futuras actualizaciones.</p>
+    </div>
+
+    <!-- Barra de Herramientas y Filtros -->
+    <div class="flex justify-between items-center mb-6 bg-white p-2 rounded-2xl shadow-sm border border-slate-100" x-data="{ tabFiltro: 'todo' }">
+        
+        <!-- Buscador Predictivo -->
+        <div class="relative w-1/3">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </div>
+            <input type="text" 
+                   name="q"
+                   placeholder="Buscar documento o contrato..." 
+                   class="block w-full pl-10 pr-3 py-2.5 border-transparent bg-slate-50 text-slate-900 rounded-xl focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all focus:bg-white focus:shadow-sm"
+                   hx-get="/api/v1/notificaciones/buzon" 
+                   hx-trigger="keyup changed delay:500ms" 
+                   hx-target="#contenedor-tarjetas">
+        </div>
+
+        <!-- Sistema de Pestañas / Tabs -->
+        <div class="flex px-2 gap-1">
+            <button @click="tabFiltro = 'todo'" 
+                    class="px-5 py-2 text-sm font-medium transition-all rounded-lg"
+                    :class="tabFiltro === 'todo' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'">
+                Todo
+            </button>
+            <button @click="tabFiltro = 'pendientes'" 
+                    class="px-5 py-2 text-sm font-medium transition-all rounded-lg"
+                    :class="tabFiltro === 'pendientes' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'">
+                Pendientes
+            </button>
+            <button @click="tabFiltro = 'vencidas'" 
+                    class="px-5 py-2 text-sm font-medium transition-all rounded-lg"
+                    :class="tabFiltro === 'vencidas' ? 'bg-red-50 text-red-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'">
+                Vencidas
+            </button>
+        </div>
+    </div>
+
+    <!-- Contenedor de Tarjetas -->
+    <div id="contenedor-tarjetas" class="flex flex-col gap-4 flex-1 overflow-y-auto pr-2" 
+         hx-get="/api/v1/notificaciones/buzon" hx-trigger="load, reloadBuzon from:body">
+        
+        <!-- Estado de Carga -->
+        <div class="flex justify-center items-center h-48 w-full">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+        
     </div>
 </section>
+
 
 <!-- TAGS VIEW -->
 <section x-show="currentView === 'tags'" x-transition.opacity.duration.300ms x-cloak>
