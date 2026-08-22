@@ -1002,6 +1002,11 @@ async def finalizar_enrutamiento(
     tenant_id = session_data["tenant_id"]
     current_user_id = session_data["user_id"]
     
+    # SANITIZACION FORENSE (HTMX envia strings vacios para selects no seleccionados)
+    etiqueta_id = None if not etiqueta_id or etiqueta_id.strip() == "" else etiqueta_id
+    asignado_usuario_id = None if not asignado_usuario_id or asignado_usuario_id.strip() == "" else asignado_usuario_id
+    asignado_grupo_id = None if not asignado_grupo_id or asignado_grupo_id.strip() == "" else asignado_grupo_id
+    
     async with db.begin():
         # Validate rules
         if not es_privado:
