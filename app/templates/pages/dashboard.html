@@ -532,15 +532,122 @@
 
 
 <!-- TAGS VIEW -->
-<section x-show="currentView === 'tags'" x-transition.opacity.duration.300ms x-cloak>
-    <div class="bg-white p-12 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center min-h-[400px]">
-        <div class="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">
-            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+
+<section x-show="currentView === 'tags'" x-transition.opacity.duration.300ms x-cloak class="min-h-[calc(100vh-140px)] bg-white rounded-3xl p-8 card-shadow border border-gray-100 flex flex-col relative" x-data="{ showModal: false, selectedTheme: null, tagName: '' }">
+    
+    <!-- Barra de Herramientas Interna -->
+    <div class="flex justify-between items-center mb-8">
+        <div class="relative w-1/3">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </div>
+            <input type="text" placeholder="Buscar etiquetas..." class="block w-full pl-10 pr-3 py-2 border border-gray-200 bg-gray-50 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
         </div>
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">Próximamente</h2>
-        <p class="text-gray-500 text-center max-w-md">El módulo de gestión de etiquetas estará disponible en futuras actualizaciones.</p>
+        
+        <button @click="showModal = true" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg px-4 py-2 transition-colors flex items-center gap-2 shadow-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+            Nueva Etiqueta
+        </button>
+    </div>
+
+    <!-- La Tabla de Gestión (Data Grid) -->
+    <div class="overflow-x-auto flex-1">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-gray-200 text-gray-500 text-sm">
+                    <th class="pb-3 px-4 font-medium">Vista Previa</th>
+                    <th class="pb-3 px-4 font-medium">Nombre de la Etiqueta</th>
+                    <th class="pb-3 px-4 font-medium">Uso en el Sistema</th>
+                    <th class="pb-3 px-4 font-medium text-right">Acciones</th>
+                </tr>
+            </thead>
+            <tbody hx-get="/api/v1/etiquetas" hx-trigger="load, reloadTags from:body" id="etiquetas-tbody">
+                <!-- Skeleton loader -->
+                <tr>
+                    <td colspan="4" class="py-12 text-center text-gray-400">
+                        <div class="animate-pulse flex space-x-4 justify-center">
+                            <div class="rounded-full bg-slate-200 h-10 w-10"></div>
+                            <div class="flex-1 space-y-6 py-1 max-w-sm">
+                                <div class="h-2 bg-slate-200 rounded"></div>
+                                <div class="space-y-3">
+                                    <div class="grid grid-cols-3 gap-4">
+                                        <div class="h-2 bg-slate-200 rounded col-span-2"></div>
+                                        <div class="h-2 bg-slate-200 rounded col-span-1"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- El Modal de Creación de Etiquetas -->
+    <div x-show="showModal" x-transition.opacity style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-sm bg-gray-900/50" @click.self="showModal = false">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in-up" x-data="{ 
+            themes: [
+                { id: 'indigo', bg: 'bg-indigo-100', text: 'text-indigo-700', label: 'Índigo' },
+                { id: 'emerald', bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Esmeralda' },
+                { id: 'rose', bg: 'bg-rose-100', text: 'text-rose-700', label: 'Rosa' },
+                { id: 'amber', bg: 'bg-amber-100', text: 'text-amber-700', label: 'Ámbar' },
+                { id: 'purple', bg: 'bg-purple-100', text: 'text-purple-700', label: 'Púrpura' },
+                { id: 'slate', bg: 'bg-slate-100', text: 'text-slate-700', label: 'Pizarra' }
+            ],
+            currentBg: 'bg-gray-100',
+            currentText: 'text-gray-500'
+        }" @change-theme="currentBg = $event.detail.bg; currentText = $event.detail.text">
+            
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-lg text-slate-800">Crear Nueva Etiqueta</h3>
+                <button @click="showModal = false" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <form hx-post="/api/v1/etiquetas" hx-target="#etiquetas-tbody" hx-swap="beforeend" @htmx:after-request="showModal = false; tagName = ''; selectedTheme = null" class="p-6">
+                
+                <!-- Vista Previa en Vivo -->
+                <div class="mb-6 flex justify-center py-4 bg-gray-50/50 rounded-xl border border-gray-100 border-dashed">
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full transition-colors" 
+                          :class="selectedTheme ? currentBg + ' ' + currentText : 'bg-gray-100 text-gray-500'" 
+                          x-text="tagName || 'Vista Previa'"></span>
+                </div>
+                
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                    <input type="text" name="nombre" x-model="tagName" maxlength="20" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Color del Tema</label>
+                    <div class="grid grid-cols-6 gap-2">
+                        <template x-for="theme in themes" :key="theme.id">
+                            <button type="button" @click="selectedTheme = theme.id; ('change-theme', theme)" 
+                                    class="w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-110 focus:outline-none"
+                                    :class="theme.bg + ' ' + theme.text + (selectedTheme === theme.id ? ' ring-2 ring-offset-2 ring-indigo-500' : '')"
+                                    :title="theme.label">
+                                <svg x-show="selectedTheme === theme.id" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+                
+                <!-- Inputs ocultos para enviar a FastAPI -->
+                <input type="hidden" name="color_fondo" :value="currentBg">
+                <input type="hidden" name="color_texto" :value="currentText">
+                
+                <div class="flex justify-end gap-3 mt-8">
+                    <button type="button" @click="showModal = false" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Cancelar</button>
+                    <button type="submit" :disabled="!tagName || !selectedTheme" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Guardar Etiqueta</button>
+                </div>
+            </form>
+        </div>
     </div>
 </section>
+
 
 <!-- SETTINGS VIEW -->
 <section x-show="currentView === 'settings'" x-transition.opacity.duration.300ms x-cloak>

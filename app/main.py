@@ -82,13 +82,14 @@ async def catch_exceptions_middleware(request: Request, call_next):
             f.write(traceback.format_exc())
         raise
 
-from app.routers import auth, rbac, documents, settings, editor, notifications
+from app.routers import auth, rbac, documents, settings, editor, notifications, etiquetas
 app.include_router(auth.router)
 app.include_router(rbac.router)
 app.include_router(documents.router)
 app.include_router(settings.router)
 app.include_router(editor.router)
 app.include_router(notifications.router)
+app.include_router(etiquetas.router)
 
 
 @app.on_event("startup")
