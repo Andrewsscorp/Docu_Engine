@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -141,8 +141,8 @@
               <div x-show="notifOpen" @click.away="notifOpen = false" x-transition.opacity 
                    class="absolute top-16 right-0 bg-white border border-gray-100 shadow-xl rounded-2xl w-96 py-2 z-50 overflow-hidden">
                   <div class="px-4 py-3 border-b border-gray-50 flex justify-between items-center">
-                      <h3 class="font-bold text-gray-700">Mi Buzón de Tareas</h3>
-                      <button class="text-xs text-primary hover:underline">Marcar todas leídas</button>
+                      <h3 class="font-bold text-gray-700">Mi BuzÃ³n de Tareas</h3>
+                      <button class="text-xs text-primary hover:underline">Marcar todas leÃ­das</button>
                   </div>
                   <!-- Carga diferida HTMX -->
                   <div class="max-h-96 overflow-y-auto bg-gray-50" 
@@ -160,7 +160,7 @@
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
         </button>
         <div>
-            <h1 class="text-[28px] font-bold text-textmain leading-tight" x-text="currentView === 'dashboard' ? 'Resumen de Documentos' : (currentView === 'explorer' ? 'Documentos' : (currentView === 'users' ? 'Gestion de Usuarios y Roles' : (currentView === 'notifications' ? 'Centro de Notificaciones' : (currentView === 'tags' ? 'Gestión de Etiquetas' : 'Panel de Ajustes'))))"></h1>
+            <h1 class="text-[28px] font-bold text-textmain leading-tight" x-text="currentView === 'dashboard' ? 'Resumen de Documentos' : (currentView === 'explorer' ? 'Documentos' : (currentView === 'users' ? 'Gestion de Usuarios y Roles' : (currentView === 'notifications' ? 'Centro de Notificaciones' : (currentView === 'tags' ? 'GestiÃ³n de Etiquetas' : 'Panel de Ajustes'))))"></h1>
             <p class="text-sm font-medium text-textmuted mt-0.5" x-show="currentView === 'dashboard'">Gestiona y accede rapidamente a todos tus documentos</p>
         </div>
     </div>
@@ -235,644 +235,40 @@
         </div>
     </div>
     
-    <!-- Upload Zone -->
-    <div x-data="documentUploader()" class="mb-10">
-        <div @click="$refs.fileInput.click()" @dragover.prevent="dragover = true" @dragleave.prevent="dragover = false" @drop.prevent="handleDrop" 
-             :class="dragover ? 'border-primary bg-primary/5 scale-[1.01]' : 'border-primary/30 hover:border-primary/50 hover:bg-primary/[0.02]'"
-             class="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 rounded-[28px] p-12 text-center border-2 border-dashed transition-all duration-300 relative overflow-hidden h-[300px] flex flex-col justify-center items-center shadow-sm cursor-pointer">
-             
-            <!-- Decorative wavy lines (SVGs) -->
-            <svg class="absolute top-0 left-0 w-full h-full opacity-40 pointer-events-none" viewBox="0 0 1000 300" preserveAspectRatio="none">
-                <path d="M0,150 C200,50 300,250 500,150 C700,50 800,250 1000,150" fill="none" stroke="#4318FF" stroke-width="1" stroke-dasharray="5 5"></path>
-            </svg>
-            
-            <!-- Floating Icons -->
-            <div class="absolute top-12 left-1/4 w-12 h-12 bg-red-500 rounded shadow-lg shadow-red-500/40 flex items-center justify-center text-white font-bold text-xs transform -rotate-12 pointer-events-none">PDF</div>
-            <div class="absolute bottom-12 left-32 w-12 h-12 bg-blue-500 rounded shadow-lg shadow-blue-500/40 flex items-center justify-center text-white font-bold text-xs transform rotate-12 pointer-events-none">DOCX</div>
-            <div class="absolute top-16 right-1/4 w-12 h-12 bg-purple-500 rounded shadow-lg shadow-purple-500/40 flex items-center justify-center text-white font-bold text-xs transform rotate-6 pointer-events-none">JPG</div>
-            <div class="absolute bottom-16 right-20 w-12 h-12 bg-orange-500 rounded shadow-lg shadow-orange-500/40 flex items-center justify-center text-white font-bold text-xs transform -rotate-6 pointer-events-none">PNG</div>
-
-            <input type="file" x-ref="fileInput" @change="handleFileSelect" accept=".pdf,.docx,.jpg,.png" class="hidden" multiple>
-            
-            <div class="w-16 h-16 bg-gradient-to-tr from-primary to-[#868CFF] rounded-full flex items-center justify-center text-white shadow-lg shadow-primary/40 mb-4 z-10">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-            </div>
-            
-            <h2 class="text-2xl font-bold text-textmain mb-2 z-10 tracking-tight">Cargar Nuevos Documentos</h2>
-            <p class="text-textmuted text-sm mb-8 z-10" x-show="!uploading">Arrastra y suelta tus archivos PDF, DOCX, JPG o PNG aqui, o haz clic para buscar.</p>
-            
-            <div class="flex gap-4 z-10" x-show="!uploading">
-                <button @click="$refs.fileInput.click()" class="bg-primary hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-xl transition-colors shadow-lg shadow-primary/30 flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
-                    Seleccionar archivos
-                </button>
-                <button class="bg-white hover:bg-gray-50 text-textmain font-medium py-2.5 px-6 rounded-xl transition-colors border border-gray-200 shadow-sm flex items-center gap-2">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    Buscar documento
-                </button>
-            </div>
-
-            <div x-show="uploading" class="w-full max-w-md z-10 mt-4">
-                <div class="w-full bg-white/50 border border-gray-200 rounded-full h-3 mb-2 shadow-inner overflow-hidden">
-                    <div class="bg-gradient-to-r from-primary to-[#868CFF] h-3 rounded-full transition-all duration-300 relative" :style="`width: ${uploadProgress}%`">
-                        <!-- animated stripes -->
-                        <div class="absolute inset-0 bg-white/20" style="background-image: linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent); background-size: 1rem 1rem;"></div>
-                    </div>
-                </div>
-                <p class="text-sm font-bold text-primary" x-text="uploadStatus"></p>
-            </div>
-                    <!-- Error Log -->
-            <div x-show="uploadLog.length > 0" class="w-full mt-4 bg-red-50 border border-red-100 rounded-xl p-4 text-left max-h-32 overflow-y-auto">
-                <h4 class="text-xs font-bold text-red-800 uppercase mb-2">Registro de Carga</h4>
-                <template x-for="log in uploadLog">
-                    <p class="text-xs text-red-600 mb-1" x-text="log"></p>
-                </template>
-            </div>
-        </div>
-    </div>
     
-    <!-- Recent Documents Carousel -->
-    <div class="mb-6">
-        <div class="flex justify-between items-end mb-6">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-blue-50 text-primary flex items-center justify-center">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+    <!-- Upload Zone (HTMX) -->
+    <div class="mb-10">
+        <form 
+            id="form-upload-documento"
+            hx-encoding="multipart/form-data" 
+            hx-post="/api/v1/documents/upload-initial" 
+            hx-target="#modal-container" 
+            hx-swap="innerHTML"
+            class="relative border-2 border-dashed border-indigo-200 rounded-xl bg-slate-50 p-10 text-center hover:bg-indigo-50 transition-colors"
+        >
+            <input type="file" name="archivo" id="archivo-upload" class="hidden" accept=".pdf,.docx,.jpg,.png" 
+                   onchange="document.getElementById('btn-submit-upload').click()">
+
+            <div class="pointer-events-none">
+                <div class="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white shadow-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                 </div>
-                <div>
-                    <h2 class="text-xl font-bold text-textmain">Documentos Recientes</h2>
-                    <p class="text-xs text-textmuted">Accede a tus archivos mas recientes</p>
-                </div>
+                <h3 class="text-xl font-bold text-slate-800">Cargar Nuevos Documentos</h3>
+                <p class="text-sm text-slate-500 mt-2">Arrastra y suelta tus archivos aquí, o haz clic para buscar.</p>
             </div>
-            <div class="flex items-center gap-3">
-                <button @click="document.getElementById('recent-docs-container').scrollBy({left: -300, behavior: 'smooth'})" class="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-primary transition-colors bg-white">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                </button>
-                <button @click="document.getElementById('recent-docs-container').scrollBy({left: 300, behavior: 'smooth'})" class="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-primary transition-colors bg-white">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                </button>
-                <button @click="currentView = 'explorer'" class="bg-white border border-gray-200 hover:bg-gray-50 text-textmain text-sm font-medium py-1.5 px-4 rounded transition-colors flex items-center gap-2 ml-2 shadow-sm">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-                    Ver todos
-                </button>
-            </div>
-        </div>
-        
-        <div class="relative overflow-hidden w-full pb-6">
-            <!-- HTMX injects carousel contents here -->
-            <div id="recent-docs-container" hx-get="/api/v1/documents/recent" hx-trigger="load, reloadRecent from:body" hx-swap="innerHTML" 
-        x-data="{ isDown: false, startX: 0, scrollLeft: 0, dragged: false }" 
-        @mousedown="isDown = true; dragged = false; startX = $event.pageX - $el.offsetLeft; scrollLeft = $el.scrollLeft; $el.classList.add('cursor-grabbing')" 
-        @mouseleave="isDown = false; $el.classList.remove('cursor-grabbing')" 
-        @mouseup="isDown = false; $el.classList.remove('cursor-grabbing')" 
-        @mousemove="if(!isDown) return; $event.preventDefault(); dragged = true; const x = $event.pageX - $el.offsetLeft; const walk = (x - startX) * 2; $el.scrollLeft = scrollLeft - walk;" 
-        @click="if(dragged) $event.preventDefault();" 
-        class="flex gap-4 overflow-x-auto pb-4 custom-scrollbar  w-full">
-                <div class="animate-pulse flex gap-4 w-full">
-                    <div class="bg-white rounded-2xl w-64 h-64 shrink-0 shadow-sm border border-gray-100"></div>
-                    <div class="bg-white rounded-2xl w-64 h-64 shrink-0 shadow-sm border border-gray-100"></div>
-                    <div class="bg-white rounded-2xl w-64 h-64 shrink-0 shadow-sm border border-gray-100"></div>
-                    <div class="bg-white rounded-2xl w-64 h-64 shrink-0 shadow-sm border border-gray-100"></div>
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-    
-    <script>
-        function documentUploader() {
-        const groups = window.USER_GROUPS || [];
-        return {
-            userGroups: groups,
-            selectedGroup: groups.length > 0 ? groups[0].id : null,
-            dragover: false,
-            uploading: false,
-            uploadProgress: 0,
-            uploadStatus: '',
-            uploadLog: [],
-            
-            async handleDrop(e) {
-                this.dragover = false;
-                const files = e.dataTransfer.files;
-                if (files.length > 0) this.processFiles(files);
-            },
-            
-            async handleFileSelect(e) {
-                const files = e.target.files;
-                if (files.length > 0) this.processFiles(files);
-            },
-            
-            async computeSHA256(file) {
-                const arrayBuffer = await file.arrayBuffer();
-                const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
-                const hashArray = Array.from(new Uint8Array(hashBuffer));
-                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-            },
-            
-            async processFiles(files) {
-                this.uploading = true;
-                this.uploadLog = [];
-                
-                try {
-                    const tokenReq = await fetch('/api/v1/csrf-token');
-                    const tokenData = await tokenReq.json();
-                    const csrfToken = tokenData.csrf_token;
-                    
-                    Swal.fire({
-                        title: 'Abriendo y Procesando...',
-                        html: 'Por favor espera mientras se procesa y cifra la informacion.',
-                        allowOutsideClick: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
-                    
-                    for (let i = 0; i < files.length; i++) {
-                        const file = files[i];
-                        this.uploadStatus = `Subiendo: ${file.name}`;
-                        this.uploadProgress = 40;
-                        
-                        try {
-                            const hash = await this.computeSHA256(file);
-                            const formData = new FormData();
-                            formData.append('file', file);
-                            formData.append('file_hash', hash);
-                            if (this.selectedGroup) {
-                                formData.append('group_id', this.selectedGroup);
-                            }
-                            
-                            const response = await fetch('/api/v1/documents/upload', {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-Token': csrfToken
-                                },
-                                body: formData
-                            });
-                            
-                            if (response.status === 409) {
-                                this.uploadLog.push(`[DUPLICADO] El archivo ${file.name} ya existe en tu boveda.`);
-                                Swal.fire('Archivo Duplicado', `El archivo ${file.name} ya fue procesado anteriormente en tu boveda.`, 'warning');
-                            } else if (response.status === 401 || response.status === 403) {
-                                let msg = "No tienes permisos para subir archivos.";
-                                try {
-                                    const err = await response.json();
-                                    if (err.detail) msg = err.detail;
-                                } catch(e) {}
-                                this.uploadLog.push(`[DENEGADO] ${file.name}: ${msg}`);
-                                Swal.fire('Acceso Denegado', msg, 'error');
-                            } else if (!response.ok) {
-                                this.uploadLog.push(`[ERROR] Fallo al subir ${file.name} (Codigo: ${response.status})`);
-                                Swal.fire('Error', `Fallo al subir ${file.name}`, 'error');
-                            } else {
-                                Swal.fire('Exito', `${file.name} encolado correctamente`, 'success');
-                                document.body.dispatchEvent(new Event('reloadRecent'));
-                            }
-                        } catch (error) {
-                            console.error(error);
-                            this.uploadLog.push(`[CRITICO] Error procesando ${file.name}: ${error.message}`);
-                            Swal.fire('Error', `Hubo un problema procesando ${file.name}`, 'error');
-                        }
-                    }
-                } catch(e) {
-                    this.uploadLog.push(`[ERROR RED] No se pudo conectar con el servidor: ${e.message}`);
-                    Swal.fire('Error', 'Fallo general de red', 'error');
-                }
-                
-                this.uploading = false;
-                this.uploadProgress = 0;
-            }
-        }
-    }
-    </script>
-</section>
 
-<!-- EXPLORER VIEW -->
-<section class="min-w-0 w-full flex-1 flex flex-col" x-show="currentView === 'explorer'" x-transition.opacity.duration.300ms x-cloak>
-    <div hx-get="/api/v1/documents/explorer" hx-trigger="load, reloadExplorer from:body">
-        <div class="flex justify-center items-center py-12">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-    </div>
-</section>
-
-
-<!-- NOTIFICATIONS VIEW -->
-
-<section x-show="currentView === 'notifications'" x-transition.opacity.duration.300ms x-cloak class="min-h-[calc(100vh-140px)] bg-slate-50 rounded-3xl p-8 card-shadow border border-gray-100 flex flex-col">
-    
-    <!-- Encabezado de la Vista -->
-    <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-semibold text-slate-800" style="font-family: 'Poppins', sans-serif;">Buzón de Revisiones</h1>
-        
-        <!-- Píldoras de Estadísticas Rápidas -->
-        <div class="flex gap-3">
-            <div class="px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm border border-red-100/50">
-                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                3 Urgentes
-            </div>
-            <div class="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm border border-amber-100/50">
-                12 Pendientes
-            </div>
-            <div class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm border border-emerald-100/50">
-                42 Completadas
-            </div>
-        </div>
-    </div>
-
-    <!-- Barra de Herramientas y Filtros -->
-    <div class="flex justify-between items-center mb-6 bg-white p-2 rounded-2xl shadow-sm border border-slate-100" x-data="{ tabFiltro: 'todo' }">
-        
-        <!-- Buscador Predictivo -->
-        <div class="relative w-1/3">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-            </div>
-            <input type="text" 
-                   name="q"
-                   placeholder="Buscar documento o contrato..." 
-                   class="block w-full pl-10 pr-3 py-2.5 border-transparent bg-slate-50 text-slate-900 rounded-xl focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all focus:bg-white focus:shadow-sm"
-                   hx-get="/api/v1/notificaciones/buzon" 
-                   hx-trigger="keyup changed delay:500ms" 
-                   hx-target="#contenedor-tarjetas">
-        </div>
-
-        <!-- Sistema de Pestañas / Tabs -->
-        <div class="flex px-2 gap-1">
-            <button @click="tabFiltro = 'todo'" 
-                    class="px-5 py-2 text-sm font-medium transition-all rounded-lg"
-                    :class="tabFiltro === 'todo' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'">
-                Todo
+            <button type="button" onclick="document.getElementById('archivo-upload').click()" class="mt-6 px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg shadow-sm hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-100 transition-all">
+                Seleccionar archivos
             </button>
-            <button @click="tabFiltro = 'pendientes'" 
-                    class="px-5 py-2 text-sm font-medium transition-all rounded-lg"
-                    :class="tabFiltro === 'pendientes' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'">
-                Pendientes
-            </button>
-            <button @click="tabFiltro = 'vencidas'" 
-                    class="px-5 py-2 text-sm font-medium transition-all rounded-lg"
-                    :class="tabFiltro === 'vencidas' ? 'bg-red-50 text-red-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'">
-                Vencidas
-            </button>
-        </div>
+
+            <button type="submit" id="btn-submit-upload" class="hidden"></button>
+            <progress id="upload-progress" value="0" max="100" class="htmx-indicator w-full mt-4 h-2 rounded-full overflow-hidden"></progress>
+        </form>
     </div>
 
-    <!-- Contenedor de Tarjetas -->
-    <div id="contenedor-tarjetas" class="flex flex-col gap-4 flex-1 overflow-y-auto pr-2" 
-         hx-get="/api/v1/notificaciones/buzon" hx-trigger="load, reloadBuzon from:body">
-        
-        <!-- Estado de Carga -->
-        <div class="flex justify-center items-center h-48 w-full">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-        
-    </div>
-</section>
+    <!-- Documentos Recientes -->
+    <div class="flex justify-between items-center mb-6">
 
-
-<!-- TAGS VIEW -->
-
-<section x-show="currentView === 'tags'" 
-         @alertaforense.window="Swal.fire({icon: 'error', title: 'Protección Forense', text: .detail.mensaje})"
-         @alertabloqueo.window="Swal.fire({icon: 'error', title: 'Bloqueo de SLA', text: .detail.mensaje})"
-         @alertaerror.window="Swal.fire({icon: 'error', title: 'Operación Denegada', text: .detail.mensaje})"
-         @toastexito.window="Swal.fire({toast: true, position: 'top-end', icon: 'success', title: .detail.mensaje, showConfirmButton: false, timer: 3000, timerProgressBar: true})"  x-transition.opacity.duration.300ms x-cloak class="min-h-[calc(100vh-140px)] bg-white rounded-3xl p-8 card-shadow border border-gray-100 flex flex-col relative" x-data="{ showModal: false, selectedTheme: null, tagName: '', showEditModal: false, showPermisosModal: false, currentTab: 'Todos' }">
-    
-    
-    <!-- Pestañas de Categoría (HTMX + Alpine) -->
-    <div class="flex gap-2 mb-6 border-b border-gray-100 pb-2">
-        <button @click="currentTab = 'Todos'" 
-                :class="currentTab === 'Todos' ? 'text-indigo-600 border-b-2 border-indigo-600 font-medium' : 'text-gray-500 hover:text-gray-700'"
-                class="px-4 py-2 text-sm transition-colors"
-                hx-get="/api/v1/etiquetas?categoria=Todos" hx-target="#etiquetas-tbody" hx-push-url="true">
-            Todos
-        </button>
-        <button @click="currentTab = 'Estado'" 
-                :class="currentTab === 'Estado' ? 'text-indigo-600 border-b-2 border-indigo-600 font-medium' : 'text-gray-500 hover:text-gray-700'"
-                class="px-4 py-2 text-sm transition-colors"
-                hx-get="/api/v1/etiquetas?categoria=Estado" hx-target="#etiquetas-tbody" hx-push-url="true">
-            Estados
-        </button>
-        <button @click="currentTab = 'Clasificación'" 
-                :class="currentTab === 'Clasificación' ? 'text-indigo-600 border-b-2 border-indigo-600 font-medium' : 'text-gray-500 hover:text-gray-700'"
-                class="px-4 py-2 text-sm transition-colors"
-                hx-get="/api/v1/etiquetas?categoria=Clasificación" hx-target="#etiquetas-tbody" hx-push-url="true">
-            Clasificación
-        </button>
-        <button @click="currentTab = 'Prioridad'" 
-                :class="currentTab === 'Prioridad' ? 'text-indigo-600 border-b-2 border-indigo-600 font-medium' : 'text-gray-500 hover:text-gray-700'"
-                class="px-4 py-2 text-sm transition-colors"
-                hx-get="/api/v1/etiquetas?categoria=Prioridad" hx-target="#etiquetas-tbody" hx-push-url="true">
-            Prioridades
-        </button>
-    </div>
-
-    <!-- Barra de Herramientas Interna -->
-    <div class="flex justify-between items-center mb-8">
-        <div class="relative max-w-sm w-full">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-            </div>
-            <input type="search" name="q" placeholder="Buscar etiquetas..." 
-                   hx-get="/api/v1/etiquetas" 
-                   hx-trigger="keyup changed delay:500ms, search" 
-                   hx-target="#etiquetas-tbody"
-                   hx-indicator="#search-spinner"
-                   :hx-vals="JSON.stringify({categoria: currentTab})"
-                   class="block w-full pl-10 pr-10 py-2 border border-gray-200 bg-gray-50 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                   
-            <div id="search-spinner" class="htmx-indicator absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <svg class="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-            </div>
-        </div>
-        
-        <button @click="showModal = true" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg px-4 py-2 transition-colors flex items-center gap-2 shadow-sm">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-            Nueva Etiqueta
-        </button>
-    </div>
-
-    <!-- La Tabla de Gestión (Data Grid) -->
-    <div class="flex-1 overflow-visible pb-32">
-        <table class="w-full text-left border-collapse">
-            <thead>
-                <tr class="border-b border-gray-200 text-gray-500 text-sm">
-                    <th class="pb-3 px-4 font-medium w-48">Vista Previa</th>
-                    <th class="pb-3 px-4 font-medium w-1/4">Nombre y Categoría</th>
-                    <th class="pb-3 px-4 font-medium w-48">Reglas de Acceso</th>
-                    <th class="pb-3 px-4 font-medium">Uso en el Sistema</th>
-                    <th class="pb-3 px-4 font-medium text-right w-24">Acciones</th>
-                </tr>
-            </thead>
-            <tbody hx-get="/api/v1/etiquetas" hx-trigger="load, reloadTags from:body" id="etiquetas-tbody">
-                <!-- Skeleton loader -->
-                <tr>
-                    <td colspan="4" class="py-12 text-center text-gray-400">
-                        <div class="animate-pulse flex space-x-4 justify-center">
-                            <div class="rounded-full bg-slate-200 h-10 w-10"></div>
-                            <div class="flex-1 space-y-6 py-1 max-w-sm">
-                                <div class="h-2 bg-slate-200 rounded"></div>
-                                <div class="space-y-3">
-                                    <div class="grid grid-cols-3 gap-4">
-                                        <div class="h-2 bg-slate-200 rounded col-span-2"></div>
-                                        <div class="h-2 bg-slate-200 rounded col-span-1"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- El Modal de Creación de Etiquetas -->
-    <div x-show="showModal" x-transition.opacity style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-sm bg-gray-900/50" @click.self="showModal = false">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in-up" x-data="{ 
-            themes: [
-                { id: 'indigo', bg: 'bg-indigo-100', text: 'text-indigo-700', label: 'Índigo' },
-                { id: 'emerald', bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Esmeralda' },
-                { id: 'rose', bg: 'bg-rose-100', text: 'text-rose-700', label: 'Rosa' },
-                { id: 'amber', bg: 'bg-amber-100', text: 'text-amber-700', label: 'Ámbar' },
-                { id: 'purple', bg: 'bg-purple-100', text: 'text-purple-700', label: 'Púrpura' },
-                { id: 'slate', bg: 'bg-slate-100', text: 'text-slate-700', label: 'Pizarra' }
-            ],
-            currentBg: 'bg-gray-100',
-            currentText: 'text-gray-500'
-        }" @change-theme="currentBg = $event.detail.bg; currentText = $event.detail.text">
-            
-            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-lg text-slate-800">Crear Nueva Etiqueta</h3>
-                <button @click="showModal = false" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            
-            <form hx-post="/api/v1/etiquetas" hx-target="#etiquetas-tbody" hx-swap="beforeend" @htmx:after-request="showModal = false; tagName = ''; selectedTheme = null" class="p-6">
-                
-                <!-- Vista Previa en Vivo -->
-                <div class="mb-6 flex justify-center py-4 bg-gray-50/50 rounded-xl border border-gray-100 border-dashed">
-                    <span class="px-3 py-1 text-xs font-semibold rounded-full transition-colors" 
-                          :class="selectedTheme ? currentBg + ' ' + currentText : 'bg-gray-100 text-gray-500'" 
-                          x-text="tagName || 'Vista Previa'"></span>
-                </div>
-                
-                <div class="mb-5">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                    <input type="text" name="nombre" x-model="tagName" maxlength="20" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                
-                
-                <div class="mb-5">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-                    <select name="categoria" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="Estado">Estado (Workflow)</option>
-                        <option value="Clasificación">Clasificación (Metadato)</option>
-                        <option value="Prioridad">Prioridad</option>
-                    </select>
-                </div>
-
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-3">Color del Tema</label>
-                    <div class="grid grid-cols-6 gap-2">
-                        <template x-for="theme in themes" :key="theme.id">
-                            <button type="button" @click="selectedTheme = theme.id; ('change-theme', theme)" 
-                                    class="w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-110 focus:outline-none"
-                                    :class="theme.bg + ' ' + theme.text + (selectedTheme === theme.id ? ' ring-2 ring-offset-2 ring-indigo-500' : '')"
-                                    :title="theme.label">
-                                <svg x-show="selectedTheme === theme.id" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                            </button>
-                        </template>
-                    </div>
-                </div>
-                
-                <!-- Inputs ocultos para enviar a FastAPI -->
-                <input type="hidden" name="color_fondo" :value="currentBg">
-                <input type="hidden" name="color_texto" :value="currentText">
-                
-                <div class="flex justify-end gap-3 mt-8">
-                    <button type="button" @click="showModal = false" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Cancelar</button>
-                    <button type="submit" :disabled="!tagName || !selectedTheme" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Guardar Etiqueta</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- El Modal de Edición de Etiquetas -->
-    <div x-show="showEditModal" x-transition.opacity style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-sm bg-gray-900/50" 
-         x-data="{ 
-            editTagId: '',
-            tagName: '',
-            currentBg: 'bg-indigo-100',
-            currentText: 'text-indigo-700',
-            tagCat: 'Estado',
-            selectedTheme: 'indigo',
-            themes: [
-                { id: 'indigo', bg: 'bg-indigo-100', text: 'text-indigo-700', label: 'Índigo' },
-                { id: 'emerald', bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Esmeralda' },
-                { id: 'rose', bg: 'bg-rose-100', text: 'text-rose-700', label: 'Rosa' },
-                { id: 'amber', bg: 'bg-amber-100', text: 'text-amber-700', label: 'Ámbar' },
-                { id: 'purple', bg: 'bg-purple-100', text: 'text-purple-700', label: 'Púrpura' },
-                { id: 'slate', bg: 'bg-slate-100', text: 'text-slate-700', label: 'Pizarra' }
-            ]
-         }"
-         @edit-tag.window="
-            showEditModal = true; 
-            editTagId = $event.detail.id; 
-            tagName = $event.detail.nombre; 
-            currentBg = $event.detail.bg; 
-            currentText = $event.detail.text; 
-            tagCat = $event.detail.cat;
-            selectedTheme = themes.find(t => t.bg === currentBg)?.id || 'indigo';
-         "
-         @click.self="showEditModal = false">
-         
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in-up" 
-             @change-theme="currentBg = $event.detail.bg; currentText = $event.detail.text">
-            
-            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-lg text-slate-800">Editar Etiqueta</h3>
-                <button @click="showEditModal = false" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            
-            <form @submit.prevent="
-                const fd = new FormData();
-                fd.append('nombre', tagName);
-                fd.append('color_fondo', currentBg);
-                fd.append('color_texto', currentText);
-                fd.append('categoria', tagCat);
-                fetch('/api/v1/etiquetas/' + editTagId, {
-                    method: 'PUT',
-                    body: fd,
-                    headers: {'HX-Request': 'true'}
-                }).then(res => {
-                    const triggerHeader = res.headers.get('hx-trigger');
-                    if (triggerHeader && triggerHeader.includes('alertaForense')) {
-                        const data = JSON.parse(triggerHeader);
-                        window.dispatchEvent(new CustomEvent('alertaforense', {detail: data.alertaForense}));
-                    } else if (res.ok) {
-                        res.text().then(html => {
-                            if(html) {
-                                document.getElementById('etiqueta-row-' + editTagId).outerHTML = html;
-                            }
-                            showEditModal = false;
-                            window.dispatchEvent(new CustomEvent('toastexito', {detail: {mensaje: 'Etiqueta editada con éxito'}}));
-                        });
-                    } else {
-                        Swal.fire('Error', 'No se pudo editar', 'error');
-                    }
-                })
-            " class="p-6">
-                
-                <div class="mb-6 flex justify-center py-4 bg-gray-50/50 rounded-xl border border-gray-100 border-dashed">
-                    <span class="px-3 py-1 text-xs font-semibold rounded-full transition-colors" 
-                          :class="currentBg + ' ' + currentText" 
-                          x-text="tagName || 'Vista Previa'"></span>
-                </div>
-                
-                <div class="mb-5">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                    <input type="text" name="nombre" x-model="tagName" maxlength="20" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                
-                <div class="mb-5">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-                    <select name="categoria" x-model="tagCat" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="Estado">Estado (Workflow)</option>
-                        <option value="Clasificación">Clasificación (Metadato)</option>
-                        <option value="Prioridad">Prioridad</option>
-                    </select>
-                </div>
-                
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-3">Color del Tema</label>
-                    <div class="grid grid-cols-6 gap-2">
-                        <template x-for="theme in themes" :key="theme.id">
-                            <button type="button" @click="selectedTheme = theme.id; $dispatch('change-theme', theme)" 
-                                    class="w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-110 focus:outline-none"
-                                    :class="theme.bg + ' ' + theme.text + (selectedTheme === theme.id ? ' ring-2 ring-offset-2 ring-indigo-500' : '')"
-                                    :title="theme.label">
-                                <svg x-show="selectedTheme === theme.id" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                            </button>
-                        </template>
-                    </div>
-                </div>
-                
-                <div class="flex justify-end gap-3 mt-8">
-                    <button type="button" @click="showEditModal = false" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">Cancelar</button>
-                    <button type="submit" :disabled="!tagName || !selectedTheme" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Actualizar Etiqueta</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal de Permisos RBAC -->
-    <div x-show="showPermisosModal" x-transition.opacity style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-sm bg-gray-900/50" 
-         @abrirmodalpermisos.window="showPermisosModal = true;"
-         @cerrarmodalpermisos.window="showPermisosModal = false;"
-         @click.self="showPermisosModal = false">
-         
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in-up">
-            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-lg text-slate-800">Permisos de Etiqueta</h3>
-                <button @click="showPermisosModal = false" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            
-            <div id="modal-permisos-content">
-                <!-- Se inyecta vía HTMX -->
-                <div class="flex justify-center py-12">
-                    <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                </div>
-            </div>
-        </div>
-    </div>
-
-</section>
-
-
-<!-- SETTINGS VIEW -->
-<section x-show="currentView === 'settings'" x-transition.opacity.duration.300ms x-cloak>
-    <h3 class="font-semibold text-lg mb-4 text-textmuted">Selecciona una categoria de ajustes:</h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Hipervinculo para abrir el pop-up de Empresa -->
-        <div @click="settingsOpen = true" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all flex items-center gap-4 hover:border-primary">
-            <div class="text-4xl">&#127970;</div>
-            <div>
-                <h4 class="font-bold text-textmain">Ajustes de Empresa</h4>
-                <p class="text-sm text-textmuted">Nombre, Idioma y Alertas</p>
-            </div>
-        </div>
-        
-        <!-- MENUS_DINAMICOS_AJUSTES -->
-        <!-- MENUS_DINAMICOS_LICENCIA -->
-        
-        <!-- Hipervinculo para OCR -->
-        <div @click="ocrOpen = true" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all flex items-center gap-4 hover:border-primary">
-            <div class="text-4xl">&#128065;&#65039;</div>
-            <div>
-                <h4 class="font-bold text-textmain">Motor OCR</h4>
-                <p class="text-sm text-textmuted">Ajustes Tesseract</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- MENUS_DINAMICOS_SECTION -->
-
-    <!-- Modal de OCR -->
-    <div x-show="ocrOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm" x-cloak>
-        <div @click.away="ocrOpen = false" class="bg-white rounded-3xl w-full max-w-2xl p-8 card-shadow overflow-y-auto max-h-[90vh]">
-            <div class="flex justify-between items-center mb-6">
                 <h3 class="text-2xl font-bold text-textmain">Configuracion del Motor OCR</h3>
                 <button @click="ocrOpen = false" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -891,7 +287,7 @@
     <div x-show="licenseOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm" style="display: none;">
         <div @click.away="licenseOpen = false" class="bg-white rounded-3xl w-full max-w-4xl p-8 card-shadow overflow-y-auto max-h-[90vh]">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-3xl font-bold text-textmain">Gestión de Licencia</h3>
+                <h3 class="text-3xl font-bold text-textmain">GestiÃ³n de Licencia</h3>
                 <button @click="licenseOpen = false" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
@@ -921,14 +317,14 @@
                 <button @click="settingsOpen = false" class="text-gray-400 hover:text-red-500 transition-colors text-2xl font-bold">&times;</button>
             </div>
             
-            <!-- HTMX cargará el formulario desde el backend automáticamente -->
+            <!-- HTMX cargarÃ¡ el formulario desde el backend automÃ¡ticamente -->
             <div hx-get="/api/v1/settings" hx-trigger="load">
                 <div class="flex items-center justify-center p-10 text-primary">
                     <svg class="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span class="ml-3 font-medium">Cargando configuración...</span>
+                    <span class="ml-3 font-medium">Cargando configuraciÃ³n...</span>
                 </div>
             </div>
         </div>
@@ -944,3 +340,4 @@
 </body>
 
 </html>
+

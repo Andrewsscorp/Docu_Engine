@@ -1,0 +1,77 @@
+﻿<div 
+    x-data="{ 
+        esPrivado: false, 
+        tipoAsignacion: 'usuario' 
+    }" 
+    class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm"
+>
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden p-6 relative animate-fade-in-up">
+        <!-- Encabezado -->
+        <h2 class="text-xl font-bold text-slate-800 border-b pb-4 mb-4">Enrutar Documento</h2>
+        <p class="text-sm text-slate-500 mb-6">Configura el destino y metadatos para: <span class="font-semibold text-indigo-600">{{ document_name }}</span></p>
+
+        <!-- Formulario HTMX para finalizar la asignación -->
+        <form hx-post="/api/v1/documents/{{ document_id }}/finalize-routing" hx-swap="none" @htmx:after-request="$el.closest('[x-data]').remove()">
+            
+            <!-- 1. Toggle: Guardado Interno (Privado) -->
+            <div class="flex items-center justify-between bg-slate-50 p-4 rounded-xl mb-6 border border-slate-100">
+                <div>
+                    <h4 class="text-sm font-semibold text-slate-800">Guardado Interno (Privado)</h4>
+                    <p class="text-xs text-slate-500">Solo tú podrás ver y auditar este documento.</p>
+                </div>
+                <!-- Toggle Switch CSS (Tailwind) -->
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="es_privado" x-model="esPrivado" value="true" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                </label>
+            </div>
+
+            <!-- Contenedor Dinámico: Se oculta si es privado -->
+            <div x-show="!esPrivado" x-transition class="space-y-4">
+                
+                <!-- 2. Etiqueta Inicial (Opcional) -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Etiqueta Inicial</label>
+                    <select name="etiqueta_id" class="w-full border-slate-200 rounded-lg text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">-- Sin etiqueta --</option>
+                        {% for et in etiquetas %}
+                            <option value="{{ et.id_etiqueta }}">{{ et.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- 3. Tipo de Asignación (Radio Buttons) -->
+                <div class="flex gap-4 mt-4">
+                    <label class="flex items-center text-sm"><input type="radio" x-model="tipoAsignacion" value="usuario" class="text-indigo-600"> <span class="ml-2">Usuario Específico</span></label>
+                    <label class="flex items-center text-sm"><input type="radio" x-model="tipoAsignacion" value="grupo" class="text-indigo-600"> <span class="ml-2">Grupo Completo</span></label>
+                </div>
+
+                <!-- 4A. Select Usuario -->
+                <div x-show="tipoAsignacion === 'usuario'">
+                    <select name="asignado_usuario_id" class="w-full border-slate-200 rounded-lg text-sm mt-2">
+                        <option value="">Seleccione un colega...</option>
+                        {% for user in usuarios %}
+                            <option value="{{ user.id }}">{{ user.username }} ({{ user.role_name }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- 4B. Select Grupo -->
+                <div x-show="tipoAsignacion === 'grupo'">
+                    <select name="asignado_grupo_id" class="w-full border-slate-200 rounded-lg text-sm mt-2">
+                        <option value="">Seleccione un grupo o jurisdicción...</option>
+                        {% for grupo in grupos %}
+                            <option value="{{ grupo.id }}">{{ grupo.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="mt-8 flex justify-end gap-3">
+                <button type="button" @click="$el.closest('[x-data]').remove()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium text-sm transition-colors">Cancelar</button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium text-sm hover:bg-indigo-700 shadow-sm transition-colors">Confirmar Carga</button>
+            </div>
+        </form>
+    </div>
+</div>
