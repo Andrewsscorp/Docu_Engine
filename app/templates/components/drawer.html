@@ -44,7 +44,7 @@
         <!-- Actions -->
         {% if can_edit %}
         <div class="pt-2">
-            <button @click="sidebarOpen = false; drawerAbierto = false" class="w-full bg-[#1e3a8a] text-white flex items-center justify-center gap-2 py-3 rounded-xl font-bold hover:bg-blue-900 transition-colors shadow-md text-sm mb-2"
+            <button class="w-full bg-[#1e3a8a] text-white flex items-center justify-center gap-2 py-3 rounded-xl font-bold hover:bg-blue-900 transition-colors shadow-md text-sm mb-2"
                     hx-get="/api/v1/documentos/{{ doc.id }}/interfaz-editor"
                     hx-target="#contenedor-modal-editor"
                     hx-swap="innerHTML">
