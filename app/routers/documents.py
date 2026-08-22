@@ -913,9 +913,7 @@ async def upload_inicial_documento(
     db: AsyncSession = Depends(get_db_session),
     session_data: dict = Depends(require_permission("documentos:subir"))
 ):
-    import traceback
-    try:
-        tenant_id = session_data["tenant_id"]
+    tenant_id = session_data["tenant_id"]
     user_id = session_data["user_id"]
     
     # 1. Sanitization: secure_filename
@@ -987,11 +985,6 @@ async def upload_inicial_documento(
         "usuarios": usuarios,
         "grupos": grupos
     })
-    except Exception as e:
-        print("====== UPLOAD ENDPOINT CRASH ======")
-        traceback.print_exc()
-        print("===================================")
-        raise e
 
 @router.post("/api/v1/documents/{documento_id}/finalize-routing")
 async def finalizar_enrutamiento(
