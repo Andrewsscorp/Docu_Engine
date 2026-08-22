@@ -931,9 +931,10 @@ async def upload_inicial_documento(
         f.write(content)
         
     # 2. Insert into documents as DRAFT
+    mime = archivo.content_type or "application/octet-stream"
     query = text("""
-        INSERT INTO documents (id, tenant_id, file_name, file_path, uploaded_by, status, is_private)
-        VALUES (:id, :t, :fn, :path, :uid, 'DRAFT', FALSE)
+        INSERT INTO documents (id, tenant_id, file_name, file_path, uploaded_by, status, is_private, mime_type, file_size_bytes)
+        VALUES (:id, :t, :fn, :path, :uid, 'DRAFT', FALSE, :mime, :size)
         RETURNING id
     """)
     doc_id = str(uuid.uuid4())
@@ -942,7 +943,9 @@ async def upload_inicial_documento(
         "t": tenant_id,
         "fn": safe_name,
         "path": disk_filename,
-        "uid": user_id
+        "uid": user_id,
+        "mime": mime,
+        "size": file_size
     })
     await db.commit()
     
