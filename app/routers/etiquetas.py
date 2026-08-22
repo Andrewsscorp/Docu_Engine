@@ -345,7 +345,7 @@ async def get_etiqueta_permisos(id: str, request: Request, db: AsyncSession = De
             return HTMLResponse("<div class='text-red-500'>Etiqueta no encontrada</div>", status_code=404)
             
         # Get all roles
-        roles_res = await db.execute(text("SELECT id_rol, nombre, descripcion FROM roles ORDER BY nombre"))
+        roles_res = await db.execute(text("SELECT id, name as nombre, '' as descripcion FROM roles ORDER BY name"))
         roles = roles_res.all()
         
         # Get currently permitted roles
@@ -362,7 +362,7 @@ async def get_etiqueta_permisos(id: str, request: Request, db: AsyncSession = De
         """
         
         for r in roles:
-            checked = "checked" if r.id_rol in permitted else ""
+            checked = "checked" if r.id in permitted else ""
             is_admin = r.nombre in ['Administrador', 'Revisor Fiscal']
             # If system tag, force admin checkbox checked and disabled visually, but we will enforce it in backend too.
             disabled_str = ""
@@ -373,7 +373,7 @@ async def get_etiqueta_permisos(id: str, request: Request, db: AsyncSession = De
             html_out += f"""
                 <label class="flex items-start gap-3 p-2 hover:bg-white rounded transition-colors cursor-pointer">
                     <div class="flex items-center h-5">
-                        <input type="checkbox" name="roles_ids" value="{r.id_rol}" {checked} {disabled_str} class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                        <input type="checkbox" name="roles_ids" value="{r.id}" {checked} {disabled_str} class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
                     </div>
                     <div class="flex flex-col">
                         <span class="text-sm font-medium text-gray-800">{r.nombre}</span>
