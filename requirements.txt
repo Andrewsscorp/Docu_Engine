@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+pydantic
+argon2-cffi
+asyncpg
+SQLAlchemy

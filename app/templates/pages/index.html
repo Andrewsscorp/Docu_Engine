@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuEngine - Login</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body style="background: DOCUENGINE_LOGIN_BG; background-size: cover; background-position: center; background-repeat: no-repeat; min-height: 100vh; display: flex; justify-content: center; align-items: center; margin: 0;">
+    <!-- Capa de color global para asegurar contraste (Glassmorphism oscuro sobre el fondo) -->
+    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.15); z-index: -1;"></div>
+    
+    <!--ring div starts here-->
+    <div class="ring">
+      <i style="--clr:#00ff0a;"></i>
+      <i style="--clr:#ff0057;"></i>
+      <i style="--clr:#fffd44;"></i>
+      <div class="login">
+        <!-- NOTA: El nombre del programa y la imagen de fondo se cambian desde el dashboard -->
+        <h2 class="animated-title" style="word-wrap: break-word; white-space: normal; line-height: 1.2;">DOCUENGINE_BRAND_NAME</h2>
+        <!-- Formulario de LOGIN -->
+        <form id="loginForm">
+          <div class="inputBx">
+            <input type="text" id="username" placeholder="Usuario" required>
+          </div>
+          <div class="inputBx password-container">
+            <input type="password" id="password" placeholder="Contraseña" required>
+            <span class="toggle-password" id="togglePassword" title="Mostrar/Ocultar contraseña">👁️</span>
+          </div>
+          <div class="remember-bx">
+            <label>
+              <input type="checkbox" id="rememberMe"> Recordar usuario
+            </label>
+          </div>
+          <div class="inputBx">
+            <button type="submit" id="submitBtn">
+              <span class="btn-text">Iniciar Sesión</span>
+              <div class="loader" style="display: none;"></div>
+            </button>
+          </div>
+        </form>
+
+        
+        <!-- Formulario de MFA (Oculto por defecto) -->
+        <div id="mfa-form" style="display: none; flex-direction: column; gap: 15px; width: 100%;">
+            <p style="color: #e2e8f0; font-weight: 500; font-size: 0.9em; text-align: center; margin-bottom: 5px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">Ingresa el código de 6 dígitos de tu aplicación Authenticator.</p>
+            
+            <div id="mfa-setup-container" style="display: none; flex-direction: column; align-items: center; padding: 15px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; margin-bottom: 15px;">
+                <p style="font-size: 1em; font-weight: bold; color: #ffffff; margin-bottom: 5px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">Configuración Inicial</p>
+                <p style="font-size: 0.85em; color: #e2e8f0; text-align: center; margin-bottom: 15px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">Escanea este código QR con Google Authenticator o Authy.</p>
+                <div style="background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <img id="qrcode-image" src="" alt="QR Code" style="width: 150px; height: 150px; display: none;">
+                </div>
+            </div>
+
+            <form id="mfaForm" style="display: flex; flex-direction: column; gap: 20px; width: 100%;">
+                <input type="hidden" id="mfa-token" value="">
+                <div class="inputBx">
+                    <input type="text" id="mfa-code" maxlength="6" autocomplete="off"
+                        style="text-align: center; font-size: 1.5em; letter-spacing: 0.3em; font-family: monospace;"
+                        required placeholder="••••••">
+                </div>
+                
+                <div class="inputBx">
+                    <button type="submit" id="mfaSubmitBtn" style="position: relative; display: flex; justify-content: center; align-items: center; width: 100%;">
+                        <span id="mfaBtnText" class="btn-text">Verificar Código</span>
+                        <div id="mfaLoader" class="loader" style="display: none; position: absolute;"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Formulario de REGISTRO (Oculto por defecto) -->
+        <form id="registerForm" style="display: none;">
+          <div class="inputBx">
+            <input type="text" id="regUsername" placeholder="Nuevo Usuario Admin" required>
+          </div>
+          <div class="inputBx">
+            <input type="password" id="regPassword" placeholder="Crear Contraseña" required>
+          </div>
+          <div style="width: 100%; margin-top: -10px; margin-bottom: 5px;">
+            <div style="color: rgba(255,255,255,0.8); font-size: 0.8em; margin-left: 10px; margin-bottom: 3px;">Hardware ID (Cópialo):</div>
+            <input type="text" id="displayHwid" readonly style="font-size: 0.85em; padding: 8px 15px; color: #a5d8ff; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); cursor: copy;" title="Haz doble clic para seleccionar todo" value="Calculando...">
+          </div>
+          <div class="inputBx">
+            <input type="text" id="regLicense" placeholder="Pega tu Token de Licencia" required>
+          </div>
+          <div class="inputBx">
+            <button type="submit" id="regSubmitBtn">
+              <span class="btn-text">Validar Licencia y Registrar</span>
+              <div class="loader" style="display: none;"></div>
+            </button>
+          </div>
+        </form>
+
+        <div class="links">
+          <a href="#" id="linkOlvidaste">Olvidé mi contraseña</a>
+          <a href="#" id="linkRegistrarse">Registrarse</a>
+        </div>
+      </div>
+    </div>
+    <!--ring div ends here-->
+    
+    <div class="footer-credits">
+      Desarrollado por Andres Suarez - Versión 1.0.0 (BETA)
+    </div>
+
+    <!-- Script de conexión al Backend y UX -->
+    <script>
+      // 0. Módulo de Extracción de Entropía HWID (Simulado para navegador web)
+      // Nota Arquitectónica: Los navegadores bloquean la lectura real del BIOS UUID por seguridad.
+      // Para este cliente web, derivamos un "Hardware ID" basado en la huella del navegador.
+      // Cuando se pase a aplicación de escritorio (Electron/Python), esto se reemplaza por el comando de sistema real.
+      async function getHardwareIdHash() {
+        const rawHwid = navigator.userAgent + navigator.hardwareConcurrency + screen.colorDepth;
+        const msgBuffer = new TextEncoder().encode(rawHwid);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+
+      // Intercambio de Formularios (Login / Registro)
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      const linkRegistrarse = document.getElementById('linkRegistrarse');
+      const title = document.querySelector('.animated-title');
+      
+      let isLoginMode = true;
+      linkRegistrarse.addEventListener('click', async (e) => {
+        e.preventDefault();
+        isLoginMode = !isLoginMode;
+        if (isLoginMode) {
+          loginForm.style.display = 'flex';
+          registerForm.style.display = 'none';
+          linkRegistrarse.textContent = 'Registrarse';
+        } else {
+          loginForm.style.display = 'none';
+          registerForm.style.display = 'flex';
+          linkRegistrarse.textContent = 'Volver al Login';
+          
+          // Calcular el HWID visible para que el Admin pueda generar la licencia de prueba
+          const hwid = await getHardwareIdHash();
+          document.getElementById('displayHwid').value = hwid;
+        }
+      });
+
+      // 1. Mostrar/Ocultar Contraseña
+      const togglePassword = document.getElementById('togglePassword');
+      const passwordInput = document.getElementById('password');
+      togglePassword.addEventListener('click', () => {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        togglePassword.textContent = type === 'password' ? '👁️' : '🙈';
+      });
+
+      // 2. Recordar Usuario usando LocalStorage
+      const usernameInput = document.getElementById('username');
+      const rememberMe = document.getElementById('rememberMe');
+      
+      if (localStorage.getItem('docuengine_username')) {
+        usernameInput.value = localStorage.getItem('docuengine_username');
+        rememberMe.checked = true;
+      }
+
+      // 3. Envío del Formulario de LOGIN
+      const submitBtn = document.getElementById('submitBtn');
+      const btnText = submitBtn.querySelector('.btn-text');
+      const loader = submitBtn.querySelector('.loader');
+
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = usernameInput.value;
+        const password = passwordInput.value;
+  
+        btnText.textContent = "Validando...";
+        loader.style.display = "block";
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = "0.7";
+  
+        try {
+          const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const result = await response.json();
+          if (response.ok) {
+            if (result.mfa_required) {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('mfa-form').style.display = 'flex';
+                document.getElementById('mfa-token').value = result.token;
+                if (result.setup && result.qr_url) {
+                    document.getElementById('mfa-setup-container').style.display = 'flex';
+                    const qrImg = document.getElementById('qrcode-image');
+                      if (qrImg) {
+                          qrImg.src = result.qr_url;
+                          qrImg.style.display = 'block';
+                      }
+                }
+                btnText.textContent = "Iniciar Sesión";
+                loader.style.display = "none";
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = "1";
+            } else {
+                btnText.textContent = "¡Éxito!";
+                loader.style.display = "none";
+                window.location.href = '/dashboard';
+            }
+          } else {
+            Swal.fire({icon: 'error', title: 'Acceso Denegado', text: result.detail || result.message, confirmButtonColor: '#2563eb'});
+            btnText.textContent = "Iniciar Sesión";
+            loader.style.display = "none";
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = "1";
+          }
+        } catch (error) {
+          Swal.fire({icon: 'error', title: 'Error de Conexión', text: 'Hubo un fallo de red.', confirmButtonColor: '#2563eb'});
+          btnText.textContent = "Iniciar Sesión";
+          loader.style.display = "none";
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = "1";
+        }
+      });
+
+      // 4. Envío del Formulario de REGISTRO
+      const regSubmitBtn = document.getElementById('regSubmitBtn');
+      const regBtnText = regSubmitBtn.querySelector('.btn-text');
+      const regLoader = regSubmitBtn.querySelector('.loader');
+
+      registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('regUsername').value;
+        const password = document.getElementById('regPassword').value;
+        const license_token = document.getElementById('regLicense').value;
+
+        regBtnText.textContent = "Cifrando & Validando...";
+        regLoader.style.display = "block";
+        regSubmitBtn.disabled = true;
+
+        try {
+          // Fase 1: Extracción del HWID Local
+          const hwid_hash = await getHardwareIdHash();
+          
+          const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, hwid_hash, license_token })
+          });
+          
+          const result = await response.json();
+          if (response.ok) {
+            Swal.fire({icon: 'success', title: '¡Éxito!', text: 'Administrador registrado exitosamente bajo licencia encriptada!', confirmButtonColor: '#2563eb'});
+            linkRegistrarse.click(); // Volver al login
+          } else {
+            Swal.fire({icon: 'error', title: 'Error de Licencia/Registro', text: result.detail, confirmButtonColor: '#2563eb'});
+          }
+        } catch (error) {
+          Swal.fire({icon: 'error', title: 'Error de Conexión', text: 'Hubo un fallo de red en el registro.', confirmButtonColor: '#2563eb'});
+        } finally {
+          regBtnText.textContent = "Validar Licencia y Registrar";
+          regLoader.style.display = "none";
+          regSubmitBtn.disabled = false;
+        }
+      });
+    
+        
+
+
+        const mfaForm = document.getElementById('mfaForm');
+        if (mfaForm) {
+            mfaForm.addEventListener('submit', async (e) => {
+              e.preventDefault();
+              const code = document.getElementById('mfa-code').value;
+              const token = document.getElementById('mfa-token').value;
+              
+              const submitBtn = document.getElementById('mfaSubmitBtn');
+              const btnText = document.getElementById('mfaBtnText');
+              const loader = document.getElementById('mfaLoader');
+              
+              submitBtn.disabled = true;
+              submitBtn.style.opacity = "0.7";
+              btnText.style.opacity = "0";
+              loader.style.display = "block";
+
+              try {
+                const response = await fetch('/api/v1/auth/mfa/verify', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ code, token })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                  btnText.textContent = "¡Éxito!";
+                  btnText.style.opacity = "1";
+                  loader.style.display = "none";
+                  window.location.href = '/dashboard'; 
+                } else {
+                  Swal.fire({icon: 'error', title: 'Código Inválido', text: result.detail || result.message, confirmButtonColor: '#2563eb'});
+                  btnText.style.opacity = "1";
+                  loader.style.display = "none";
+                  submitBtn.disabled = false;
+                  submitBtn.style.opacity = "1";
+                }
+              } catch (error) {
+                Swal.fire({icon: 'error', title: 'Error de Conexión', text: 'Hubo un fallo de red.', confirmButtonColor: '#2563eb'});
+                btnText.style.opacity = "1";
+                loader.style.display = "none";
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = "1";
+              }
+            });
+        }
+
+</script>
+</body>
+</html>

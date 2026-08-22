@@ -1,0 +1,6 @@
+FROM collabora/code:latest
+USER root
+COPY --chown=cool:cool branding_test.css /usr/share/coolwsd/browser/dist/branding.css
+COPY --chown=cool:cool branding_test.css.gz /usr/share/coolwsd/browser/dist/branding.css.gz
+COPY --chown=cool:cool branding_test.css.br /usr/share/coolwsd/browser/dist/branding.css.br
+USER cool

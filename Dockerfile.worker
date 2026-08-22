@@ -1,0 +1,22 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Instalar dependencias del sistema requeridas por OpenCV (necesario para OCR)
+RUN apt-get update && apt-get install -y \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar e instalar dependencias basicas del proyecto
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Instalar dependencias del motor OCR (PaddleOCR y herramientas PDF)
+RUN pip install --no-cache-dir paddlepaddle paddleocr pymupdf rapidocr_onnxruntime
+
+# Copiar el codigo fuente
+COPY . .
+
+# Iniciar el proceso Worker en segundo plano
+CMD ["python", "ocr_worker.py"]

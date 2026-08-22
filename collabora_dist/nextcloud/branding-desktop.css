@@ -1,0 +1,6 @@
+/* (C) DocuFiles Productivity 2026, All Rights Reserved, (version 26.04.3-1) */
+
+.text-selection-handle-start,
+.text-selection-handle-end {
+  display: none;
+}

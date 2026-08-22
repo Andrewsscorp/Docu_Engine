@@ -1,0 +1,107 @@
+<div class="h-full flex flex-col pb-8">
+    <!-- Cover/Thumbnail -->
+    <div class="h-64 bg-gray-100 relative shrink-0">
+        {% if doc.thumbnail_path %}
+            <img src="{{ doc.thumbnail_path }}" class="w-full h-full object-cover">
+        {% else %}
+            <div class="w-full h-full flex items-center justify-center bg-gray-100">
+                <span class="text-6xl opacity-50">📄</span>
+            </div>
+        {% endif %}
+        <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-6 pt-12">
+            <h2 class="text-2xl font-bold text-white truncate drop-shadow-md">{{ doc.file_name }}</h2>
+        </div>
+    </div>
+    
+    <!-- Meta -->
+    <div class="p-6 shrink-0 border-b border-gray-100 space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Subido por</p>
+                <p class="font-medium text-gray-900">{{ doc.uploader_name or 'Desconocido' }}</p>
+            </div>
+            <div>
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Fecha</p>
+                <p class="font-medium text-gray-900">{{ doc.created_at.strftime("%d %b, %Y") }}</p>
+            </div>
+            <div>
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Estado</p>
+                <p class="font-medium text-gray-900">{{ doc.status }}</p>
+            </div>
+            <div>
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Confianza OCR</p>
+                <p class="font-medium text-gray-900">{% if doc.ocr_confidence_score %}{{ "%.1f"|format(doc.ocr_confidence_score * 100) }}%{% else %}N/A{% endif %}</p>
+            </div>
+            <div>
+                <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Descargas</p>
+                <p class="font-medium text-gray-900 flex items-center gap-1">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <span x-ref="downloadCounter">{{ doc.download_count or 0 }}</span>
+                </p>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        {% if can_edit %}
+        <div class="pt-2">
+            <button class="w-full bg-[#1e3a8a] text-white flex items-center justify-center gap-2 py-3 rounded-xl font-bold hover:bg-blue-900 transition-colors shadow-md text-sm mb-2"
+                    hx-get="/api/v1/documentos/{{ doc.id }}/interfaz-editor"
+                    hx-target="#contenedor-modal-editor"
+                    hx-swap="innerHTML">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                Previsualizar Documento
+            </button>
+        </div>
+        {% endif %}
+        <div class="flex gap-2 pt-2">
+            <button @click="Swal.fire({toast: true, position: 'top-end', icon: 'info', title: 'Iniciando descarga...', showConfirmButton: false, timer: 2000}); window.location.href = '/api/v1/documents/{{ doc.id }}/download'; $refs.downloadCounter.innerText = parseInt($refs.downloadCounter.innerText) + 1" class="flex-1 bg-primary text-white text-center py-2.5 rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-sm text-sm">
+                Descargar
+            </button>
+            
+            {% if can_edit %}
+            <button @click="showReassign = !showReassign" x-data="{ showReassign: false }" class="flex-1 bg-gray-100 text-gray-700 text-center py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-colors shadow-sm text-sm relative">
+                Reasignar Grupo
+                
+                <div x-show="showReassign" @click.away="showReassign = false" class="absolute bottom-full mb-2 right-0 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-2 z-50 text-left">
+                    <p class="text-xs text-gray-500 mb-2 px-2">Selecciona un grupo:</p>
+                    <template x-for="group in window.USER_GROUPS" :key="group.id">
+                        <button class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 rounded-lg"
+                                @click.prevent="
+                                    fetch(`/api/v1/documents/{{ doc.id }}/reassign`, {
+                                        method: 'PUT',
+                                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                                        body: 'group_id=' + group.id
+                                    }).then(() => {
+                                        Swal.fire('Éxito', 'Documento reasignado', 'success');
+                                        showReassign = false;
+                                        document.body.dispatchEvent(new Event('reloadExplorer'));
+                                    }).catch(() => Swal.fire('Error', 'No se pudo reasignar', 'error'));
+                                ">
+                            <span x-text="group.name"></span>
+                        </button>
+                    </template>
+                </div>
+            </button>
+            {% endif %}
+            
+            <button class="px-4 py-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+        </div>
+    </div>
+    
+    <!-- OCR Text Area -->
+    <div class="flex-1 p-6 overflow-y-auto custom-scrollbar bg-gray-50">
+        <h3 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+            Texto Extraído
+        </h3>
+        <div class="text-sm text-gray-600 whitespace-pre-wrap font-mono leading-relaxed bg-white p-4 rounded-xl shadow-sm border border-gray-100 h-full">
+            {% if doc.extracted_text %}
+                {{ doc.extracted_text }}
+            {% else %}
+                <span class="italic text-gray-400">El documento aún no tiene texto extraído o está en proceso.</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
