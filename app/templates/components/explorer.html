@@ -192,6 +192,24 @@
         }
 
         
+          
+          window.openCrearFondoModal = function() {
+              Swal.fire({
+                  width: '600px',
+                  padding: 0,
+                  showConfirmButton: false,
+                  customClass: { popup: 'rounded-2xl overflow-hidden' },
+                  didOpen: () => {
+                      Swal.showLoading();
+                      fetch('/api/v1/agn/modal/fondo')
+                          .then(r => r.text())
+                          .then(html => {
+                              Swal.getPopup().innerHTML = html;
+                          });
+                  }
+              });
+          };
+
           window.openAgnModal = function() {
               Swal.fire({
                   width: '800px',
