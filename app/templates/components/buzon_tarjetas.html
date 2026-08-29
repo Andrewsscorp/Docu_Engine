@@ -161,7 +161,7 @@
                 <!-- Botones Accionables -->
                 <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-100">
                     {% if tarea.estado_tarea == 'Pendiente' and not tarea.vista_enviadas %}
-                        <button @click="currentTareaId = '{{ tarea.id_asignacion }}'; modalRechazar = true"
+                        <button @click="markRead(); currentTareaId = '{{ tarea.id_asignacion }}'; modalRechazar = true"
                                 class="px-4 py-2 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 rounded-lg font-medium text-sm flex items-center gap-2 transition-all shadow-sm">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             Rechazar
@@ -175,7 +175,7 @@
                             </button>
                         {% else %}
                             <!-- Boton Aceptar normal con proteccion HTMX -->
-                            <button hx-put="/api/v1/tareas/{{ tarea.id_asignacion }}/aceptar"
+                            <button @click="markRead()" hx-put="/api/v1/tareas/{{ tarea.id_asignacion }}/aceptar"
                                     hx-swap="none" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                 Aceptar
@@ -184,7 +184,7 @@
                     {% endif %}
                     
                     <!-- Boton Responder -->
-                    <button @click="currentTareaId = '{{ tarea.id_asignacion }}'; currentRemitente = '{{ tarea.asignado_nombre if tarea.vista_enviadas else tarea.asignador_nombre }}'; modalResponder = true"
+                    <button @click="markRead(); currentTareaId = '{{ tarea.id_asignacion }}'; currentRemitente = '{{ tarea.asignado_nombre if tarea.vista_enviadas else tarea.asignador_nombre }}'; modalResponder = true"
                             class="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                         {% if tarea.vista_enviadas %}AGREGAR NOTA{% else %}RESPONDER{% endif %}
