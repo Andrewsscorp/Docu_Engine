@@ -1,4 +1,8 @@
 from fastapi import APIRouter, Depends, Request
+from fastapi import Form, UploadFile, File, HTTPException
+import json
+from pydantic import BaseModel
+from typing import Optional
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
@@ -343,8 +347,6 @@ async def get_crear_fondo_modal(
     """
     return HTMLResponse(html)
 
-from fastapi import Form, UploadFile, File, HTTPException
-import json
 
 @router.post("/fondos")
 async def create_agn_fondo(
@@ -403,8 +405,6 @@ async def create_agn_fondo(
     
     return JSONResponse({"status": "success", "id": new_id})
 
-from pydantic import BaseModel
-from typing import Optional
 
 class CerrarFondoRequest(BaseModel):
     fecha_cierre: str
