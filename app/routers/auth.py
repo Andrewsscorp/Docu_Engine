@@ -293,6 +293,18 @@ async def get_dashboard(request: Request, db: AsyncSession = Depends(get_db_sess
         html = html.replace("DOCUENGINE_BRAND_NAME", branding['nombre_empresa'])
         html = html.replace("DOCUENGINE_USERNAME", session_data.get("username", "Usuario"))
         
+        # Inyectar usuarios para el filtro avanzado
+        users_html = ""
+        try:
+            from sqlalchemy import text
+            res = await db.execute(text("SELECT id, username FROM users WHERE is_active = true ORDER BY username ASC"))
+            users = res.fetchall()
+            for u in users:
+                users_html += f'<option value="{u.id}">{u.username}</option>\n'
+        except Exception:
+            pass
+        html = html.replace("<!-- USERS_OPTIONS_INJECTION -->", users_html)
+        
         # Inject Groups logic
         user_id = session_data.get("user_id")
         hierarchy = rbac.get_role_hierarchy(tenant_id, role_id)

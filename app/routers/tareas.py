@@ -35,6 +35,10 @@ async def obtener_bandeja_asignaciones(
     q: str = "",
     fecha_inicio: str = None,
     fecha_fin: str = None,
+    pill_filter: str = None,
+    user_filter: str = None,
+    proximos_vencer: bool = False,
+    page: int = 1,
     db: AsyncSession = Depends(get_db_session)
 ):
     user_id = getattr(request.state, "user_id", None)
@@ -151,7 +155,8 @@ async def obtener_bandeja_asignaciones(
     
     return templates.TemplateResponse(request=request, name="components/buzon_tarjetas.html", context={
         "request": request,
-        "tareas": tareas
+        "tareas": tareas,
+        "page": page
     })
 
 @router.put("/tareas/{tarea_id}/aceptar", response_class=HTMLResponse)
@@ -363,23 +368,31 @@ async def obtener_estadisticas_buzon(request: Request, db: AsyncSession = Depend
     pend = (await db.execute(text(q_pendientes), {"uid": user_id})).scalar() or 0
     comp = (await db.execute(text(q_completadas), {"uid": user_id})).scalar() or 0
     
-    return HTMLResponse(f'''
-        <div class="px-4 py-2 bg-gradient-to-r from-red-50 to-red-100 text-red-700 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm border border-red-200 cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5" @click="tabFiltro='vencidas'">
+    return HTMLResponse(f"""
+        <div class="px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm border cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5"
+             :class="pillFilter === 'urgentes' ? 'bg-red-600 text-white border-red-700 ring-2 ring-red-300 ring-offset-2' : 'bg-gradient-to-r from-red-50 to-red-100 text-red-700 border-red-200'"
+             @click="pillFilter = (pillFilter === 'urgentes' ? '' : 'urgentes'); tabFiltro = 'todo'; setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <span class="flex items-center gap-1">
                 {f'<span class="relative flex h-2 w-2 mr-1"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>' if urg > 0 else ''}
                 {urg}
             </span> Urgentes
         </div>
-        <div class="px-4 py-2 bg-gradient-to-r from-amber-50 to-amber-100 text-amber-700 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm border border-amber-200 cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5" @click="tabFiltro='pendientes'">
+        
+        <div class="px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm border cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5"
+             :class="pillFilter === 'pendientes' ? 'bg-amber-500 text-white border-amber-600 ring-2 ring-amber-300 ring-offset-2' : 'bg-gradient-to-r from-amber-50 to-amber-100 text-amber-700 border-amber-200'"
+             @click="pillFilter = (pillFilter === 'pendientes' ? '' : 'pendientes'); tabFiltro = 'todo'; setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-            <span class="bg-amber-200 text-amber-800 py-0.5 px-2 rounded-md">{pend}</span> Pendientes
+            <span class="py-0.5 px-2 rounded-md" :class="pillFilter === 'pendientes' ? 'bg-amber-600 text-white' : 'bg-amber-200 text-amber-800'">{pend}</span> Pendientes
         </div>
-        <div class="px-4 py-2 bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm border border-emerald-200 cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5" @click="tabFiltro='aceptados'">
+        
+        <div class="px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm border cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5"
+             :class="pillFilter === 'procesadas' ? 'bg-emerald-600 text-white border-emerald-700 ring-2 ring-emerald-300 ring-offset-2' : 'bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 border-emerald-200'"
+             @click="pillFilter = (pillFilter === 'procesadas' ? '' : 'procesadas'); tabFiltro = 'todo'; setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span class="bg-emerald-200 text-emerald-800 py-0.5 px-2 rounded-md">{comp}</span> Procesadas
+            <span class="py-0.5 px-2 rounded-md" :class="pillFilter === 'procesadas' ? 'bg-emerald-700 text-white' : 'bg-emerald-200 text-emerald-800'">{comp}</span> Procesadas
         </div>
-    ''')
+    """)
 
 @router.put("/tareas/{tarea_id}/rechazar", response_class=HTMLResponse)
 async def rechazar_tarea(

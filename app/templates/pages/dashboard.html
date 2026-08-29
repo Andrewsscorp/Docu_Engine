@@ -358,7 +358,7 @@
     </div>
 
     <!-- Barra de Herramientas y Filtros -->
-    <form id="buzon-filters" hx-get="/api/v1/buzon/asignaciones" hx-target="#contenedor-tarjetas" hx-trigger="change, keyup delay:500ms from:input, submit" class="flex flex-col gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+    <form id="buzon-filters" x-data="{ showAdvancedFilters: false, pillFilter: '' }" hx-get="/api/v1/buzon/asignaciones" hx-target="#contenedor-tarjetas" hx-trigger="change, keyup delay:500ms from:input, submit" class="flex flex-col gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
         
         <div class="flex justify-between items-center gap-4">
             <!-- Buscador Predictivo -->
@@ -378,16 +378,57 @@
                 <input type="date" name="fecha_inicio" class="py-2 px-3 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-blue-500 focus:border-blue-500">
                 <span class="text-sm text-slate-500 font-medium">Hasta:</span>
                 <input type="date" name="fecha_fin" class="py-2 px-3 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-blue-500 focus:border-blue-500">
+                
+                <button type="button" @click="showAdvancedFilters = !showAdvancedFilters" 
+                        class="ml-2 flex items-center gap-1 px-3 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                    Más Filtros
+                </button>
             </div>
+        </div>
+        
+        <!-- Filtros Avanzados -->
+        <div x-show="showAdvancedFilters" x-collapse class="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-2 flex flex-wrap gap-4 items-end">
+            
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Usuario Remitente</label>
+                <select name="user_filter" hx-get="/api/v1/buzon/asignaciones" hx-target="#contenedor-tarjetas" class="py-2 px-3 border border-slate-200 rounded-lg text-sm bg-white text-slate-700 focus:ring-blue-500">
+                    <option value="">Cualquier Usuario</option>
+                    <option value="mis_asignaciones">Enviados por Mí</option>
+                    <!-- USERS_OPTIONS_INJECTION -->
+                </select>
+            </div>
+            
+            <div class="flex items-center gap-2 mb-1">
+                <input type="checkbox" name="proximos_vencer" id="proximos_vencer" value="true" class="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500">
+                <label for="proximos_vencer" class="text-sm font-medium text-slate-700 cursor-pointer">Próximos a Vencer (24h)</label>
+            </div>
+            
+            <div class="flex-1"></div>
+            
+            <!-- Botón Limpiar Notificaciones -->
+            <button type="button" @click="if(confirm('¿Eliminar todas las notificaciones?')) { localStorage.setItem('global_read_mark', Date.now().toString()); document.body.dispatchEvent(new CustomEvent('reloadBuzon')); }"
+                    class="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg text-sm font-bold shadow-sm transition-all">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Limpiar Notificaciones
+            </button>
         </div>
 
         <input type="hidden" name="estado" :value="tabFiltro">
+        <input type="hidden" name="pill_filter" :value="pillFilter">
 
         <!-- Sistema de Pestañas / Tabs -->
         <div class="flex gap-1 border-t border-slate-100 pt-3"
     x-data="{ 
         counts: {nuevo:0, enviadas:0, pendientes:0, vencidas:0, aceptados:0, rechazados:0, total:0},
         isUnread(task) {
+            const globalMark = localStorage.getItem('global_read_mark');
+            if (globalMark && parseInt(task.ts) <= parseInt(globalMark)) return false;
+            
             const stored = localStorage.getItem('read_' + task.id);
             if (!stored) return true;
             return parseInt(task.ts) > parseInt(stored);
@@ -420,12 +461,12 @@
         // Listen for when a task is marked read from the child cards
         window.addEventListener('task-read', () => fetchCounts());
     ">
-            <button type="button" @click="tabFiltro = 'todo'; setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);" 
+            <button type="button" @click="tabFiltro = 'todo'; pillFilter = ''; setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);" 
                     class="px-5 py-2 text-sm font-medium transition-all rounded-lg"
                     :class="tabFiltro === 'todo' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'">
                 Nuevo <span x-show="counts.nuevo > 0" x-cloak class="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-rose-500 text-white shadow-sm ring-1 ring-rose-200" x-text="counts.nuevo"></span>
             </button>
-            <button type="button" @click="tabFiltro = 'enviadas'; setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);" 
+            <button type="button" @click="tabFiltro = 'enviadas'; pillFilter = ''; setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);" 
                     class="px-5 py-2 text-sm font-medium transition-all rounded-lg"
                     :class="tabFiltro === 'enviadas' ? 'bg-purple-50 text-purple-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'">
                 <div class="flex items-center gap-2">
@@ -433,22 +474,22 @@
                     Enviadas <span x-show="counts.enviadas > 0" x-cloak class="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-purple-500 text-white shadow-sm ring-1 ring-purple-200" x-text="counts.enviadas"></span>
                 </div>
             </button>
-            <button type="button" @click="tabFiltro = 'pendientes'; setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);" 
+            <button type="button" @click="tabFiltro = 'pendientes'; pillFilter = ''; setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);" 
                     class="px-5 py-2 text-sm font-medium transition-all rounded-lg"
                     :class="tabFiltro === 'pendientes' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'">
                 Pendientes <span x-show="counts.pendientes > 0" x-cloak class="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-blue-500 text-white shadow-sm ring-1 ring-blue-200" x-text="counts.pendientes"></span>
             </button>
-            <button type="button" @click="tabFiltro = 'vencidas'; setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);" 
+            <button type="button" @click="tabFiltro = 'vencidas'; pillFilter = ''; setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);" 
                     class="px-5 py-2 text-sm font-medium transition-all rounded-lg"
                     :class="tabFiltro === 'vencidas' ? 'bg-red-50 text-red-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'">
                 Vencidas <span x-show="counts.vencidas > 0" x-cloak class="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-red-600 text-white shadow-sm ring-1 ring-red-300 animate-pulse" x-text="counts.vencidas"></span>
             </button>
-            <button type="button" @click="tabFiltro = 'aceptados'; setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);" 
+            <button type="button" @click="tabFiltro = 'aceptados'; pillFilter = ''; setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);" 
                     class="px-5 py-2 text-sm font-medium transition-all rounded-lg"
                     :class="tabFiltro === 'aceptados' ? 'bg-emerald-50 text-emerald-700 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'">
                 Aceptados <span x-show="counts.aceptados > 0" x-cloak class="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-emerald-500 text-white shadow-sm ring-1 ring-emerald-200" x-text="counts.aceptados"></span>
             </button>
-            <button type="button" @click="tabFiltro = 'rechazados'; setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);" 
+            <button type="button" @click="tabFiltro = 'rechazados'; pillFilter = ''; setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);" 
                     class="px-5 py-2 text-sm font-medium transition-all rounded-lg"
                     :class="tabFiltro === 'rechazados' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'">
                 Rechazados <span x-show="counts.rechazados > 0" x-cloak class="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-slate-600 text-white shadow-sm ring-1 ring-slate-300" x-text="counts.rechazados"></span>

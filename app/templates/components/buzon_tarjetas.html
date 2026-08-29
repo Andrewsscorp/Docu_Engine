@@ -195,3 +195,16 @@
     </div>
     {% endfor %}
 {% endif %}
+
+{% if tareas|length == 10 %}
+    <div id="cargar-mas-{{ page }}" class="flex justify-center mt-2 mb-8">
+        <button hx-get="/api/v1/buzon/asignaciones" hx-include="#buzon-filters" hx-vals='{"page": {{ page + 1 }}}'
+                hx-target="#cargar-mas-{{ page }}" hx-swap="outerHTML"
+                class="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl shadow-sm transition-all border border-slate-200 flex items-center gap-2">
+            Ver más resultados
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+    </div>
+{% endif %}
