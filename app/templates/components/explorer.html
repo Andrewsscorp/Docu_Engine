@@ -206,6 +206,7 @@
                           .then(html => {
                               Swal.getPopup().innerHTML = html;
                                 if (window.htmx) { htmx.process(Swal.getPopup()); }
+                                if (window.Alpine) { Alpine.initTree(Swal.getPopup()); }
                           });
                   }
               });
@@ -224,6 +225,7 @@
                           .then(html => {
                               Swal.getPopup().innerHTML = html;
                                 if (window.htmx) { htmx.process(Swal.getPopup()); }
+                                if (window.Alpine) { Alpine.initTree(Swal.getPopup()); }
                           });
                   }
               });
