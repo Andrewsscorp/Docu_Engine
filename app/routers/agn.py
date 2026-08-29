@@ -60,49 +60,40 @@ async def get_agn_modal(
     </div>
     <div class="p-6">
         
-    <script>
-        document.addEventListener('alpine:init', () => {{
-            Alpine.data('agnForm', () => ({{
-                previewCode: '---',
-                updatePreview() {{
-                    const getCode = (selectId) => {{
-                        const select = document.getElementById(selectId);
-                        if (!select || !select.value) return '';
-                        const option = select.options[select.selectedIndex];
-                        return option.getAttribute('data-codigo') || '';
-                    }};
-                    
-                    const f = getCode('fondo_select');
-                    const sec = getCode('seccion_select');
-                    const subsec = getCode('subseccion_select');
-                    const ser = getCode('serie_select');
-                    const subser = getCode('subserie_select');
-                    
-                    const fecha = document.getElementById('fecha_apertura')?.value;
-                    const year = fecha ? fecha.split('-')[0] : new Date().getFullYear();
-                    
-                    let parts = [];
-                    if (f) parts.push(f);
-                    if (sec) parts.push(sec);
-                    if (subsec) parts.push(subsec);
-                    if (ser) parts.push(ser);
-                    if (subser) parts.push(subser);
-                    
-                    if (parts.length > 0) {{
-                        parts.push(year);
-                        parts.push('XXX');
-                        this.previewCode = parts.join('-');
-                    }} else {{
-                        this.previewCode = 'Seleccione la clasificación documental para generar el código...';
-                    }}
-                }},
-                init() {{
-                    this.updatePreview();
-                }}
-            }}));
-        }});
-    </script>
-    <form id="agn-expediente-form" x-data="agnForm()" onsubmit="event.preventDefault(); window.submitAgnExpediente();">
+    
+    <form id="agn-expediente-form" x-data="{
+    previewCode: 'Seleccione la clasificación documental para generar el código...',
+    updatePreview() {
+        const getCode = (selectId) => {
+            const select = document.getElementById(selectId);
+            if (!select || !select.value) return '';
+            const option = select.options[select.selectedIndex];
+            return option.getAttribute('data-codigo') || '';
+        };
+        const f = getCode('fondo_select');
+        const sec = getCode('seccion_select');
+        const subsec = getCode('subseccion_select');
+        const ser = getCode('serie_select');
+        const subser = getCode('subserie_select');
+        const fecha = document.getElementById('fecha_apertura')?.value;
+        const year = fecha ? fecha.split('-')[0] : new Date().getFullYear();
+        
+        let parts = [];
+        if (f) parts.push(f);
+        if (sec) parts.push(sec);
+        if (subsec) parts.push(subsec);
+        if (ser) parts.push(ser);
+        if (subser) parts.push(subser);
+        
+        if (parts.length > 0) {
+            parts.push(year);
+            parts.push('XXX');
+            this.previewCode = parts.join('-');
+        } else {
+            this.previewCode = 'Seleccione la clasificación documental para generar el código...';
+        }
+    }
+}" x-init="updatePreview()" onsubmit="event.preventDefault(); window.submitAgnExpediente();">
 
             <h3 class="text-md font-bold text-gray-800 mb-3">1. Clasificación Documental (CCD/TRD)</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
