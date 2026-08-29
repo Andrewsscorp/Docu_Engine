@@ -65,7 +65,7 @@ async def get_agn_modal(
                         <div class="relative group flex items-center">
                             <span class="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
                             <div class="absolute bottom-full right-0 mb-1 w-max px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100]">
-                                Ayuda próximamente
+                                Entidad productora u organismo que ha reunido o generado los documentos.
                                 <div class="absolute top-full right-1 border-[3px] border-transparent border-t-gray-800"></div>
                             </div>
                         </div>
@@ -83,7 +83,7 @@ async def get_agn_modal(
                         <div class="relative group flex items-center">
                             <span class="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
                             <div class="absolute bottom-full right-0 mb-1 w-max px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100]">
-                                Ayuda próximamente
+                                Dependencia administrativa de alto nivel (ej. Dirección, Secretaría).
                                 <div class="absolute top-full right-1 border-[3px] border-transparent border-t-gray-800"></div>
                             </div>
                         </div>
@@ -101,7 +101,7 @@ async def get_agn_modal(
                         <div class="relative group flex items-center">
                             <span class="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
                             <div class="absolute bottom-full right-0 mb-1 w-max px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100]">
-                                Ayuda próximamente
+                                Unidad administrativa operativa o grupo de trabajo subordinado.
                                 <div class="absolute top-full right-1 border-[3px] border-transparent border-t-gray-800"></div>
                             </div>
                         </div>
@@ -122,7 +122,7 @@ async def get_agn_modal(
                         <div class="relative group flex items-center">
                             <span class="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
                             <div class="absolute bottom-full right-0 mb-1 w-max px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100]">
-                                Ayuda próximamente
+                                Conjunto de expedientes con estructura y contenido homogéneos.
                                 <div class="absolute top-full right-1 border-[3px] border-transparent border-t-gray-800"></div>
                             </div>
                         </div>
@@ -140,7 +140,7 @@ async def get_agn_modal(
                         <div class="relative group flex items-center">
                             <span class="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
                             <div class="absolute bottom-full right-0 mb-1 w-max px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100]">
-                                Ayuda próximamente
+                                División de la serie documental según un trámite específico.
                                 <div class="absolute top-full right-1 border-[3px] border-transparent border-t-gray-800"></div>
                             </div>
                         </div>

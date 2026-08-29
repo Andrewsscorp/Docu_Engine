@@ -4,5 +4,3 @@ import re
 match = re.search(r'<form id="crear-fondo-form"[\s\S]*?</form>', content)
 if match:
     print(match.group(0))
-else:
-    print("Not found")
