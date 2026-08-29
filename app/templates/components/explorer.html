@@ -205,6 +205,7 @@
                           .then(r => r.text())
                           .then(html => {
                               Swal.getPopup().innerHTML = html;
+                                if (window.htmx) { htmx.process(Swal.getPopup()); }
                           });
                   }
               });
@@ -222,6 +223,7 @@
                           .then(r => r.text())
                           .then(html => {
                               Swal.getPopup().innerHTML = html;
+                                if (window.htmx) { htmx.process(Swal.getPopup()); }
                           });
                   }
               });
