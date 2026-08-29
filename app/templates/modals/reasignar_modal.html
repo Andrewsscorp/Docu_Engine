@@ -1,0 +1,110 @@
+
+<div x-data="{ 
+    queryGrupo: '', 
+    usuarioDestino: null,
+    etiquetaId: null,
+    enviando: false
+}"
+     id="modal-reasignar"
+     class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm"
+     x-init="setTimeout(() => { document.getElementById('search-grupo').focus(); }, 100)"
+     @keydown.escape.window="$el.remove()"
+     @cerrar-modal-reasignacion.window="$el.remove()">
+     
+    <div class="bg-white rounded-xl shadow-2xl w-[500px] max-w-[95vw] p-6 relative" 
+         @click.outside="if(!enviando) $el.closest('#modal-reasignar').remove()">
+        
+        <!-- X Cerrar -->
+        <button @click="$el.closest('#modal-reasignar').remove()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+        
+        <h3 class="text-xl font-bold text-slate-800 mb-1">Reasignar Documento</h3>
+        <p class="text-sm text-slate-500 mb-4">Seleccione un Grupo y un Usuario, y defina los detalles de la tarea.</p>
+        
+        <form hx-post="/api/v1/documentos/{{ documento_id }}/reasignar" 
+              hx-swap="none"
+              @submit="enviando = true"
+              class="flex flex-col gap-4 overflow-y-auto pr-2">
+              
+            <!-- Busqueda de Grupos y Usuarios -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Busqueda de Grupos / Usuarios</label>
+                <div class="relative mb-2">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" id="search-grupo" x-model="queryGrupo" placeholder="Buscar Grupo o Usuario..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                
+                <!-- Lista de Grupos (Acordeon) con Jinja -->
+                <div class="border border-slate-200 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+                    {% for grupo in grupos %}
+                    <details class="group border-b border-slate-200 last:border-0" 
+         x-show="'{{ grupo.name | lower }}'.includes(queryGrupo.toLowerCase()) || queryGrupo === ''">
+    <summary class="px-4 py-3 bg-slate-50 cursor-pointer font-medium text-sm text-slate-700 hover:bg-slate-100 list-none flex justify-between items-center">
+        <span>{{ grupo.name }}</span>
+        <svg class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+    </summary>
+    <div class="p-2 bg-white" id="users-grupo-{{ grupo.id }}" x-data="{ qUser: '' }">
+        <input type="text" x-model="qUser" placeholder="Filtrar usuario en este grupo..." class="w-full px-3 py-1.5 border border-slate-200 rounded text-xs focus:ring-1 focus:ring-indigo-500 mb-2">
+        <div class="max-h-40 overflow-y-auto flex flex-col gap-1">
+            {% for u in grupo.usuarios %}
+            <label x-show="'{{ u.username | lower }}'.includes(qUser.toLowerCase()) || qUser === ''" class="flex items-center gap-3 p-2 hover:bg-slate-50 cursor-pointer rounded-lg border border-transparent transition-colors">
+                <input type="radio" name="usuario_destino_dummy" class="text-indigo-600 focus:ring-indigo-500" @change="usuarioDestino = '{{ u.id }}'">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">
+                        {{ u.username[:2] | upper }}
+                    </div>
+                    <span class="text-sm font-medium text-slate-700">{{ u.username }}</span>
+                </div>
+            </label>
+            {% else %}
+            <div class="text-sm text-slate-500 p-2">No hay miembros en este grupo.</div>
+            {% endfor %}
+        </div>
+    </div>
+</details>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Etiqueta a Asignar -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Etiqueta a Asignar</label>
+                <div class="flex flex-wrap gap-2">
+                    {% for etiqueta in etiquetas %}
+                    <label class="cursor-pointer">
+                        <input type="radio" name="etiqueta_id" value="{{ etiqueta.id_etiqueta }}" class="peer sr-only" @change="etiquetaId = '{{ etiqueta.id_etiqueta }}'">
+                        <div class="px-3 py-1.5 text-xs font-bold rounded-md border border-transparent peer-checked:ring-2 peer-checked:ring-indigo-500 peer-checked:ring-offset-1 opacity-70 peer-checked:opacity-100 transition-all {{ etiqueta.color_fondo }} {{ etiqueta.color_texto }}">
+                            {{ etiqueta.nombre }}
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Mensaje Opcional -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Mensaje (Opcional)</label>
+                <textarea name="mensaje" rows="2" class="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Agregue un mensaje opcional para el usuario..."></textarea>
+            </div>
+            
+            <!-- Fecha SLA -->
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Fecha para Respuesta (SLA)</label>
+                <input type="date" name="fecha_limite" min="{{ fecha_hoy }}" class="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" required>
+            </div>
+            
+            <!-- Input oculto del usuario seleccionado (Alpine a Form) -->
+            <input type="hidden" name="destinatario_id" :value="usuarioDestino">
+            
+            <div class="mt-4 flex justify-center gap-3">
+                <button type="submit" :disabled="!usuarioDestino || !etiquetaId || enviando" 
+                        class="px-8 py-2 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span x-show="!enviando">Enviar</span>
+                    <span x-show="enviando">Procesando...</span>
+                </button>
+                <button type="button" @click="$el.closest('#modal-reasignar').remove()" class="px-6 py-2 bg-slate-500 text-white rounded-lg font-medium text-sm hover:bg-slate-600 transition-colors shadow-sm disabled:opacity-50">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>

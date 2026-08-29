@@ -1,0 +1,44 @@
+﻿<div 
+    x-data="{}" 
+    class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm"
+>
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden p-6 relative animate-fade-in-up border-t-4 border-amber-500">
+        <!-- Close button -->
+        <button @click="$el.closest('[x-data]').remove()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+
+        <!-- Icon & Header -->
+        <div class="flex items-center gap-4 mb-6">
+            <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-slate-800">Documento Duplicado</h2>
+                <p class="text-sm text-slate-500">Se detectó una copia exacta en la bóveda.</p>
+            </div>
+        </div>
+
+        <div class="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-6">
+            <p class="text-sm text-slate-600 mb-3">El archivo <span class="font-semibold text-slate-800">{{ document_name }}</span> tiene el mismo contenido (Hash) que un documento ya cargado:</p>
+            
+            <div class="flex items-start gap-3 bg-white p-3 rounded-lg border border-slate-200 shadow-sm cursor-pointer hover:border-indigo-300 transition-colors"
+                 hx-get="/api/v1/documents/{{ existing_id }}/details" hx-trigger="click" hx-target="#modal-container"
+                 @click="$el.closest('[x-data]').remove()">
+                <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm text-indigo-700 truncate max-w-[300px]">{{ existing_name }}</h4>
+                    <p class="text-xs text-slate-500 mt-0.5">Subido por <span class="font-medium">{{ existing_uploader }}</span> el {{ existing_date }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end">
+            <button @click="$el.closest('[x-data]').remove()" class="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-medium rounded-lg transition-colors">
+                Entendido
+            </button>
+        </div>
+    </div>
+</div>

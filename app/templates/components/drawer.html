@@ -59,29 +59,9 @@
             </button>
             
             {% if can_edit %}
-            <button @click="showReassign = !showReassign" x-data="{ showReassign: false }" class="flex-1 bg-gray-100 text-gray-700 text-center py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-colors shadow-sm text-sm relative">
-                Reasignar Grupo
-                
-                <div x-show="showReassign" @click.away="showReassign = false" class="absolute bottom-full mb-2 right-0 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-2 z-50 text-left">
-                    <p class="text-xs text-gray-500 mb-2 px-2">Selecciona un grupo:</p>
-                    <template x-for="group in window.USER_GROUPS" :key="group.id">
-                        <button class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 rounded-lg"
-                                @click.prevent="
-                                    fetch(`/api/v1/documents/{{ doc.id }}/reassign`, {
-                                        method: 'PUT',
-                                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                                        body: 'group_id=' + group.id
-                                    }).then(() => {
-                                        Swal.fire('Éxito', 'Documento reasignado', 'success');
-                                        showReassign = false;
-                                        document.body.dispatchEvent(new Event('reloadExplorer'));
-                                    }).catch(() => Swal.fire('Error', 'No se pudo reasignar', 'error'));
-                                ">
-                            <span x-text="group.name"></span>
-                        </button>
-                    </template>
-                </div>
-            </button>
+            <button hx-get="/api/v1/documentos/{{ doc.id }}/reasignar/ui" hx-target="body" hx-swap="beforeend" class="flex-1 bg-gray-100 text-gray-700 text-center py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-colors shadow-sm text-sm">
+                Reasignar
+              </button>
             {% endif %}
             
             <button class="px-4 py-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors">

@@ -1,4 +1,4 @@
-from app import security
+﻿from app import security
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, File, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -65,7 +65,7 @@ def cached_translate(text: str, from_code: str = 'es', to_code: str = 'en'):
     try:
         return argostranslate.translate.translate(text, from_code, to_code)
     except Exception as e:
-        print("Error en traducciÃ³n offline:", e)
+        print("Error en traducciÃƒÂ³n offline:", e)
         return text
 
 load_dotenv()
@@ -82,7 +82,7 @@ async def catch_exceptions_middleware(request: Request, call_next):
             f.write(traceback.format_exc())
         raise
 
-from app.routers import auth, rbac, documents, settings, editor, notifications, etiquetas
+from app.routers import auth, rbac, documents, settings, editor, notifications, etiquetas, tareas
 app.include_router(auth.router)
 app.include_router(rbac.router)
 app.include_router(documents.router)
@@ -90,6 +90,7 @@ app.include_router(settings.router)
 app.include_router(editor.router)
 app.include_router(notifications.router)
 app.include_router(etiquetas.router)
+app.include_router(tareas.router)
 
 
 @app.on_event("startup")
@@ -106,21 +107,21 @@ async def preload_translation_model():
     print(" PRE-CARGANDO MODELO NEURONAL EN RAM...")
     print("=========================================")
     # Esto fuerza a Argos Translate a cargar los binarios de MarianMT/ONNX a la memoria
-    cached_translate("Inicializando sistema de traducciÃ³n offline", "es", "en")
+    cached_translate("Inicializando sistema de traducciÃƒÂ³n offline", "es", "en")
     print("Modelo neuronal ES->EN cargado exitosamente. Listo para solicitudes.")
 
 # ==============================================================
-# CONFIGURACIÃ“N CRIPTOGRÃFICA (FASE 2 Y LICENCIAMIENTO)
+# CONFIGURACIÃƒâ€œN CRIPTOGRÃƒÂFICA (FASE 2 Y LICENCIAMIENTO)
 # ==============================================================
 ph = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=4, hash_len=32, salt_len=16)
 DUMMY_HASH = ph.hash("dummy_password_for_timing_attack_mitigation")
 
-# ExtracciÃ³n de Llaves desde Variable de Entorno (Confianza Cero)
+# ExtracciÃƒÂ³n de Llaves desde Variable de Entorno (Confianza Cero)
 _hmac_env = os.environ.get("MASTER_HMAC_KEY")
 _db_env = os.environ.get("DB_CRYPT_KEY")
 
 if not _hmac_env or not _db_env:
-    raise RuntimeError("CRÃTICO: Faltan llaves maestras en el entorno. Configure el archivo .env primero.")
+    raise RuntimeError("CRÃƒÂTICO: Faltan llaves maestras en el entorno. Configure el archivo .env primero.")
 
 MASTER_HMAC_KEY = _hmac_env.encode('utf-8')
 DB_CRYPT_KEY = _db_env
@@ -130,7 +131,7 @@ failed_ip_attempts = defaultdict(list)
 failed_user_attempts = defaultdict(list)
 
 # ==============================================================
-# CONFIGURACIÃ“N CSRF Y CACHÃ‰ L1
+# CONFIGURACIÃƒâ€œN CSRF Y CACHÃƒâ€° L1
 # ==============================================================
 class CsrfSettings(BaseModel):
     secret_key: str = os.environ.get("CSRF_SECRET_KEY", secrets.token_hex(32))
@@ -141,8 +142,8 @@ def get_csrf_config():
     return CsrfSettings()
 
 
-# CachÃ© en memoria RAM (Simulada usando un diccionario global simple, 
-# ya que functools.lru_cache no soporta async transparentemente sin librerÃ­as extra)
+# CachÃƒÂ© en memoria RAM (Simulada usando un diccionario global simple, 
+# ya que functools.lru_cache no soporta async transparentemente sin librerÃƒÂ­as extra)
 from app.security import settings_l1_cache
 
 def invalidate_settings_cache(tenant_id: str):
@@ -163,11 +164,11 @@ def enforce_rate_limit(ip: str, username: str):
     one_hour_ago = now - timedelta(hours=1)
     failed_ip_attempts[ip] = [t for t in failed_ip_attempts[ip] if t > one_hour_ago]
     if len(failed_ip_attempts[ip]) >= MAX_FAILS_PER_HOUR:
-        raise HTTPException(status_code=429, detail=f"Â¡ALERTA DE SEGURIDAD! Has superado el lÃ­mite mÃ¡ximo de {MAX_FAILS_PER_HOUR} intentos fallidos desde esta red. El sistema se ha bloqueado temporalmente por protecciÃ³n contra ataques de fuerza bruta.")
+        raise HTTPException(status_code=429, detail=f"Ã‚Â¡ALERTA DE SEGURIDAD! Has superado el lÃƒÂ­mite mÃƒÂ¡ximo de {MAX_FAILS_PER_HOUR} intentos fallidos desde esta red. El sistema se ha bloqueado temporalmente por protecciÃƒÂ³n contra ataques de fuerza bruta.")
     if username:
         failed_user_attempts[username] = [t for t in failed_user_attempts[username] if t > one_hour_ago]
         if len(failed_user_attempts[username]) >= MAX_FAILS_PER_HOUR:
-            raise HTTPException(status_code=429, detail=f"Â¡ALERTA DE SEGURIDAD! Has superado el lÃ­mite mÃ¡ximo de {MAX_FAILS_PER_HOUR} intentos fallidos. La cuenta ha sido bloqueada temporalmente por protecciÃ³n.")
+            raise HTTPException(status_code=429, detail=f"Ã‚Â¡ALERTA DE SEGURIDAD! Has superado el lÃƒÂ­mite mÃƒÂ¡ximo de {MAX_FAILS_PER_HOUR} intentos fallidos. La cuenta ha sido bloqueada temporalmente por protecciÃƒÂ³n.")
 
 def record_failed_attempt(ip: str, username: str) -> int:
     now = datetime.now()
@@ -177,7 +178,7 @@ def record_failed_attempt(ip: str, username: str) -> int:
     return max(len(failed_ip_attempts[ip]), len(failed_user_attempts[username]))
 
 # ==============================================================
-# MIDDLEWARE SEGURIDAD FRONTEND (TraducciÃ³n desactivada a peticiÃ³n)
+# MIDDLEWARE SEGURIDAD FRONTEND (TraducciÃƒÂ³n desactivada a peticiÃƒÂ³n)
 # ==============================================================
 
 async def get_tenant_branding(db: AsyncSession) -> dict:
@@ -223,12 +224,12 @@ def require_permission(action: str):
             svc_account = result.fetchone()
             
             if not svc_account:
-                raise HTTPException(status_code=401, detail="API Key inválida o expirada")
+                raise HTTPException(status_code=401, detail="API Key invÃ¡lida o expirada")
             
             user_id, role_id, role_name = svc_account
             
             # Here we simulate checking permission via RBAC. Assuming we have check_permission
-            # But the instruction says "Cuando un endpoint sea consumido por una API Key de una Cuenta de Servicio, el registro de auditoría debe incluir metadatos enriquecidos en la columna detalles (JSONB)."
+            # But the instruction says "Cuando un endpoint sea consumido por una API Key de una Cuenta de Servicio, el registro de auditorÃ­a debe incluir metadatos enriquecidos en la columna detalles (JSONB)."
             
             detalles_json = {
                 "agente_ia": "PaddleOCR_v4_onnx" if "extractor" in role_name else "Polars_ETL" if "analista" in role_name else "n8n_Workflow",
@@ -258,13 +259,13 @@ def require_permission(action: str):
         try:
             session_data = security.session_signer.loads(cookie, max_age=86400) # 1 dia
         except Exception:
-            raise HTTPException(status_code=401, detail="Sesión inválida o expirada")
+            raise HTTPException(status_code=401, detail="SesiÃ³n invÃ¡lida o expirada")
             
         tenant_id = session_data.get("tenant_id")
         role_id = session_data.get("role_id")
         
         if not tenant_id or not role_id:
-            raise HTTPException(status_code=401, detail="Datos de sesión corruptos")
+            raise HTTPException(status_code=401, detail="Datos de sesiÃ³n corruptos")
             
         if not check_permission(tenant_id, role_id, action):
             raise HTTPException(status_code=403, detail=f"Acceso Denegado. Se requiere el permiso: {action}")
@@ -294,7 +295,7 @@ def render_settings_form(csrf_token: str, data: dict, show_success: bool = False
             <button type="submit" x-data="{{ show: true }}" x-init="setTimeout(() => show = false, 3000)" 
                     class="font-semibold py-3 px-8 rounded-lg transition-colors shadow-lg"
                     :class="show ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-500/30' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30'"
-                    x-text="show ? 'Â¡Ajustes Guardados exitosamente!' : 'Guardar Cambios'">
+                    x-text="show ? 'Ã‚Â¡Ajustes Guardados exitosamente!' : 'Guardar Cambios'">
             </button>
         </div>
     """ if show_success else """
@@ -305,7 +306,7 @@ def render_settings_form(csrf_token: str, data: dict, show_success: bool = False
         </div>
     """
 
-    # Si venimos de un PATCH, enviamos tambiÃ©n el OOB swap para actualizar el tÃ­tulo del menÃº lateral
+    # Si venimos de un PATCH, enviamos tambiÃƒÂ©n el OOB swap para actualizar el tÃƒÂ­tulo del menÃƒÂº lateral
     oob_html = f"""
     <div id="brandLogo" hx-swap-oob="true" class="text-xl md:text-2xl font-bold text-center mb-10 tracking-widest text-textmain break-words whitespace-normal leading-tight px-2" title="{data['nombre_empresa']}">
         {data['nombre_empresa']}
@@ -323,8 +324,8 @@ def render_settings_form(csrf_token: str, data: dict, show_success: bool = False
         <div class="settings-group">
             <label class="block font-medium text-gray-700 mb-2">Idioma Preferido</label>
             <select name="idioma" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none text-gray-800 transition-colors">
-                <option value="es" {'selected' if data['idioma'] == 'es' else ''}>EspaÃ±ol</option>
-                <option value="en" {'selected' if data['idioma'] == 'en' else ''}>InglÃ©s</option>
+                <option value="es" {'selected' if data['idioma'] == 'es' else ''}>EspaÃƒÂ±ol</option>
+                <option value="en" {'selected' if data['idioma'] == 'en' else ''}>InglÃƒÂ©s</option>
             </select>
         </div>
 
@@ -444,8 +445,15 @@ async def process_response(request: Request, call_next):
     if cookie:
         try:
             session_data = session_signer.loads(cookie, max_age=86400)
-            request.state.tenant_id = session_data.get("tenant_id", request.state.tenant_id)
-            request.state.user_id = session_data.get("user_id", "")
+            t_id = session_data.get("tenant_id", request.state.tenant_id)
+            if not t_id or str(t_id).strip() == "":
+                t_id = "22222222-2222-2222-2222-222222222222"
+            request.state.tenant_id = t_id
+            
+            u_id = session_data.get("user_id", "")
+            if u_id == "None":
+                u_id = ""
+            request.state.user_id = u_id
             
             from app import rbac
             hierarchy = rbac.get_role_hierarchy(request.state.tenant_id, session_data.get("role_id"))
@@ -467,10 +475,18 @@ async def process_response(request: Request, call_next):
         "object-src 'none';"
     )
 
-    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+    return response
+
+@app.middleware('http')
+async def add_hsts_header(request: Request, call_next):
+    response = await call_next(request)
+    # Enforce HTTPS on the client side (MITM protection)
+    response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
     return response
 
 
 from fastapi.staticfiles import StaticFiles
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
+

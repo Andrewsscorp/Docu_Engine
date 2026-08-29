@@ -51,7 +51,7 @@ async def delete_user(
         error_msg = str(e).lower()
         if 'foreign key constraint' in error_msg or 'violates foreign key' in error_msg:
             return HTMLResponse("<script>Swal.fire({icon: 'error', title: 'No se puede eliminar', text: 'Este usuario no se puede eliminar porque ya subió documentos o tiene movimientos registrados en las bases de datos. Por favor, desactiva la cuenta en su lugar.'});</script>")
-        return templates.TemplateResponse('component_7.html', {'request': request, 'str': str, 'e': e})
+        return HTMLResponse("<div class='p-4 text-red-500'>Ocurrió un error. Verifique los datos o permisos e intente nuevamente.</div>", status_code=400)
 
 @router.post("/api/v1/rbac/users/{user_id}/expel")
 async def expel_user(user_id: str, request: Request, session_data: dict = Depends(require_permission("usuarios:modificar")), db: AsyncSession = Depends(get_db_session)):
@@ -283,7 +283,7 @@ async def rbac_ui(request: Request, db: AsyncSession = Depends(get_db_session), 
         p_name = p[1]
         p_desc = p[2]
         
-        has_perm = check_permission(tenant_id, role_id, p_name)
+        has_perm = (actor_level == 99) or check_permission(tenant_id, role_id, p_name)
         disabled_attr = "" if has_perm else "disabled opacity-50 cursor-not-allowed"
         locked_icon = "" if has_perm else "🔒 "
         
@@ -509,7 +509,7 @@ async def create_user(
         await db.commit()
     except Exception as e:
         await db.rollback()
-        return templates.TemplateResponse('component_8.html', {'request': request, 'str': str, 'e': e})
+        return HTMLResponse("<div class='p-4 text-red-500'>Ocurrió un error. Verifique los datos o permisos e intente nuevamente.</div>", status_code=400)
         
     # Devolver una alerta visual con la contraseña copiable
     # Como el hx-target es #users-list, enviaremos la alerta por OOB a un div de notificaciones y recargaremos la tabla
@@ -549,7 +549,7 @@ async def create_role(
     
     # 1. Validation: Hierarchy block
     if hierarchy_level > actor_level:
-        return templates.TemplateResponse('component_3.html', {'request': request, 'actor_level': actor_level})
+        return HTMLResponse("<div class='p-4 text-red-500'>Ocurrió un error. Verifique los datos o permisos e intente nuevamente.</div>", status_code=400)
         
     # 2. Validation: Permissions Governance (Zero Trust)
     # Check if the actor actually has all the requested permissions
@@ -557,8 +557,8 @@ async def create_role(
         query_check_perms = text("SELECT id, name FROM permissions WHERE id = ANY(:perms)")
         res = await db.execute(query_check_perms, {"perms": permissions})
         for p_id, p_name in res.fetchall():
-            if not check_permission(tenant_id, actor_role_id, p_name):
-                return templates.TemplateResponse('component_15.html', {'request': request, 'p_name': p_name})
+            if not ((actor_level == 99) or check_permission(tenant_id, actor_role_id, p_name)):
+                return HTMLResponse(f"<div class='p-4 text-red-500'>Error de Seguridad: No posees el permiso {p_name}.</div>", status_code=403)
                 
     try:
         # Atomic Transaction
@@ -588,7 +588,7 @@ async def create_role(
         
     except Exception as e:
         await db.rollback()
-        import traceback; traceback.print_exc(); return templates.TemplateResponse('component_9.html', {'request': request, 'str': str, 'e': e})
+        import traceback; traceback.print_exc(); return HTMLResponse("<div class='p-4 text-red-500'>Ocurrió un error. Verifique los datos o permisos e intente nuevamente.</div>", status_code=400)
         
     response = HTMLResponse("")
     response.headers["HX-Trigger"] = "reload-roles"
@@ -815,7 +815,7 @@ async def get_edit_role(role_id: str, request: Request, session_data: dict = Dep
         p_desc = p[2]
         is_assigned = p[3] is not None
         
-        has_perm = check_permission(tenant_id, session_data["role_id"], p_name)
+        has_perm = (actor_level == 99) or check_permission(tenant_id, session_data["role_id"], p_name)
         disabled_attr = "" if has_perm else "disabled opacity-50 cursor-not-allowed"
         locked_icon = "" if has_perm else "🔒 "
         checked_attr = "checked" if is_assigned else ""
@@ -895,8 +895,8 @@ async def post_edit_role(
     
     for p_id in permissions:
         p_name = perm_map.get(p_id)
-        if p_name and not check_permission(tenant_id, session_data["role_id"], p_name):
-            return templates.TemplateResponse('component_10.html', {'request': request, 'p_name': p_name})
+        if p_name and not ((actor_level == 99) or check_permission(tenant_id, session_data["role_id"], p_name)):
+            return HTMLResponse(f"<div class='p-4 text-red-500'>Error de Seguridad: No posees el permiso {p_name}.</div>", status_code=403)
 
     try:
         query_update = text("UPDATE roles SET name = :name, hierarchy_level = :hierarchy_level WHERE id = :role_id AND tenant_id = :tenant_id")
@@ -914,7 +914,7 @@ async def post_edit_role(
     except Exception as e:
         await db.rollback()
         import traceback; traceback.print_exc()
-        return templates.TemplateResponse('component_11.html', {'request': request, 'str': str, 'e': e})
+        return HTMLResponse("<div class='p-4 text-red-500'>Ocurrió un error. Verifique los datos o permisos e intente nuevamente.</div>", status_code=400)
         
     response = HTMLResponse("")
     response.headers["HX-Trigger"] = "reload-roles"
@@ -1065,7 +1065,7 @@ async def post_edit_group(
         return await list_groups(request, session_data, db)
     except Exception as e:
         await db.rollback()
-        return templates.TemplateResponse('component_13.html', {'request': request, 'e': e})
+        return HTMLResponse("<div class='p-4 text-red-500'>Ocurrió un error. Verifique los datos o permisos e intente nuevamente.</div>", status_code=400)
 
 @router.get("/api/v1/rbac/groups/new", response_class=HTMLResponse)
 async def get_new_group(request: Request, session_data: dict = Depends(require_permission("roles:modificar")), db: AsyncSession = Depends(get_db_session)):
@@ -1168,4 +1168,70 @@ async def post_create_group(
         return await list_groups(request, session_data, db)
     except Exception as e:
         await db.rollback()
-        return templates.TemplateResponse('component_14.html', {'request': request, 'e': e})
+        return HTMLResponse("<div class='p-4 text-red-500'>Ocurrió un error. Verifique los datos o permisos e intente nuevamente.</div>", status_code=400)
+@router.get("/api/v1/grupos/{grupo_id}/usuarios", response_class=HTMLResponse)
+async def get_grupo_usuarios(grupo_id: str, request: Request, db: AsyncSession = Depends(get_db_session)):
+    user_id = getattr(request.state, "user_id", None)
+    if not user_id: return HTMLResponse("")
+    
+    query = text("""
+        SELECT id, username
+        FROM users
+        WHERE role_id = :gid
+    """)
+    res = await db.execute(query, {"gid": grupo_id})
+    usuarios = res.fetchall()
+    
+    html = """
+    <div x-data="{ qUser: '' }" class="p-2 bg-white flex flex-col gap-2">
+        <input type="text" x-model="qUser" placeholder="Filtrar usuario en este grupo..." class="w-full px-3 py-1.5 border border-slate-200 rounded text-xs focus:ring-1 focus:ring-indigo-500 mb-2">
+        <div class="max-h-40 overflow-y-auto">
+    """
+    for u in usuarios:
+        html += f"""
+            <label x-show="'{u.username.lower()}'.includes(qUser.toLowerCase())" class="flex items-center gap-3 p-2 hover:bg-slate-50 cursor-pointer rounded-lg border border-transparent transition-colors">
+                <input type="radio" name="usuario_destino_dummy" class="text-indigo-600 focus:ring-indigo-500" @change="usuarioDestino = '{u.id}'">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">
+                        {u.username[:2].upper()}
+                    </div>
+                    <span class="text-sm font-medium text-slate-700">{u.username}</span>
+                </div>
+            </label>
+        """
+    if not usuarios:
+        html += '<div class="text-sm text-slate-500 p-2">No hay miembros en este grupo.</div>'
+        
+    html += "</div></div>"
+    return HTMLResponse(html)
+
+@router.get("/api/v1/usuarios/buscar", response_class=HTMLResponse)
+async def buscar_usuarios_global(request: Request, query: str = "", db: AsyncSession = Depends(get_db_session)):
+    if len(query) < 2:
+        return HTMLResponse("")
+        
+    sql = text("""
+        SELECT id, username 
+        FROM users 
+        WHERE username ILIKE :q 
+        LIMIT 10
+    """)
+    res = await db.execute(sql, {"q": f"%{query}%"})
+    usuarios = res.fetchall()
+    
+    html = ""
+    for u in usuarios:
+        html += f"""
+        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 cursor-pointer rounded-lg border border-slate-100 mb-1 transition-colors">
+            <input type="radio" name="usuario_destino_dummy" class="text-indigo-600 focus:ring-indigo-500" @change="usuarioDestino = '{u.id}'">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600">
+                    {u.username[:2].upper()}
+                </div>
+                <span class="text-sm font-medium text-slate-700">{u.username}</span>
+            </div>
+        </label>
+        """
+    if not html:
+        html = '<div class="text-sm text-slate-500">No se encontraron auditores.</div>'
+    return HTMLResponse(html)

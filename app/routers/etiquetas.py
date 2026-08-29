@@ -28,62 +28,71 @@ def get_row_html(et, uso_count):
                 <li>
     '''
     
-    if uso_count > 0:
-        kebab_menu += f'''
-                    <button @click.prevent="open=false; Swal.fire({{icon: 'warning', title: 'Etiqueta Bloqueada', text: 'Esta etiqueta ya ha sido aplicada a {uso_count} documentos. Para proteger la inmutabilidad de la auditoría, su nombre y color han sido sellados. Si necesita una nueva nomenclatura, por favor cree una etiqueta nueva y desactive esta.', confirmButtonText: 'Entendido'}})" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center transition-colors">
-                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg> Editar
-                    </button>
-        '''
-    else:
-        kebab_menu += f'''
-                    <button @click.prevent="open=false; window.dispatchEvent(new CustomEvent('edit-tag', {{detail: {{id: '{et.id_etiqueta}', nombre: '{et.nombre}', bg: '{et.color_fondo}', text: '{et.color_texto}', cat: '{et.categoria}'}}}}))" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center transition-colors">
-                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg> Editar
-                    </button>
-        '''
+    if getattr(et, 'estado_activa', True):
+        # ACTIVE TAG MENU
+        if uso_count > 0:
+            kebab_menu += f'''
+                        <button @click.prevent="open=false; Swal.fire({{icon: 'warning', title: 'Etiqueta Bloqueada', text: 'Esta etiqueta ya ha sido aplicada a {uso_count} documentos. Para proteger la inmutabilidad de la auditora, su nombre y color han sido sellados. Si necesita una nueva nomenclatura, por favor cree una etiqueta nueva y desactive esta.', confirmButtonText: 'Entendido'}})" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center transition-colors">
+                            <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg> Editar
+                        </button>
+            '''
+        else:
+            kebab_menu += f'''
+                        <button @click.prevent="open=false; window.dispatchEvent(new CustomEvent('edit-tag', {{detail: {{id: '{et.id_etiqueta}', nombre: '{et.nombre}', bg: '{et.color_fondo}', text: '{et.color_texto}', cat: '{et.categoria}'}}}}))" class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center transition-colors">
+                            <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg> Editar
+                        </button>
+            '''
 
-    kebab_menu += f'''
-                </li>
-                <li>
-                    <button hx-get="/api/v1/etiquetas/{et.id_etiqueta}/permisos" 
-                            hx-target="#modal-permisos-content" 
-                            @click="open = false; window.dispatchEvent(new Event('abrirmodalpermisos'))"
-                            class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center transition-colors">
-                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> Permisos
-                    </button>
-                </li>
-                <li>
-                    <button x-data="{{ clicking: false }}" 
-                        @click.prevent="
-                            if(clicking) return; 
-                            clicking = true; 
-                            open = false; 
-                            Swal.fire({{
-                                title: 'Módulo de Automatización',
-                                text: 'Las reglas de disparo hacia Novu estarán habilitadas en la v2.0.',
-                                icon: 'info',
-                                confirmButtonColor: '#4f46e5'
-                            }}); 
-                            setTimeout(() => clicking = false, 1000);
-                        " class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center transition-colors">
-                        <svg class="w-4 h-4 mr-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Automatización
-                    </button>
-                </li>
-                <li class="border-t border-slate-100">
-    '''
-    
-    if not et.es_sistema:
         kebab_menu += f'''
-                    <button hx-delete="/api/v1/etiquetas/{et.id_etiqueta}" hx-confirm="¿Está completamente seguro de desactivar esta etiqueta del sistema?" hx-target="closest tr" hx-swap="delete" class="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center font-medium transition-colors">
-                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Desactivar
-                    </button>
+                    </li>
+                    <li>
+                        <button hx-get="/api/v1/etiquetas/{et.id_etiqueta}/permisos" 
+                                hx-target="#modal-permisos-content" 
+                                @click="open = false; window.dispatchEvent(new Event('abrirmodalpermisos'))"
+                                class="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center transition-colors">
+                            <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> Permisos
+                        </button>
+                    </li>
+                    <li>
         '''
+        
+        if not et.es_sistema:
+            kebab_menu += f'''
+                        <button @click.prevent="open=false; Swal.fire({{title: 'Desactivar Etiqueta', text: 'Se desactivar la etiqueta. Ya no se podr asignar a nuevos documentos.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Desactivar'}}).then((result) => {{ if (result.isConfirmed) {{ htmx.ajax('DELETE', '/api/v1/etiquetas/{et.id_etiqueta}', {{target: '#etiqueta-row-{et.id_etiqueta}', swap: 'delete'}}); }} }})" class="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center font-medium transition-colors">
+                            <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Desactivar
+                        </button>
+            '''
+        else:
+            kebab_menu += f'''
+                        <button @click.prevent="open=false; Swal.fire('Restringido', 'No se puede desactivar una etiqueta del sistema', 'error')" class="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-400 flex items-center cursor-not-allowed">
+                            <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> Sistema
+                        </button>
+            '''
     else:
+        # INACTIVE TAG MENU
         kebab_menu += f'''
-                    <button @click.prevent="Swal.fire('Restringido', 'No se puede desactivar una etiqueta del sistema', 'error')" class="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-400 flex items-center cursor-not-allowed">
-                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> Sistema
+                    <button @click.prevent="open=false; htmx.ajax('POST', '/api/v1/etiquetas/{et.id_etiqueta}/reactivar', {{target: '#etiqueta-row-{et.id_etiqueta}', swap: 'delete'}})" class="w-full text-left px-4 py-2 hover:bg-emerald-50 text-emerald-600 flex items-center font-medium transition-colors">
+                        <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Reactivar
                     </button>
         '''
         
+        if uso_count == 0:
+            kebab_menu += f'''
+                    </li>
+                    <li>
+                        <button @click.prevent="open=false; Swal.fire({{title: 'Eliminar Etiqueta', text: 'Esta accin eliminar permanentemente la etiqueta. Es irreversible.', icon: 'error', showCancelButton: true, confirmButtonText: 'Eliminar'}}).then((result) => {{ if (result.isConfirmed) {{ htmx.ajax('DELETE', '/api/v1/etiquetas/{et.id_etiqueta}/hard', {{target: '#etiqueta-row-{et.id_etiqueta}', swap: 'delete'}}); }} }})" class="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center font-medium transition-colors">
+                            <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Eliminar Definitivo
+                        </button>
+            '''
+        else:
+            kebab_menu += f'''
+                    </li>
+                    <li>
+                        <button @click.prevent="open=false; Swal.fire('No se puede eliminar', 'Esta etiqueta est en uso en {uso_count} documentos. Solo puedes eliminar etiquetas sin uso.', 'error')" class="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-400 flex items-center cursor-not-allowed">
+                            <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> Eliminar (En Uso)
+                        </button>
+            '''
+
     kebab_menu += '''
                 </li>
             </ul>
@@ -91,11 +100,15 @@ def get_row_html(et, uso_count):
     </td>
     '''
     
+    name_display = et.nombre
+    if not getattr(et, 'estado_activa', True):
+        name_display += ' <svg class="inline-block w-4 h-4 text-red-500 ml-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>'
+        
     return f'''
     <tr class="border-b border-gray-100 hover:bg-slate-50/50 transition-colors animate-fade-in-up" id="etiqueta-row-{et.id_etiqueta}">
         <td class="py-3 px-4">
             <span class="px-3 py-1 text-xs font-semibold rounded-full {et.color_fondo} {et.color_texto}">
-                {et.nombre}
+                {name_display}
             </span>
         </td>
         <td class="py-3 px-4">
@@ -105,7 +118,7 @@ def get_row_html(et, uso_count):
         <td class="py-3 px-4">
             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 text-xs font-medium text-gray-600 border border-gray-200">
                 <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                Pública
+                Pblica
             </span>
         </td>
         <td class="py-3 px-4">
@@ -119,16 +132,20 @@ def get_row_html(et, uso_count):
 async def list_etiquetas(request: Request, categoria: str = Query("Todos"), q: str = Query(None), db: AsyncSession = Depends(get_db_session)):
     try:
         query_str = """
-            SELECT e.id_etiqueta, e.nombre, e.color_fondo, e.color_texto, e.es_sistema, e.categoria,
+            SELECT e.id_etiqueta, e.nombre, e.color_fondo, e.color_texto, e.es_sistema, e.categoria, e.estado_activa,
                    COUNT(de.id_documento) as uso_count
             FROM etiquetas_maestras e
             LEFT JOIN documento_etiquetas de ON e.id_etiqueta = de.id_etiqueta
-            WHERE e.estado_activa = TRUE
+            WHERE 1=1
         """
         params = {}
-        if categoria != "Todos":
-            query_str += " AND e.categoria = :cat"
-            params["cat"] = categoria
+        if categoria == "Inactivas":
+            query_str += " AND e.estado_activa = FALSE"
+        else:
+            query_str += " AND e.estado_activa = TRUE"
+            if categoria != "Todos":
+                query_str += " AND e.categoria = :cat"
+                params["cat"] = categoria
             
         if q and q.strip():
             query_str += " AND e.nombre ILIKE :q"
@@ -162,6 +179,7 @@ async def list_etiquetas(request: Request, categoria: str = Query("Todos"), q: s
         return HTMLResponse(content=html_out)
     except Exception as e:
         import traceback
+        await db.rollback()
         traceback.print_exc()
         return HTMLResponse(f"<tr><td colspan='5' class='text-red-500'>Error: {str(e)}</td></tr>")
 
@@ -189,7 +207,7 @@ async def create_etiqueta(
             text("""
                 INSERT INTO etiquetas_maestras (nombre, color_fondo, color_texto, categoria, creado_por)
                 VALUES (:nombre, :color_fondo, :color_texto, :categoria, :creado_por)
-                RETURNING id_etiqueta, nombre, color_fondo, color_texto, es_sistema, categoria
+                RETURNING id_etiqueta, nombre, color_fondo, color_texto, es_sistema, categoria, estado_activa
             """),
             {"nombre": clean_name, "color_fondo": color_fondo, "color_texto": color_texto, "categoria": categoria, "creado_por": user_id}
         )
@@ -218,7 +236,7 @@ async def update_etiqueta(
     
     try:
         clean_name = nombre.strip()
-        async with db.begin():
+        if True:
             query_etiqueta = text("SELECT * FROM etiquetas_maestras WHERE id_etiqueta = :id FOR UPDATE")
             etiqueta_res = await db.execute(query_etiqueta, {"id": id})
             if not etiqueta_res.fetchone():
@@ -258,8 +276,9 @@ async def update_etiqueta(
                 UPDATE etiquetas_maestras 
                 SET nombre = :nombre, color_fondo = :color_fondo, color_texto = :color_texto, categoria = :categoria 
                 WHERE id_etiqueta = :id 
-                RETURNING id_etiqueta, nombre, color_fondo, color_texto, es_sistema, categoria
+                RETURNING id_etiqueta, nombre, color_fondo, color_texto, es_sistema, categoria, estado_activa
             """), {"id": id, "nombre": clean_name, "color_fondo": color_fondo, "color_texto": color_texto, "categoria": categoria})
+            await db.commit()
             et = result.fetchone()
             
             response = HTMLResponse(content=get_row_html(et, 0))
@@ -272,16 +291,19 @@ async def update_etiqueta(
             return response
             
     except HTTPException:
+        await db.rollback()
+        raise
         raise
     except Exception as e:
         import traceback
+        await db.rollback()
         traceback.print_exc()
         return HTMLResponse(f"Error: {str(e)}", status_code=500)
 
 @router.delete("/{id}", response_class=HTMLResponse)
 async def delete_etiqueta(id: str, request: Request, db: AsyncSession = Depends(get_db_session)):
     try:
-        async with db.begin():
+        if True:
             result = await db.execute(text("SELECT es_sistema FROM etiquetas_maestras WHERE id_etiqueta = :id"), {"id": id})
             row = result.fetchone()
             if not row:
@@ -293,7 +315,7 @@ async def delete_etiqueta(id: str, request: Request, db: AsyncSession = Depends(
             query_tareas = text("""
                 SELECT COUNT(1) FROM tareas_asignaciones ta
                 JOIN documento_etiquetas de ON ta.id_documento = de.id_documento
-                WHERE de.id_etiqueta = :id AND ta.estado IN ('PENDIENTE', 'EN_PROGRESO')
+                WHERE de.id_etiqueta = :id AND ta.estado_tarea IN ('Pendiente', 'En Progreso')
             """)
             tareas_vivas = await db.execute(query_tareas, {"id": id})
             
@@ -316,9 +338,12 @@ async def delete_etiqueta(id: str, request: Request, db: AsyncSession = Depends(
         })
         return response
     except HTTPException:
+        await db.rollback()
+        raise
         raise
     except Exception as e:
         import traceback
+        await db.rollback()
         traceback.print_exc()
         return HTMLResponse(f"Error: {str(e)}", status_code=500)
 
@@ -404,7 +429,7 @@ async def get_etiqueta_permisos(id: str, request: Request, db: AsyncSession = De
 async def update_etiqueta_permisos(id: str, request: Request, roles_ids: list[str] = Form(default=[]), db: AsyncSession = Depends(get_db_session)):
     user_id = getattr(request.state, "user_id", None)
     try:
-        async with db.begin():
+        if True:
             # Obtener etiqueta
             res = await db.execute(text("SELECT id_etiqueta, es_sistema FROM etiquetas_maestras WHERE id_etiqueta = :id"), {"id": id})
             et = res.fetchone()
@@ -445,9 +470,57 @@ async def update_etiqueta_permisos(id: str, request: Request, roles_ids: list[st
         })
         return response
     except HTTPException:
+        await db.rollback()
+        raise
         raise
     except Exception as e:
         import traceback
+        await db.rollback()
         traceback.print_exc()
         return HTMLResponse(f"<div class='text-red-500'>Error al guardar permisos: {str(e)}</div>")
 
+
+@router.post("/{id}/reactivar", response_class=HTMLResponse)
+async def reactivar_etiqueta(id: str, request: Request, db: AsyncSession = Depends(get_db_session)):
+    try:
+        if True:
+            await db.execute(text("UPDATE etiquetas_maestras SET estado_activa = TRUE WHERE id_etiqueta = :id"), {"id": id})
+            await db.commit()
+            
+        response = HTMLResponse(content="")
+        response.headers["HX-Trigger"] = '{"toastExito": {"mensaje": "Etiqueta reactivada."}}'
+        return response
+    except Exception as e:
+        await db.rollback()
+        raise e
+
+@router.delete("/{id}/hard", response_class=HTMLResponse)
+async def hard_delete_etiqueta(id: str, request: Request, db: AsyncSession = Depends(get_db_session)):
+    try:
+        if True:
+            result = await db.execute(text("SELECT es_sistema FROM etiquetas_maestras WHERE id_etiqueta = :id"), {"id": id})
+            row = result.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="Etiqueta no encontrada")
+                
+            if row.es_sistema:
+                return HTMLResponse("No puedes eliminar una etiqueta de sistema", status_code=403)
+                
+            query_tareas = text("""
+                SELECT COUNT(1) FROM documento_etiquetas WHERE id_etiqueta = :id
+            """)
+            uso = await db.execute(query_tareas, {"id": id})
+            if uso.scalar() > 0:
+                response = HTMLResponse(content="")
+                response.headers["HX-Trigger"] = '{"alertaBloqueo": {"mensaje": "No se puede eliminar. Esta etiqueta est asignada a documentos."}}'
+                return response
+                
+            await db.execute(text("DELETE FROM etiquetas_maestras WHERE id_etiqueta = :id"), {"id": id})
+            await db.commit()
+            
+        response = HTMLResponse(content="")
+        response.headers["HX-Trigger"] = '{"toastExito": {"mensaje": "Etiqueta eliminada permanentemente."}}'
+        return response
+    except Exception as e:
+        await db.rollback()
+        raise e

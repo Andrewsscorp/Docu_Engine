@@ -1,0 +1,197 @@
+﻿{% if not tareas %}
+<div class="flex flex-col items-center justify-center h-48 bg-white rounded-2xl border border-dashed border-slate-200">
+    <div class="text-4xl mb-3">📭</div>
+    <h3 class="text-slate-500 font-medium">No tienes tareas aquí</h3>
+    <p class="text-slate-400 text-sm mt-1">¡Todo al día!</p>
+</div>
+{% else %}
+    {% for tarea in tareas %}
+    {% set last_update = tarea.timeline_mensajes[-1].fecha.isoformat() if (tarea.timeline_mensajes and tarea.timeline_mensajes|length > 0 and tarea.timeline_mensajes[-1].fecha) else (tarea.fecha_asignacion.isoformat() if tarea.fecha_asignacion else 'now') %}
+    <div x-data="{ 
+            isNew: false, showTimeline: false,
+            key: 'read_{{ tarea.id_asignacion }}',
+            lastUpdate: '{{ tarea.last_update.isoformat() if tarea.last_update else '' }}',
+            init() {
+                this.isNew = localStorage.getItem(this.key) !== this.lastUpdate;
+            },
+            markRead() {
+                if (this.isNew) {
+                    localStorage.setItem(this.key, this.lastUpdate);
+                    this.isNew = false;
+                    window.dispatchEvent(new CustomEvent('task-read'));
+                }
+            }
+        }"
+        @click="markRead()"
+        @mouseenter="setTimeout(() => markRead(), 1500)"
+        :class="isNew ? 'ring-2 ring-indigo-400 bg-indigo-50/20' : ''"
+        class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 hover:shadow-md transition-all relative overflow-visible" id="tarea-{{ tarea.id_asignacion }}">
+        
+        
+        <!-- Indicadores Superiores Dinámicos -->
+        <div class="absolute top-4 right-4 flex items-center gap-2 z-10">
+            <!-- Etiqueta 1 de Novedad -->
+            <div x-show="isNew" x-cloak class="flex items-center justify-center bg-rose-500 text-white w-6 h-6 rounded-full text-xs font-bold shadow-sm animate-bounce ring-2 ring-rose-200" title="¡Nueva actualización!">1</div>
+            
+            {% if tarea.estado_tarea == 'Rechazado' %}
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-slate-700 to-slate-800 text-white shadow-sm border border-slate-600 transform transition-transform hover:scale-105">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="text-[11px] font-bold uppercase tracking-wider">Rechazada</span>
+            </div>
+            {% elif tarea.estado_tarea in ['En Progreso', 'Completado'] %}
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm border border-emerald-400 transform transition-transform hover:scale-105">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="text-[11px] font-bold uppercase tracking-wider">Aceptada</span>
+            </div>
+            {% elif tarea.vencido and tarea.estado_tarea != 'En Progreso' %}
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-sm border border-red-400 animate-pulse transform transition-transform hover:scale-105">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="text-[11px] font-bold uppercase tracking-wider">¡Urgente! Vencida</span>
+            </div>
+            {% elif tarea.estado_tarea == 'Pendiente' %}
+            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 text-white shadow-sm border border-amber-300 transform transition-transform hover:scale-105">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="text-[11px] font-bold uppercase tracking-wider">
+                    {% if tarea.tiempo_respuesta_esperado %}
+                        Vence: {{ tarea.tiempo_respuesta_esperado.strftime('%d/%m/%Y %H:%M') }}
+                    {% else %}
+                        Pendiente
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="flex gap-4">
+
+            <!-- Avatar Iniciales -->
+            <div class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0 border border-indigo-100 mt-1 shadow-sm">
+                <span class="text-indigo-700 font-bold text-sm">
+                    {{ tarea.asignador_nombre[:2].upper() }}
+                </span>
+            </div>
+            
+            <div class="flex-1 w-full">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 pr-24" title="{{ tarea.file_name }}">
+                    <span class="truncate max-w-[70%]">{{ tarea.file_name }}</span>
+                    <button @click="docUrl = '/api/v1/documents/{{ tarea.doc_id }}/download?preview=1'; modalPreview = true" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-md transition-colors shadow-sm flex-shrink-0" title="Previsualizar Documento">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    </button>
+                </h3>
+                <p class="text-sm text-slate-500 mb-1">
+                    Asignado por: <span class="font-medium text-slate-700">{{ tarea.asignador_nombre }}</span> 
+                    <span class="mx-1 text-slate-300">•</span> 
+                    Asignado a: <span class="font-medium text-slate-700">{{ tarea.asignado_nombre }}</span>
+                </p>
+                <p class="text-xs text-slate-500 mb-3 bg-slate-50 inline-block px-2 py-1 rounded-md border border-slate-100">
+                    Enviado el: <span class="font-medium text-slate-700" x-data="{ ts: {{ (tarea.fecha_asignacion.timestamp() * 1000)|int if tarea.fecha_asignacion else 'null' }} }" x-text="ts ? new Date(ts).toLocaleString('es-ES', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit'}) : 'Desconocido'"></span> 
+                    <span class="mx-1 text-slate-300">•</span> 
+                    <span class="{{ tarea.sla_color }} flex-inline items-center gap-1">
+                        <svg class="w-3 h-3 inline pb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        {{ tarea.sla_text }}
+                    </span>
+                </p>
+                
+                <!-- Etiquetas JSON Agg -->
+                <div class="flex flex-wrap gap-2 mb-4">
+                    {% if tarea.etiquetas %}
+                        {% for etiqueta in tarea.etiquetas %}
+                        <span class="px-2.5 py-1 text-xs font-bold rounded-md shadow-sm {{ etiqueta.color_fondo }} {{ etiqueta.color_texto }}">
+                            {{ etiqueta.nombre }}
+                        </span>
+                        {% endfor %}
+                    {% else %}
+                        <span class="px-2.5 py-1 text-xs font-bold rounded-md bg-slate-100 text-slate-600 shadow-sm">Sin Etiquetas</span>
+                    {% endif %}
+                </div>
+                
+                                <!-- VISTA ENVIADAS: Línea de Tiempo (Auditoría Hamburguesa) -->
+                {% if tarea.vista_enviadas %}
+                    <div class="mt-2 mb-2">
+                        <button @click.stop="showTimeline = !showTimeline" class="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-indigo-600 transition-colors py-1.5 px-3 rounded-lg hover:bg-indigo-50 border border-transparent hover:border-indigo-100">
+                            <svg class="w-4 h-4 transform transition-transform duration-200" :class="showTimeline ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            Historial de Estados <span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full text-[10px] ml-1">{{ tarea.timeline_mensajes|length }}</span>
+                        </button>
+                    </div>
+                    <div x-show="showTimeline" x-transition x-cloak class="mt-4 border-l-2 border-indigo-200 ml-2 pl-4 py-1 space-y-4 relative">
+                        {% for msg in tarea.timeline_mensajes %}
+                            <div class="relative">
+                                <!-- Punto en la línea de tiempo -->
+                                <div class="absolute -left-[23px] top-2 w-3 h-3 bg-indigo-500 rounded-full ring-4 ring-white shadow-sm"></div>
+                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 relative shadow-sm hover:shadow-md transition-shadow">
+                                    <div class="flex justify-between items-start mb-1 gap-2">
+                                        <span class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md">{{ msg.remitente_nombre }}</span>
+                                        <span class="text-[11px] font-medium text-slate-400 bg-white border border-slate-100 px-2 py-0.5 rounded-full" 
+                                              x-data="{ ts: {{ (msg.fecha.timestamp() * 1000)|int if msg.fecha else 'null' }} }" 
+                                              x-text="ts ? new Date(ts).toLocaleString('es-ES', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit'}) : 'N/A'">
+                                        </span>
+                                    </div>
+                                    {% if msg.asunto %}
+                                        <p class="text-xs font-bold text-slate-700 mb-1">{{ msg.asunto }}</p>
+                                    {% endif %}
+                                    <p class="text-sm text-slate-600 italic pr-12">"{{ msg.cuerpo }}"</p>
+                                    
+                                    {% if msg.codigo %}
+                                        <span class="absolute bottom-2 right-2 text-[10px] text-slate-400 font-mono font-bold">{{ msg.codigo }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <p class="text-sm text-slate-400 italic">No hay movimientos registrados.</p>
+                        {% endfor %}
+                        <!-- Capa decorativa final de la línea -->
+                        <div class="absolute -left-[2px] bottom-0 w-0 h-4 bg-white"></div>
+                    </div>
+                {% else %}
+                    <!-- VISTA NORMAL: Solo el último mensaje -->
+                    <div class="mb-4 bg-slate-50 border border-slate-200 rounded-xl p-3.5 relative shadow-sm">
+                        <p class="text-sm text-slate-700 italic pr-12">
+                            {% if tarea.timeline_mensajes and tarea.timeline_mensajes|length > 0 %}
+                                "{{ tarea.timeline_mensajes[-1].cuerpo }}"
+                            {% else %}
+                                Sin mensajes recientes.
+                            {% endif %}
+                        </p>
+                        {% if tarea.timeline_mensajes and tarea.timeline_mensajes|length > 0 and tarea.timeline_mensajes[-1].codigo %}
+                        <span class="absolute bottom-2 right-2 text-[10px] text-slate-400 font-mono font-bold">{{ tarea.timeline_mensajes[-1].codigo }}</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                
+                <!-- Botones Accionables -->
+                <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-100">
+                    {% if tarea.estado_tarea == 'Pendiente' and not tarea.vista_enviadas %}
+                        <button @click="currentTareaId = '{{ tarea.id_asignacion }}'; modalRechazar = true"
+                                class="px-4 py-2 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 rounded-lg font-medium text-sm flex items-center gap-2 transition-all shadow-sm">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            Rechazar
+                        </button>
+                        
+                        {% if tarea.vencido %}
+                            <!-- Boton Aceptar deshabilitado por SLA -->
+                            <button disabled class="px-4 py-2 bg-slate-100 text-slate-400 rounded-lg font-medium text-sm flex items-center gap-2 cursor-not-allowed border border-slate-200">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                Aceptar
+                            </button>
+                        {% else %}
+                            <!-- Boton Aceptar normal con proteccion HTMX -->
+                            <button hx-put="/api/v1/tareas/{{ tarea.id_asignacion }}/aceptar"
+                                    hx-swap="none" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                Aceptar
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <!-- Boton Responder -->
+                    <button @click="currentTareaId = '{{ tarea.id_asignacion }}'; currentRemitente = '{{ tarea.asignado_nombre if tarea.vista_enviadas else tarea.asignador_nombre }}'; modalResponder = true"
+                            class="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                        {% if tarea.vista_enviadas %}AGREGAR NOTA{% else %}RESPONDER{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}

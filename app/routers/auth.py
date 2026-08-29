@@ -70,7 +70,7 @@ def csrf_protect_exception_handler(request: Request, exc: CsrfProtectError):
 
 @router.get("/")
 async def get_index(request: Request, db: AsyncSession = Depends(get_db_session)):
-    # Si ya tiene cookie de sesiÃ³n vÃ¡lida, redirigir al dashboard
+    # Si ya tiene cookie de sesiÃƒÂ³n vÃƒÂ¡lida, redirigir al dashboard
     if request.cookies.get("sessionId"):
         from fastapi.responses import RedirectResponse
         return RedirectResponse(url="/dashboard")
@@ -81,7 +81,7 @@ async def get_index(request: Request, db: AsyncSession = Depends(get_db_session)
         html = f.read()
         html = html.replace("DOCUENGINE_BRAND_NAME", branding['nombre_empresa'])
         html = html.replace("DOCUENGINE_LOGIN_BG", bg_style)
-        return HTMLResponse(content=html)
+        return HTMLResponse(content=html, headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"})
 
 @router.get("/style.css")
 async def get_style():
@@ -95,9 +95,9 @@ def get_csrf(response: Response, csrf_protect: CsrfProtect = Depends()):
     return {"csrf_token": csrf_token}
 
 def render_settings_form(csrf_token: str, data: dict, show_success: bool=False):
-    button_html = f"""\n        <div class="flex justify-end mt-4">\n            <button type="submit" x-data="{{ show: true }}" x-init="setTimeout(() => show = false, 3000)" \n                    class="font-semibold py-3 px-8 rounded-lg transition-colors shadow-lg"\n                    :class="show ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-500/30' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30'"\n                    x-text="show ? 'Â¡Ajustes Guardados exitosamente!' : 'Guardar Cambios'">\n            </button>\n        </div>\n    """ if show_success else '\n        <div class="flex justify-end mt-4">\n            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors shadow-lg shadow-blue-500/30">\n                Guardar Cambios\n            </button>\n        </div>\n    '
+    button_html = f"""\n        <div class="flex justify-end mt-4">\n            <button type="submit" x-data="{{ show: true }}" x-init="setTimeout(() => show = false, 3000)" \n                    class="font-semibold py-3 px-8 rounded-lg transition-colors shadow-lg"\n                    :class="show ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-500/30' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30'"\n                    x-text="show ? 'Ã‚Â¡Ajustes Guardados exitosamente!' : 'Guardar Cambios'">\n            </button>\n        </div>\n    """ if show_success else '\n        <div class="flex justify-end mt-4">\n            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors shadow-lg shadow-blue-500/30">\n                Guardar Cambios\n            </button>\n        </div>\n    '
     oob_html = f'''\n    <div id="brandLogo" hx-swap-oob="true" class="text-xl md:text-2xl font-bold text-center mb-10 tracking-widest text-textmain break-words whitespace-normal leading-tight px-2" title="{data['nombre_empresa']}">\n        {data['nombre_empresa']}\n    </div>\n    ''' if show_success else ''
-    return f'''\n    {oob_html}\n    <form hx-patch="/api/v1/settings" hx-headers='{{"X-CSRF-Token": "{csrf_token}"}}' hx-encoding="multipart/form-data" hx-swap="outerHTML" class="space-y-6">\n        <div class="settings-group">\n            <label class="block font-medium text-gray-700 mb-2">Nombre de la Empresa</label>\n            <input type="text" name="nombre_empresa" value="{data['nombre_empresa']}" required maxlength="100" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none text-gray-800 transition-colors">\n        </div>\n        \n        <div class="settings-group">\n            <label class="block font-medium text-gray-700 mb-2">Idioma Preferido</label>\n            <select name="idioma" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none text-gray-800 transition-colors">\n                <option value="es" {('selected' if data['idioma'] == 'es' else '')}>EspaÃ±ol</option>\n                <option value="en" {('selected' if data['idioma'] == 'en' else '')}>InglÃ©s</option>\n            </select>\n        </div>\n\n        \n        <div class="settings-group">\n            <label class="block font-medium text-gray-700 mb-2">Imagen de Fondo (Login)</label>\n            <input type="file" name="login_bg_image" accept="image/*" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none text-gray-800 transition-colors">\n            <p class="text-sm text-gray-500 mt-1">Sube una nueva imagen para cambiar el fondo de la pantalla de inicio.</p>\n        </div>\n\n        <div class="settings-group">\n            <label class="block font-medium text-gray-700 mb-2">Notificaciones por Email</label>\n            <select name="notificaciones_email" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none text-gray-800 transition-colors">\n                <option value="true" {('selected' if data['notificaciones_email'] else '')}>Activadas</option>\n                <option value="false" {('selected' if not data['notificaciones_email'] else '')}>Desactivadas</option>\n            </select>\n        </div>\n        \n        {button_html}\n    </form>\n    '''
+    return f'''\n    {oob_html}\n    <form hx-patch="/api/v1/settings" hx-headers='{{"X-CSRF-Token": "{csrf_token}"}}' hx-encoding="multipart/form-data" hx-swap="outerHTML" class="space-y-6">\n        <div class="settings-group">\n            <label class="block font-medium text-gray-700 mb-2">Nombre de la Empresa</label>\n            <input type="text" name="nombre_empresa" value="{data['nombre_empresa']}" required maxlength="100" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none text-gray-800 transition-colors">\n        </div>\n        \n        <div class="settings-group">\n            <label class="block font-medium text-gray-700 mb-2">Idioma Preferido</label>\n            <select name="idioma" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none text-gray-800 transition-colors">\n                <option value="es" {('selected' if data['idioma'] == 'es' else '')}>EspaÃƒÂ±ol</option>\n                <option value="en" {('selected' if data['idioma'] == 'en' else '')}>InglÃƒÂ©s</option>\n            </select>\n        </div>\n\n        \n        <div class="settings-group">\n            <label class="block font-medium text-gray-700 mb-2">Imagen de Fondo (Login)</label>\n            <input type="file" name="login_bg_image" accept="image/*" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none text-gray-800 transition-colors">\n            <p class="text-sm text-gray-500 mt-1">Sube una nueva imagen para cambiar el fondo de la pantalla de inicio.</p>\n        </div>\n\n        <div class="settings-group">\n            <label class="block font-medium text-gray-700 mb-2">Notificaciones por Email</label>\n            <select name="notificaciones_email" class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none text-gray-800 transition-colors">\n                <option value="true" {('selected' if data['notificaciones_email'] else '')}>Activadas</option>\n                <option value="false" {('selected' if not data['notificaciones_email'] else '')}>Desactivadas</option>\n            </select>\n        </div>\n        \n        {button_html}\n    </form>\n    '''
 
 @router.get("/api/v1/settings", response_class=HTMLResponse)
 async def get_settings(
@@ -210,7 +210,7 @@ async def update_settings(
 
     invalidate_settings_cache(tenant_id)
 
-    # Generamos de nuevo la pÃ¡gina con un nuevo token CSRF por seguridad post-consumo
+    # Generamos de nuevo la pÃƒÂ¡gina con un nuevo token CSRF por seguridad post-consumo
     csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
     
     data = {
@@ -256,24 +256,24 @@ async def get_dashboard(request: Request, db: AsyncSession = Depends(get_db_sess
         <html lang="es">
         <head>
             <meta charset="UTF-8">
-            <title>Cambio de Contraseña Requerido</title>
+            <title>Cambio de ContraseÃ±a Requerido</title>
             <script src="https://cdn.tailwindcss.com"></script>
             <script src="https://unpkg.com/htmx.org@1.9.10"></script>
         </head>
         <body class="bg-gray-50 flex items-center justify-center min-h-screen">
             <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
                 <div class="mb-6 text-center">
-                    <div class="text-4xl mb-4">🔐</div>
+                    <div class="text-4xl mb-4">ðŸ”</div>
                     <h2 class="text-2xl font-bold text-gray-800">Actualiza tu Seguridad</h2>
-                    <p class="text-sm text-gray-500 mt-2">Por políticas de la empresa o porque es tu primer ingreso, debes cambiar tu contraseña ahora mismo.</p>
+                    <p class="text-sm text-gray-500 mt-2">Por polÃ­ticas de la empresa o porque es tu primer ingreso, debes cambiar tu contraseÃ±a ahora mismo.</p>
                 </div>
                 <form hx-post="/api/v1/force-password-change" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Nueva Contraseña</label>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Nueva ContraseÃ±a</label>
                         <input type="password" name="new_password" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Confirmar Contraseña</label>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Confirmar ContraseÃ±a</label>
                         <input type="password" name="confirm_password" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none">
                     </div>
                     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all">Cambiar y Entrar</button>
@@ -283,7 +283,7 @@ async def get_dashboard(request: Request, db: AsyncSession = Depends(get_db_sess
         </body>
         </html>
         '''
-        return HTMLResponse(content=html)
+        return HTMLResponse(content=html, headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"})
     
     branding = await get_tenant_branding(db)
     with open("app/templates/pages/dashboard.html", "r", encoding="utf-8") as f:
@@ -327,15 +327,12 @@ async def get_dashboard(request: Request, db: AsyncSession = Depends(get_db_sess
         c1 = check_permission(tenant_id, role_id, "usuarios:leer")
         c2 = check_permission(tenant_id, role_id, "roles:leer")
         from app import rbac
-        with open("debug_dashboard.log", "a") as df:
-            df.write(f"DEBUG DASHBOARD: tenant={tenant_id}, role={role_id}, usr={c1}, rol={c2}\n")
-            df.write(f"DEBUG CACHE KEYS: {list(rbac.rbac_l1_cache.keys())}\n")
         c_lic = check_permission(tenant_id, role_id, "ajustes:licencia")
         if c1 or c2:
 
 
             usuarios_btn = '''
-                <div @click="currentView = 'users'" class="bg-white p-6 rounded-2xl card-shadow cursor-pointer hover:-translate-y-1 transition-transform flex items-center gap-4 border border-transparent hover:border-blue-500">
+                <div id="btn-users" @click="currentView = 'users'" class="bg-white p-6 rounded-2xl card-shadow cursor-pointer hover:-translate-y-1 transition-transform flex items-center gap-4 border border-transparent hover:border-blue-500">
                     <div class="text-4xl">&#128101;</div>
                     <div>
                         <h4 class="font-bold text-textmain">Usuarios y Roles</h4>
@@ -344,8 +341,8 @@ async def get_dashboard(request: Request, db: AsyncSession = Depends(get_db_sess
                 </div>'''
             usuarios_section = '''
             <section x-show="currentView === 'users'" x-transition.opacity.duration.300ms x-cloak>
-                <button @click="currentView = 'settings'" class="mb-4 text-blue-600 font-bold hover:underline">← Volver a Ajustes</button>
-                <div hx-get="/api/v1/rbac/ui" hx-trigger="load, click from:div[x-bind\:class*='users']">Cargando módulo de seguridad...</div>
+                <button @click="currentView = 'settings'" class="mb-4 text-blue-600 font-bold hover:underline">â† Volver a Ajustes</button>
+                <div hx-get="/api/v1/rbac/ui" hx-trigger="click from:#btn-users">Cargando mÃ³dulo de seguridad...</div>
             </section>'''
             
             html = html.replace("<!-- MENUS_DINAMICOS_AJUSTES -->", usuarios_btn)
@@ -357,11 +354,11 @@ async def get_dashboard(request: Request, db: AsyncSession = Depends(get_db_sess
         
         if c_lic:
             licencia_btn = '''
-                <div @click="licenseOpen = true" class="bg-white p-6 rounded-2xl card-shadow cursor-pointer hover:-translate-y-1 transition-transform flex items-center gap-4 border border-transparent hover:border-primary">
+                <div id="btn-licencia" @click="licenseOpen = true" class="bg-white p-6 rounded-2xl card-shadow cursor-pointer hover:-translate-y-1 transition-transform flex items-center gap-4 border border-transparent hover:border-primary">
                     <div class="text-4xl">&#128273;</div>
                     <div>
                         <h4 class="font-bold text-textmain">Licencia del Sistema</h4>
-                        <p class="text-sm text-textmuted">Renovación, Límites y HWID</p>
+                        <p class="text-sm text-textmuted">RenovaciÃ³n, LÃ­mites y HWID</p>
                     </div>
                 </div>'''
             html = html.replace("<!-- MENUS_DINAMICOS_LICENCIA -->", licencia_btn)
@@ -375,11 +372,18 @@ async def get_dashboard(request: Request, db: AsyncSession = Depends(get_db_sess
         dinamicos_li = ""
         if rbac.check_permission(tenant_id, role_id, "notificaciones:ver") or is_sa:
             dinamicos_li += '''<li @click="currentView = 'notifications'" title="Notificaciones"
-            class="px-5 py-3.5 rounded-2xl cursor-pointer font-medium transition-all flex items-center gap-4 whitespace-nowrap overflow-hidden"
-            :class="currentView === 'notifications' ? 'bg-gradient-to-r from-primary to-[#868CFF] text-white shadow-lg shadow-primary/40' : 'text-gray-400 hover:text-white hover:bg-white/5'">
-            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+              class="px-5 py-3.5 rounded-2xl cursor-pointer font-medium transition-all flex items-center gap-4 whitespace-nowrap overflow-hidden relative"
+              :class="currentView === 'notifications' ? 'bg-gradient-to-r from-primary to-[#868CFF] text-white shadow-lg shadow-primary/40' : 'text-gray-400 hover:text-white hover:bg-white/5'">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
             <span x-show="sidebarOpen" x-transition.opacity>Notificaciones</span>
-        </li>'''
+            <!-- AlpineJS Badge for Unread Notifications -->
+              <div x-data="{ total: 0 }" 
+                   @update-sidebar-counts.window="total = $event.detail" 
+                   x-show="total > 0" x-cloak 
+                   class="absolute top-1 right-1 flex items-center justify-center bg-rose-500 text-white w-4 h-4 rounded-full text-[9px] font-bold shadow-sm ring-2 ring-rose-200"
+                   x-text="total">
+              </div>
+          </li>'''
         if rbac.check_permission(tenant_id, role_id, "etiquetas:ver") or is_sa:
             dinamicos_li += '''<li @click="currentView = 'tags'" title="Etiquetas"
             class="px-5 py-3.5 rounded-2xl cursor-pointer font-medium transition-all flex items-center gap-4 whitespace-nowrap overflow-hidden"
@@ -392,7 +396,7 @@ async def get_dashboard(request: Request, db: AsyncSession = Depends(get_db_sess
 
 
             
-        return HTMLResponse(content=html)
+        return HTMLResponse(content=html, headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"})
 
 @router.get("/dashboard.css")
 async def get_dashboard_style():
@@ -408,7 +412,7 @@ async def register(
     client_ip = request.client.host if request.client else "unknown"
     enforce_rate_limit(client_ip, payload.username)
 
-    # 1. ValidaciÃ³n de la Licencia Off-Grid en Memoria (HMAC-SHA256)
+    # 1. ValidaciÃƒÂ³n de la Licencia Off-Grid en Memoria (HMAC-SHA256)
     try:
         b64_license_payload, signature = payload.license_token.split('.')
         # Corregir padding base64 si es necesario
@@ -419,7 +423,7 @@ async def register(
         expected_sig = hmac.new(MASTER_HMAC_KEY, payload_bytes, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected_sig, signature):
             attempts = record_failed_attempt(client_ip, payload.username)
-            raise HTTPException(status_code=200, detail=f"Firma de licencia invÃ¡lida (Spoofing detectado). Intento fallido {attempts} de {MAX_FAILS_PER_HOUR}.")
+            raise HTTPException(status_code=200, detail=f"Firma de licencia invÃƒÂ¡lida (Spoofing detectado). Intento fallido {attempts} de {MAX_FAILS_PER_HOUR}.")
             
         license_data = json.loads(payload_bytes.decode('utf-8'))
     except Exception as e:
@@ -427,7 +431,7 @@ async def register(
         attempts = record_failed_attempt(client_ip, payload.username)
         raise HTTPException(status_code=200, detail=f"Token de licencia malformado. Intento fallido {attempts} de {MAX_FAILS_PER_HOUR}.")
 
-    # 2. Verificar Hardware ID y ExpiraciÃ³n
+    # 2. Verificar Hardware ID y ExpiraciÃƒÂ³n
     if license_data.get("hwid_hash") != payload.hwid_hash:
         attempts = record_failed_attempt(client_ip, payload.username)
         raise HTTPException(status_code=200, detail=f"La licencia no pertenece a este hardware (HWID Mismatch). Intento fallido {attempts} de {MAX_FAILS_PER_HOUR}.")
@@ -435,10 +439,10 @@ async def register(
     if license_data.get("exp_timestamp") < datetime.now().timestamp():
         raise HTTPException(status_code=200, detail="La licencia ha expirado.")
 
-    # 3. DerivaciÃ³n de Clave Argon2id
+    # 3. DerivaciÃƒÂ³n de Clave Argon2id
     hashed_password = ph.hash(payload.password)
     
-    # 4. InserciÃ³n en PostgreSQL usando pgcrypto (Zero Trust)
+    # 4. InserciÃƒÂ³n en PostgreSQL usando pgcrypto (Zero Trust)
     # RLS tenant_id ya fue inyectado por database.py
     insert_query = text("""
         INSERT INTO users (tenant_id, username, hash_password, encrypted_license)
@@ -576,14 +580,14 @@ async def login(
         return {"status": "success", "message": "Login exitoso. Autenticado contra PostgreSQL seguro."}
     else:
         attempts = record_failed_attempt(client_ip, credentials.username)
-        raise HTTPException(status_code=401, detail=f"Credenciales invÃ¡lidas. Intento fallido {attempts} de {MAX_FAILS_PER_HOUR}.")
+        raise HTTPException(status_code=401, detail=f"Credenciales invÃƒÂ¡lidas. Intento fallido {attempts} de {MAX_FAILS_PER_HOUR}.")
 
 @router.post("/api/v1/auth/mfa/verify")
 async def verify_mfa(req: MFAVerifyRequest, request: Request, response: Response, db: AsyncSession = Depends(get_db_session)):
     try:
         session_data = session_signer.loads(req.token, max_age=300) # 5 minutes max to verify MFA
     except Exception:
-        raise HTTPException(status_code=401, detail="Token expirado o inválido. Inicia sesión nuevamente.")
+        raise HTTPException(status_code=401, detail="Token expirado o invÃ¡lido. Inicia sesiÃ³n nuevamente.")
         
     user_id = session_data["user_id"]
     query = text("SELECT mfa_secret FROM users WHERE id = :uid LIMIT 1")
@@ -591,11 +595,11 @@ async def verify_mfa(req: MFAVerifyRequest, request: Request, response: Response
     row = res.fetchone()
     
     if not row or not row[0]:
-        raise HTTPException(status_code=400, detail="MFA no está configurado correctamente para este usuario.")
+        raise HTTPException(status_code=400, detail="MFA no estÃ¡ configurado correctamente para este usuario.")
         
     totp = pyotp.TOTP(row[0])
     if not totp.verify(req.code):
-        raise HTTPException(status_code=401, detail="Código incorrecto.")
+        raise HTTPException(status_code=401, detail="CÃ³digo incorrecto.")
         
     # Mark as verified!
     await db.execute(text("UPDATE users SET mfa_verified = true, last_login_at = CURRENT_TIMESTAMP WHERE id = :uid"), {"uid": user_id})
@@ -661,17 +665,17 @@ async def force_password_change(
 ):
     cookie = request.cookies.get("sessionId")
     if not cookie:
-        return HTMLResponse("<div id='password-error' class='text-red-500 font-bold'>Sesión no válida.</div>")
+        return HTMLResponse("<div id='password-error' class='text-red-500 font-bold'>SesiÃ³n no vÃ¡lida.</div>")
         
     try:
         session_data = session_signer.loads(cookie, max_age=86400)
     except Exception:
-        return HTMLResponse("<div id='password-error' class='text-red-500 font-bold'>Sesión expirada.</div>")
+        return HTMLResponse("<div id='password-error' class='text-red-500 font-bold'>SesiÃ³n expirada.</div>")
         
     user_id = session_data["user_id"]
     
     if new_password != confirm_password:
-        return HTMLResponse("<div id='password-error' class='text-red-500 font-bold'>Las contraseñas no coinciden.</div>")
+        return HTMLResponse("<div id='password-error' class='text-red-500 font-bold'>Las contraseÃ±as no coinciden.</div>")
         
     query = text("SELECT password_policy FROM users WHERE id = :user_id")
     res = await db.execute(query, {"user_id": user_id})
@@ -700,7 +704,7 @@ async def force_password_change(
         has_digit = any(c in string.digits for c in new_password)
         has_special = any(c in "!@#$%^&*" for c in new_password)
         if not (has_letter and has_digit and has_special):
-            return HTMLResponse("<div id='password-error' class='text-red-500 font-bold'>Debe contener letras, números y al menos un símbolo (!@#$%^&*).</div>")
+            return HTMLResponse("<div id='password-error' class='text-red-500 font-bold'>Debe contener letras, nÃºmeros y al menos un sÃ­mbolo (!@#$%^&*).</div>")
             
     # Success! Update DB
     hashed = ph.hash(new_password)
@@ -733,3 +737,9 @@ async def force_password_change(
         max_age=86400
     )
     return response
+@router.get("/login")
+async def redirect_login():
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/")
+
+

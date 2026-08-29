@@ -17,79 +17,85 @@ from typing import Dict, Set
 
 rbac_l1_cache: Dict[str, Dict] = {}
 
-async def load_rbac_cache(db: AsyncSession):
+async def load_rbac_cache(db: AsyncSession = None):
     global rbac_l1_cache
     
-    # 1. Fetch all roles
-    query_roles = text("SELECT id, tenant_id, name, hierarchy_level FROM roles")
-    roles_result = await db.execute(query_roles)
+    from app.database import get_global_db_session
     
     new_cache = {}
     
-    for row in roles_result.fetchall():
-        role_id = str(row[0])
-        tenant_id = str(row[1])
-        name = row[2]
-        hierarchy = row[3]
+    async for temp_db in get_global_db_session():
+        # 1. Fetch all roles
+        query_roles = text("SELECT id, tenant_id, name, hierarchy_level FROM roles")
+        roles_result = await temp_db.execute(query_roles)
         
-        if tenant_id not in new_cache:
-            new_cache[tenant_id] = {"roles": {}, "groups": {}, "user_groups": {}}
+        for row in roles_result.fetchall():
+            role_id = str(row[0])
+            tenant_id = str(row[1])
+            name = row[2]
+            hierarchy = row[3]
             
-        new_cache[tenant_id]["roles"][role_id] = {
-            "name": name,
-            "hierarchy": hierarchy,
-            "permissions": set()
-        }
-
-    # 2. Fetch all role permissions
-    query_perms = text("""
-        SELECT rp.role_id, p.name 
-        FROM role_permissions rp
-        JOIN permissions p ON rp.permission_id = p.id
-    """)
-    perms_result = await db.execute(query_perms)
-    
-    for row in perms_result.fetchall():
-        role_id = str(row[0])
-        perm_name = row[1]
-        
-        # Encontramos a que tenant pertenece el rol
-        for tenant_id, tenant_data in new_cache.items():
-            if role_id in tenant_data["roles"]:
-                tenant_data["roles"][role_id]["permissions"].add(perm_name)
-                break
+            if tenant_id not in new_cache:
+                new_cache[tenant_id] = {"roles": {}, "groups": {}, "user_groups": {}}
                 
-    # 3. Fetch all groups
-    query_groups = text("SELECT id, tenant_id, name, role_id FROM groups")
-    groups_result = await db.execute(query_groups)
-    
-    for row in groups_result.fetchall():
-        group_id = str(row[0])
-        tenant_id = str(row[1])
-        name = row[2]
-        role_id = str(row[3]) if row[3] else None
-        
-        if tenant_id in new_cache:
-            new_cache[tenant_id]["groups"][group_id] = {
+            new_cache[tenant_id]["roles"][role_id] = {
                 "name": name,
-                "role_id": role_id
+                "hierarchy": hierarchy,
+                "permissions": set()
             }
 
-    # 4. Fetch all user_groups
-    query_user_groups = text("SELECT user_id, group_id FROM user_groups")
-    user_groups_result = await db.execute(query_user_groups)
-    
-    for row in user_groups_result.fetchall():
-        user_id = str(row[0])
-        group_id = str(row[1])
+        # 2. Fetch all role permissions
+        query_perms = text("""
+            SELECT rp.role_id, p.name 
+            FROM role_permissions rp
+            JOIN permissions p ON rp.permission_id = p.id
+        """)
+        perms_result = await temp_db.execute(query_perms)
         
-        # Encontramos a que tenant pertenece el grupo
-        for tenant_id, tenant_data in new_cache.items():
-            if group_id in tenant_data["groups"]:
-                if user_id not in tenant_data["user_groups"]:
-                    tenant_data["user_groups"][user_id] = set()
-                tenant_data["user_groups"][user_id].add(group_id)
-                break
+        for row in perms_result.fetchall():
+            role_id = str(row[0])
+            perm_name = row[1]
+            
+            # Encontramos a que tenant pertenece el rol
+            for tenant_id, tenant_data in new_cache.items():
+                if role_id in tenant_data["roles"]:
+                    tenant_data["roles"][role_id]["permissions"].add(perm_name)
+                    break
+                    
+        # 3. Fetch all groups
+        query_groups = text("SELECT id, tenant_id, name, role_id FROM groups")
+        groups_result = await temp_db.execute(query_groups)
+        
+        for row in groups_result.fetchall():
+            group_id = str(row[0])
+            tenant_id = str(row[1])
+            name = row[2]
+            role_id = str(row[3]) if row[3] else None
+            
+            if tenant_id in new_cache:
+                new_cache[tenant_id]["groups"][group_id] = {
+                    "name": name,
+                    "role_id": role_id
+                }
+
+        # 4. Fetch all user_groups
+        query_user_groups = text("SELECT user_id, group_id FROM user_groups")
+        user_groups_result = await temp_db.execute(query_user_groups)
+        
+        for row in user_groups_result.fetchall():
+            user_id = str(row[0])
+            group_id = str(row[1])
+            
+            # Encontramos a que tenant pertenece el grupo
+            for tenant_id, tenant_data in new_cache.items():
+                if group_id in tenant_data["groups"]:
+                    if user_id not in tenant_data["user_groups"]:
+                        tenant_data["user_groups"][user_id] = set()
+                    tenant_data["user_groups"][user_id].add(group_id)
+                    break
+        
+        # Break since we only need the first session from the generator
+        break
 
     rbac_l1_cache.clear()
     rbac_l1_cache.update(new_cache)

@@ -1,4 +1,4 @@
-﻿import os
+import os
 import httpx
 from typing import Dict, Any
 
@@ -33,7 +33,7 @@ class NotificadorEventos:
                 print(f"[NOVU] Error sincronizando suscriptor: {e}")
                 return False
 
-    async def trigger_event(self, event_name: str, user_id: str, payload: Dict[str, Any]):
+    async def trigger_event(self, event_name: str, user_id: str, payload: Dict[str, Any], overrides: Dict[str, Any] = None):
         """Dispara un evento/workflow en Novu para un suscriptor."""
         async with httpx.AsyncClient() as client:
             data = {
@@ -43,6 +43,9 @@ class NotificadorEventos:
                 },
                 "payload": payload
             }
+            if overrides:
+                data["overrides"] = overrides
+                
             try:
                 response = await client.post(
                     f"{NOVU_API_URL}/events/trigger",

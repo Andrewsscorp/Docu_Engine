@@ -28,9 +28,13 @@ router = APIRouter()
 
 async def generate_carousel_html(db, tenant_id, q=""):
     query_str = """
-        SELECT id, file_name, thumbnail_path, created_at, mime_type, status, ocr_progress_percent, file_size_bytes 
-        FROM documents 
-        WHERE tenant_id = :t 
+        SELECT d.id, d.file_name, d.thumbnail_path, d.created_at, d.mime_type, d.status, d.ocr_progress_percent, d.file_size_bytes,
+        (SELECT json_agg(json_build_object('nombre', em.nombre, 'color_fondo', em.color_fondo, 'color_texto', em.color_texto))
+         FROM documento_etiquetas de
+         JOIN etiquetas_maestras em ON de.id_etiqueta = em.id_etiqueta
+         WHERE de.id_documento = d.id) as tags
+        FROM documents d
+        WHERE d.tenant_id = :t 
     """
     params = {"t": tenant_id}
     if q and len(q) >= 3:
@@ -60,9 +64,26 @@ async def generate_carousel_html(db, tenant_id, q=""):
         if s.is_integer(): s = int(s)
         return f"{s} {size_name[i]}"
         
-    for doc in docs:
-        doc_id, fn, thumb, created_at, mime, status, progress, size_bytes = doc
-        if progress is None: progress = 0
+    import json
+    for row in docs:
+        d = dict(row._mapping)
+        doc_id = d['id']
+        fn = d['file_name']
+        thumb = d['thumbnail_path']
+        created_at = d['created_at']
+        mime = d['mime_type']
+        status = d['status']
+        progress = d['ocr_progress_percent'] or 0
+        size_bytes = d['file_size_bytes']
+        
+        tags = d.get('tags')
+        if tags and isinstance(tags, str):
+            try:
+                tags = json.loads(tags)
+            except:
+                tags = []
+        elif not tags:
+            tags = []
         
         # Determine visual style
         tag_bg = "bg-blue-500"
@@ -90,11 +111,18 @@ async def generate_carousel_html(db, tenant_id, q=""):
         elif status == "ERROR":
             status_badge = "<div class='absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center'><span class='bg-red-100 text-red-800 text-xs font-bold px-3 py-1 rounded-full shadow-sm'>Error</span></div>"
             
+        tag_html = ""
+        if tags and len(tags) > 0:
+            t = tags[0]
+            tag_html = f"<div class='absolute top-2 right-2 px-2.5 py-1 rounded-md text-xs font-extrabold shadow-md backdrop-blur-md z-10 px-3 py-1.5 border border-white/20 uppercase tracking-wide {t['color_fondo']} {t['color_texto']}'>{t['nombre']}</div>"
+        else:
+            tag_html = status_badge
+            
         card = f"""
         <div class="bg-white rounded-3xl w-64 shrink-0 shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300  cursor-pointer overflow-hidden group" hx-get="/api/v1/documents/{doc_id}/details" hx-trigger="click" hx-target="#modal-container" @click="if(dragged) {{ $event.preventDefault(); $event.stopPropagation(); }}">
             <div class="h-40 w-full bg-gray-50 relative overflow-hidden flex items-center justify-center p-4">
-                <img src="{thumb_url}" class="max-h-full max-w-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-500" alt="thumbnail" onerror="this.style.display='none'">
-                {status_badge}
+                <img src="{thumb_url}" class="max-h-full max-w-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-500" alt="thumbnail" onerror="this.src='https://ui-avatars.com/api/?name=DOC&background=718096&color=fff&rounded=true&font-size=0.3'">
+                {tag_html}
                 <div class="absolute bottom-3 left-3 {tag_bg} text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
                     {tag_text}
                 </div>
@@ -203,7 +231,7 @@ async def upload_document(
             doc = docx.Document(io.BytesIO(content))
             fast_route_text = "\n".join([para.text for para in doc.paragraphs])
             final_status = "COMPLETED"
-            thumbnail_path = None # Usa el ícono genérico en frontend
+            thumbnail_path = None # Usa el Ã­cono genÃ©rico en frontend
         except Exception as e:
             print(f"Error fast-routing DOCX: {e}")
             final_status = "FAILED"
@@ -374,7 +402,7 @@ async def search_documents(
     
     dropdown_html = ""
     if not docs:
-        dropdown_html = "<div class='p-4 text-center text-gray-500 font-medium'>No se encontraron documentos que coincidan con la búsqueda.</div>"
+        dropdown_html = "<div class='p-4 text-center text-gray-500 font-medium'>No se encontraron documentos que coincidan con la bÃºsqueda.</div>"
     else:
         html = "<ul class='divide-y divide-gray-100 max-h-96 overflow-y-auto custom-scrollbar'>"
         for doc in docs:
@@ -382,7 +410,7 @@ async def search_documents(
             html += f'''
             <li class="p-4 hover:bg-gray-50 cursor-pointer transition-colors flex items-center justify-between group" hx-get="/api/v1/documents/{doc_id}/details" hx-trigger="click" hx-target="#modal-container" @click="if(dragged) {{ $event.preventDefault(); $event.stopPropagation(); }}">
                 <div class="flex items-center gap-3">
-                    <span class="text-2xl opacity-80 group-hover:opacity-100 transition-opacity">📄</span>
+                    <span class="text-2xl opacity-80 group-hover:opacity-100 transition-opacity">ðŸ“„</span>
                     <div>
                         <p class="font-bold text-sm text-textmain truncate max-w-md">{fn}</p>
                         <p class="text-xs text-textmuted">{created_at.strftime("%d %b, %H:%M")} &bull; <span class="uppercase tracking-wider">{status}</span></p>
@@ -425,7 +453,7 @@ async def get_document_details(
     char_count = len(doc.extracted_text) if doc.extracted_text else 0
     confidence = f"{doc.ocr_confidence_score * 100:.1f}%" if doc.ocr_confidence_score else "N/A"
     
-    preview_text = doc.extracted_text[:1500] + "..." if doc.extracted_text and len(doc.extracted_text) > 1500 else (doc.extracted_text or "Sin texto extraído aún.")
+    preview_text = doc.extracted_text[:1500] + "..." if doc.extracted_text and len(doc.extracted_text) > 1500 else (doc.extracted_text or "Sin texto extraÃ­do aÃºn.")
     
     html = f'''
     <div x-data="{{ show: true }}" x-show="show" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm" x-transition.opacity>
@@ -484,7 +512,7 @@ async def get_document_details(
                 <div>
                     <h3 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
                         <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
-                        Vista Previa de Texto Extraído
+                        Vista Previa de Texto ExtraÃ­do
                     </h3>
                     <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 max-h-72 overflow-y-auto text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed custom-scrollbar shadow-inner">
                         {preview_text}
@@ -504,7 +532,7 @@ async def download_document(
     cookie = request.cookies.get("sessionId")
     if not cookie: return HTMLResponse("No autorizado", status_code=401)
     try: session_data = session_signer.loads(cookie, max_age=86400)
-    except: return HTMLResponse("Sesión inválida", status_code=401)
+    except: return HTMLResponse("SesiÃ³n invÃ¡lida", status_code=401)
     
     tenant_id = session_data.get("tenant_id")
     user_id = session_data.get("user_id")
@@ -527,10 +555,18 @@ async def download_document(
     if hierarchy != 99:
         user_groups = get_user_groups(tenant_id, user_id)
         if doc.group_id not in user_groups:
-            raise HTTPException(status_code=403, detail="Acceso denegado a este grupo de documentos")
+            # Check if user has an active/historical task for this document (assigned to them or by them)
+            task_check_q = text("""
+                SELECT 1 FROM tareas_asignaciones 
+                WHERE id_documento = :did 
+                AND (asignado_a = :uid OR asignado_por = :uid)
+                LIMIT 1
+            """)
+            task_res = await db.execute(task_check_q, {"did": doc_id, "uid": user_id})
+            if not task_res.fetchone():
+                raise HTTPException(status_code=403, detail="Acceso denegado a este grupo de documentos")
             
-    if not os.path.exists(doc.file_path):
-        raise HTTPException(status_code=404, detail="El archivo físico ya no existe en el servidor")
+    
         
     # Track download and log to audit
     try:
@@ -553,11 +589,22 @@ async def download_document(
     from fastapi.responses import FileResponse
     import urllib.parse
     encoded_filename = urllib.parse.quote(doc.file_name)
+    file_path = doc.file_path
+    import os
+    if "/" not in file_path and "\\" not in file_path:
+        file_path = os.path.join("uploads", tenant_id, file_path)
+        
+    if not os.path.exists(file_path):
+        return HTMLResponse("Archivo no encontrado en el servidor.", status_code=404)
+        
+    preview = request.query_params.get("preview")
+    disp = "inline" if preview else "attachment"
+    
     return FileResponse(
-        path=doc.file_path,
+        path=file_path,
         media_type=doc.mime_type,
-        filename=doc.file_name,
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
+        filename=doc.file_name if not preview else None,
+        content_disposition_type=disp
     )
 
 @router.get("/api/v1/documents/explorer", response_class=HTMLResponse)
@@ -574,7 +621,7 @@ async def explorer_view(
     cookie = request.cookies.get("sessionId")
     if not cookie: return HTMLResponse("No autorizado", status_code=401)
     try: session_data = session_signer.loads(cookie, max_age=86400)
-    except: return HTMLResponse("Sesi��n inv��lida", status_code=401)
+    except: return HTMLResponse("Sesiï¿½ï¿½n invï¿½ï¿½lida", status_code=401)
     
     tenant_id = session_data.get("tenant_id")
     user_id = session_data.get("user_id")
@@ -588,7 +635,11 @@ async def explorer_view(
     
     # Base query for FTS
     base_query = """
-        SELECT d.id, d.file_name, d.status, d.created_at, d.thumbnail_path, d.mime_type, d.file_size_bytes, g.name as group_name
+        SELECT d.id, d.file_name, d.status, d.created_at, d.thumbnail_path, d.mime_type, d.file_size_bytes, g.name as group_name,
+        (SELECT json_agg(json_build_object('nombre', em.nombre, 'color_fondo', em.color_fondo, 'color_texto', em.color_texto))
+         FROM documento_etiquetas de
+         JOIN etiquetas_maestras em ON de.id_etiqueta = em.id_etiqueta
+         WHERE de.id_documento = d.id) as tags
         FROM documents d
         LEFT JOIN groups g ON d.group_id = g.id
         WHERE d.tenant_id = :t
@@ -620,8 +671,14 @@ async def explorer_view(
         params["status"] = status
         
     if q:
-        base_query += " AND d.fts_vector @@ plainto_tsquery('spanish', :q)"
+        base_query += """ AND (
+            d.fts_vector @@ websearch_to_tsquery('spanish', :q)
+            OR d.file_name ILIKE :q_wild
+            OR g.name ILIKE :q_wild
+            OR d.mime_type ILIKE :q_wild
+        )"""
         params["q"] = q
+        params["q_wild"] = f"%{q}%"
         
     # Order by
     if sort == "asc":
@@ -636,10 +693,24 @@ async def explorer_view(
     params["limit"] = limit
     params["offset"] = offset
     
+    import json
     result = await db.execute(text(base_query), params)
-    docs = result.fetchall()
+    rows = result.fetchall()
     
-    return templates.TemplateResponse(request=request, name="components/explorer.html", context={
+    docs = []
+    for row in rows:
+        d = dict(row._mapping)
+        if d.get("tags") and isinstance(d["tags"], str):
+            try:
+                d["tags"] = json.loads(d["tags"])
+            except:
+                d["tags"] = []
+        elif not d.get("tags"):
+            d["tags"] = []
+        docs.append(d)
+    
+    template_name = "components/explorer_results.html" if request.headers.get("hx-target") == "explorer-results" else "components/explorer.html"
+    return templates.TemplateResponse(request=request, name=template_name, context={
         "request": request,
         "docs": docs,
         "view": view,
@@ -663,7 +734,7 @@ async def document_drawer(
     cookie = request.cookies.get("sessionId")
     if not cookie: return HTMLResponse("No autorizado", status_code=401)
     try: session_data = session_signer.loads(cookie, max_age=86400)
-    except: return HTMLResponse("Sesi��n inv��lida", status_code=401)
+    except: return HTMLResponse("Sesiï¿½ï¿½n invï¿½ï¿½lida", status_code=401)
     
     tenant_id = session_data.get("tenant_id")
     user_id = session_data.get("user_id")
@@ -688,7 +759,15 @@ async def document_drawer(
     if hierarchy != 99:
         user_groups = get_user_groups(tenant_id, user_id)
         if doc.group_id not in user_groups:
-             return HTMLResponse("Acceso denegado", status_code=403)
+            task_check_q = text("""
+                SELECT 1 FROM tareas_asignaciones 
+                WHERE id_documento = :did 
+                AND (asignado_a = :uid OR asignado_por = :uid)
+                LIMIT 1
+            """)
+            task_res = await db.execute(task_check_q, {"did": doc_id, "uid": user_id})
+            if not task_res.fetchone():
+                 return HTMLResponse("Acceso denegado", status_code=403)
              
     can_edit = check_permission(tenant_id, role_id, "documentos:editar")
     
@@ -829,15 +908,15 @@ async def asignar_documento(
     db: AsyncSession = Depends(get_db_session)
 ):
     """
-    Endpoint de Transacción Dual:
+    Endpoint de TransacciÃ³n Dual:
     1. Inserta en la DB (tareas_asignaciones).
     2. Dispara evento a Novu.
     """
-    # Este endpoint debería recibir un body (JSON o Form) con los detalles.
+    # Este endpoint deberÃ­a recibir un body (JSON o Form) con los detalles.
     # Como es un POST desde HTMX, probablemente sea un form.
     form_data = await request.form()
     asignado_a = form_data.get("asignado_a")
-    etiqueta_accion = form_data.get("etiqueta_accion", "Revisión General")
+    etiqueta_accion = form_data.get("etiqueta_accion", "RevisiÃ³n General")
     tiempo_respuesta = form_data.get("tiempo_respuesta_esperado")
     
     if not asignado_a or not tiempo_respuesta:
@@ -864,6 +943,13 @@ async def asignar_documento(
                 "tiempo_respuesta": tiempo_respuesta
             }
         )
+        
+        # Actualizar assigned_user_id para que el RLS le de permisos de lectura al asignado
+        await db.execute(
+            text("UPDATE documents SET assigned_user_id = :uid WHERE id = :did"),
+            {"uid": asignado_a, "did": doc_id}
+        )
+        
         await db.commit()
     except Exception as e:
         await db.rollback()
@@ -872,7 +958,7 @@ async def asignar_documento(
     # 2. Trigger Novu
     from app.services.novu_client import novu_client
     
-    # Podríamos buscar el nombre del remitente y del doc, pero usaremos dummies para el MVP
+    # PodrÃ­amos buscar el nombre del remitente y del doc, pero usaremos dummies para el MVP
     payload = {
         "remitente_nombre": "Auditor Asignador", 
         "documento_titulo": f"Documento {doc_id}",
@@ -883,13 +969,13 @@ async def asignar_documento(
     }
     
     # Disparamos sin bloquear el response
-    # En producción usaríamos un BackgroundTask
+    # En producciÃ³n usarÃ­amos un BackgroundTask
     import asyncio
     asyncio.create_task(
         novu_client.trigger_event("WORKFLOW_DOCUMENTO_ASIGNADO", asignado_a, payload)
     )
     
-    return HTMLResponse("<div class='text-green-500 p-2 bg-green-50 rounded'>Documento asignado y notificación enviada correctamente.</div>")
+    return HTMLResponse("<div class='text-green-500 p-2 bg-green-50 rounded'>Documento asignado y notificaciÃ³n enviada correctamente.</div>")
 
 import os
 import uuid
@@ -949,24 +1035,111 @@ async def upload_inicial_documento(
     # 3. Insert into documents as DRAFT
     mime = archivo.content_type or "application/octet-stream"
     file_hash = hashlib.sha256(content).hexdigest()
+
+    # GENERATE THUMBNAIL & FAST ROUTE
+    thumb_dir = os.path.join(upload_dir, "thumbnails")
+    os.makedirs(thumb_dir, exist_ok=True)
+    thumbnail_path = None
+    fast_route_text = None
+    final_status = "PENDING"
+    
+    thumb_filename = f"thumb_{file_hash}.webp"
+    thumb_full_path = os.path.join(thumb_dir, thumb_filename)
+    thumb_rel_path = f"/api/v1/documents/thumbnail/{tenant_id}/{thumb_filename}"
+    
+    import io
+    if mime == "application/pdf":
+        try:
+            import fitz # PyMuPDF
+            pdf_doc = fitz.open(stream=content, filetype="pdf")
+            if len(pdf_doc) > 0:
+                page = pdf_doc.load_page(0)
+                pix = page.get_pixmap(matrix=fitz.Matrix(0.5, 0.5))
+                from PIL import Image
+                mode = "RGBA" if pix.alpha else "RGB"
+                img = Image.frombytes(mode, [pix.width, pix.height], pix.samples)
+                if mode == "RGBA":
+                    bg = Image.new("RGB", img.size, (255, 255, 255))
+                    bg.paste(img, mask=img.split()[3])
+                    img = bg
+                img.thumbnail((300, 400))
+                img.save(thumb_full_path, "WEBP", quality=70)
+                thumbnail_path = thumb_rel_path
+                
+            text_blocks = []
+            for page in pdf_doc:
+                text_blocks.append(page.get_text())
+            fast_route_text = "\n".join(text_blocks).strip()
+            if fast_route_text:
+                final_status = "PENDING" # modal still requires PENDING
+        except Exception as e:
+            print(f"Error PDF routing/thumbnail: {e}")
+            
+    elif mime in ["image/jpeg", "image/png", "image/webp"]:
+        try:
+            from PIL import Image
+            img = Image.open(io.BytesIO(content))
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            img.thumbnail((300, 400))
+            img.save(thumb_full_path, "WEBP", quality=70)
+            thumbnail_path = thumb_rel_path
+        except Exception as e:
+            print(f"Error image thumbnail: {e}")
+
+
     query = text("""
-        INSERT INTO documents (id, tenant_id, group_id, file_name, file_path, uploaded_by, status, is_private, mime_type, file_size_bytes, file_hash)
-        VALUES (:id, :t, :gid, :fn, :path, :uid, 'PENDING', FALSE, :mime, :size, :hash)
+        INSERT INTO documents (id, tenant_id, group_id, file_name, file_path, uploaded_by, status, is_private, mime_type, file_size_bytes, file_hash, thumbnail_path, extracted_text)
+        VALUES (:id, :t, :gid, :fn, :path, :uid, 'PENDING', FALSE, :mime, :size, :hash, :thumb, :text)
         RETURNING id
     """)
     doc_id = str(uuid.uuid4())
-    await db.execute(query, {
-        "id": doc_id,
-        "t": tenant_id,
-        "gid": group_id,
-        "fn": safe_name,
-        "path": disk_filename,
-        "uid": user_id,
-        "mime": mime,
-        "size": file_size,
-        "hash": file_hash
-    })
-    await db.commit()
+    from sqlalchemy.exc import IntegrityError
+    try:
+        await db.execute(query, {
+            "id": doc_id,
+            "t": tenant_id,
+            "gid": group_id,
+            "fn": safe_name,
+            "path": disk_filename,
+            "uid": user_id,
+            "mime": mime,
+            "size": file_size,
+            "hash": file_hash,
+            "thumb": thumbnail_path,
+            "text": fast_route_text
+        })
+    except IntegrityError as e:
+        await db.rollback()
+        if "uq_tenant_file_hash" in str(e.orig):
+            # Fetch the existing document info
+            dup_query = text("""
+                SELECT d.id, d.file_name, d.created_at, u.username
+                FROM documents d
+                LEFT JOIN users u ON d.uploaded_by = u.id
+                WHERE d.file_hash = :hash AND d.tenant_id = :t
+                LIMIT 1
+            """)
+            dup_res = await db.execute(dup_query, {"hash": file_hash, "t": tenant_id})
+            dup_doc = dup_res.fetchone()
+            
+            if dup_doc:
+                return templates.TemplateResponse(request=request, name="modals/duplicate_modal.html", context={
+                    "request": request,
+                    "document_name": safe_name,
+                    "existing_id": dup_doc.id,
+                    "existing_name": dup_doc.file_name,
+                    "existing_date": dup_doc.created_at.strftime("%d %b, %Y %H:%M") if dup_doc.created_at else "Desconocida",
+                    "existing_uploader": dup_doc.username or "Sistema"
+                })
+            else:
+                import json
+                response = HTMLResponse(content="")
+                response.headers["HX-Trigger"] = json.dumps({
+                    "alertaError": {"mensaje": "Documento duplicado."}
+                })
+                return response
+        raise e
     
     # 3. Fetch tags, users, groups for the modal
     tags_res = await db.execute(text("SELECT id_etiqueta, nombre FROM etiquetas_maestras WHERE estado_activa = TRUE ORDER BY nombre"))
@@ -977,6 +1150,8 @@ async def upload_inicial_documento(
     
     groups_res = await db.execute(text("SELECT id, name FROM groups WHERE tenant_id = :t ORDER BY name"), {"t": tenant_id})
     grupos = groups_res.all()
+    
+    await db.commit()
     
     return templates.TemplateResponse(request=request, name="modals/routing_modal.html", context={
         "request": request,
@@ -1007,26 +1182,25 @@ async def finalizar_enrutamiento(
     asignado_usuario_id = None if not asignado_usuario_id or asignado_usuario_id.strip() == "" else asignado_usuario_id
     asignado_grupo_id = None if not asignado_grupo_id or asignado_grupo_id.strip() == "" else asignado_grupo_id
     
-    async with db.begin():
+    try:
         # Validate rules
         if not es_privado:
             if asignado_usuario_id == current_user_id:
-                raise HTTPException(status_code=400, detail="Fallo de Integridad: No puede auto-asignarse un documento de revisión.")
+                raise HTTPException(status_code=400, detail="Fallo de Integridad: No puede auto-asignarse un documento de revisiÃ³n.")
             if not asignado_usuario_id and not asignado_grupo_id:
                 raise HTTPException(status_code=400, detail="Debe asignar el documento a un usuario o grupo.")
                 
         # 2. Update Document
-        estado_nuevo = "PRIVADO" if es_privado else "OCR_PENDING"
-        # Since group_id exists in our schema, but we added assigned_user_id
+        # REMOVED status update because 'PRIVADO' and 'OCR_PENDING' violate the documents_status_check constraint
+        # The document is already in 'PENDING' or 'COMPLETED' (from fast route) and is_private boolean handles privacy.
         await db.execute(text("""
             UPDATE documents 
-            SET is_private = :priv, assigned_user_id = :u_id, group_id = :g_id, status = :estado
+            SET is_private = :priv, assigned_user_id = :u_id, group_id = :g_id
             WHERE id = :id AND tenant_id = :t
         """), {
             "priv": es_privado, 
             "u_id": asignado_usuario_id if asignado_usuario_id else None, 
-            "g_id": asignado_grupo_id if asignado_grupo_id else None, 
-            "estado": estado_nuevo, 
+            "g_id": asignado_grupo_id if asignado_grupo_id else None,
             "id": documento_id,
             "t": tenant_id
         })
@@ -1046,21 +1220,165 @@ async def finalizar_enrutamiento(
             # NOVU trigger mock...
             
         # Shadow Log
-        await db.execute(text("""
-            INSERT INTO audit_rbac_logs (tenant_id, user_id, action, target_resource, target_id, ip_address, user_agent, details)
-            VALUES (:t, :uid, 'DOCUMENTO_INGRESADO_Y_ENRUTADO', 'documents', :d_id, '127.0.0.1', 'System', :det)
-        """), {
-            "t": tenant_id,
-            "uid": current_user_id,
-            "d_id": str(documento_id),
-            "det": json.dumps({"is_private": es_privado, "assigned_to": asignado_usuario_id})
-        })
+        from app.rbac import log_audit_action
+        await log_audit_action(
+            db=db,
+            tenant_id=tenant_id,
+            user_id=current_user_id,
+            action='DOCUMENTO_INGRESADO_Y_ENRUTADO',
+            target_id=str(documento_id),
+            details={"is_private": es_privado, "assigned_to": asignado_usuario_id}
+        )
         
         # 5. Background Task
-        if not es_privado:
-            background_tasks.add_task(iniciar_extraccion_ocr, documento_id)
+        # REMOVED if not es_privado: ALL documents (private or not) must run through OCR
+        # otherwise they stay in PENDING forever and user cannot search their contents.
+        background_tasks.add_task(iniciar_extraccion_ocr, documento_id)
             
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise e
+        
     response = HTMLResponse(content="")
-    response.headers["HX-Trigger"] = json.dumps({"toastExito": {"mensaje": "Documento cargado y enrutado exitosamente."}})
+    response.headers["HX-Trigger"] = json.dumps({
+        "toastExito": {"mensaje": "Documento cargado y enrutado exitosamente."},
+        "reloadRecent": "",
+        "reloadExplorer": ""
+    })
     return response
 
+
+
+
+
+
+@router.get("/api/v1/documentos/{doc_id}/reasignar/ui", response_class=HTMLResponse)
+async def get_reasignar_modal(doc_id: str, request: Request, db: AsyncSession = Depends(get_db_session)):
+    user_id = getattr(request.state, "user_id", None)
+    if not user_id: return HTMLResponse("")
+    
+    # Obtener grupos
+    res_grupos = await db.execute(text("SELECT id, name FROM roles WHERE name != 'Admin'"))
+    grupos = [dict(r._mapping) for r in res_grupos.fetchall()]
+    
+    res_usuarios = await db.execute(text("SELECT id, username, role_id FROM users WHERE role_id IS NOT NULL"))
+    all_users = res_usuarios.fetchall()
+    
+    for g in grupos:
+        g['id'] = str(g['id'])
+        g['usuarios'] = [{"id": str(u.id), "username": u.username} for u in all_users if str(u.role_id) == g['id']]
+        
+    # Obtener etiquetas maestras (RBAC simulado: todas activas)
+    res_etiquetas = await db.execute(text("SELECT id_etiqueta, nombre, color_fondo, color_texto FROM etiquetas_maestras WHERE estado_activa = TRUE"))
+    etiquetas = res_etiquetas.fetchall()
+    
+    from datetime import datetime
+    fecha_hoy = datetime.now().strftime('%Y-%m-%d')
+    
+    return templates.TemplateResponse(request=request, name="modals/reasignar_modal.html", context={
+        "documento_id": doc_id,
+        "grupos": grupos,
+        "etiquetas": etiquetas,
+        "fecha_hoy": fecha_hoy
+    })
+
+@router.post("/api/v1/documentos/{doc_id}/reasignar", response_class=HTMLResponse)
+async def post_reasignar(
+    doc_id: str, 
+    request: Request,
+    destinatario_id: str = Form(...),
+    etiqueta_id: str = Form(...),
+    fecha_limite: str = Form(...),
+    mensaje: str = Form(""),
+    db: AsyncSession = Depends(get_db_session)
+):
+    user_id = getattr(request.state, "user_id", None)
+    tenant_id = getattr(request.state, "tenant_id", None)
+    if not user_id: return HTMLResponse("No autorizado", status_code=401)
+    
+    try:
+        # Transaccion ACID - The user specified logic exactly:
+        # PASO 1: Cerrar tareas previas
+        await db.execute(text("""
+            UPDATE tareas_asignaciones 
+            SET estado_tarea = 'Reasignado', fecha_cierre = CURRENT_TIMESTAMP 
+            WHERE id_documento = :did AND estado_tarea IN ('Pendiente', 'En Progreso', 'Vencido')
+        """), {"did": doc_id})
+        
+        from datetime import datetime
+        fecha_obj = datetime.strptime(fecha_limite, "%Y-%m-%d")
+        
+        # PASO 2: Crear nueva tarea
+        res_tarea = await db.execute(text("""
+            INSERT INTO tareas_asignaciones (id_documento, asignado_por, asignado_a, tiempo_respuesta_esperado, estado_tarea, etiqueta_accion)
+            VALUES (:did, :uid, :dest_id, :fecha, 'Pendiente', :etiqueta_id)
+            RETURNING id_asignacion
+        """), {
+            "did": doc_id, 
+            "uid": user_id, 
+            "dest_id": destinatario_id, 
+            "fecha": fecha_obj,
+            "etiqueta_id": etiqueta_id
+        })
+        id_nueva_tarea = res_tarea.scalar()
+        
+        # PASO X: Actualizar el propietario del documento para el RLS
+        await db.execute(text("""
+            UPDATE documents 
+            SET assigned_user_id = :dest_id 
+            WHERE id = :did
+        """), {"dest_id": destinatario_id, "did": doc_id})
+        
+        # PASO 3: Guardar mensaje
+        if mensaje:
+            await db.execute(text("""
+                INSERT INTO tarea_mensajes (id_tarea, remitente_id, cuerpo)
+                VALUES (:id_tarea, :uid, :msg)
+            """), {"id_tarea": id_nueva_tarea, "uid": user_id, "msg": mensaje})
+            
+        # PASO 4: Actualizar etiqueta del documento
+        await db.execute(text("DELETE FROM documento_etiquetas WHERE id_documento = :did"), {"did": doc_id})
+        await db.execute(text("INSERT INTO documento_etiquetas (id_documento, id_etiqueta) VALUES (:did, :eid)"), 
+            {"did": doc_id, "eid": etiqueta_id})
+            
+        # PASO 5: Boveda de auditoria
+        from app.rbac import log_audit_action
+        await log_audit_action(
+            db=db, tenant_id=tenant_id, user_id=user_id,
+            action='DOCUMENTO_REASIGNADO', target_id=str(doc_id),
+            details={
+                "destinatario_id": destinatario_id,
+                "etiqueta_aplicada": etiqueta_id,
+                "fecha_limite_sla": fecha_limite,
+                "mensaje_incluido": bool(mensaje)
+            }
+        )
+        
+        await db.commit()
+        
+        # Disparo Novu asincrono
+        from app.services.novu_client import novu_client
+        await novu_client.trigger_event(
+            event_name="documento_reasignado",
+            user_id=destinatario_id,
+            payload={
+                "mensaje": f"Se te ha reasignado un documento. SLA: {fecha_limite}"
+            }
+        )
+        
+        # Return HTTP 200 with HTMX headers
+        import json
+        headers = {
+            "HX-Trigger": "cerrar-modal-reasignacion",
+            "HX-Trigger-After-Swap": json.dumps({
+                "toastExito": {
+                    "mensaje": "Documento reasignado y asegurado en la bandeja del destinatario."
+                }
+            })
+        }
+        return HTMLResponse(content="", headers=headers)
+        
+    except Exception as e:
+        await db.rollback()
+        raise e

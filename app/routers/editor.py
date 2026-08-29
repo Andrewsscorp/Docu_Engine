@@ -67,12 +67,15 @@ async def generar_vista_editor_htmx(doc_id: str, request: Request, db: AsyncSess
         import time
         collabora_url = f"http://localhost:9980/browser/dist/cool.html?WOPISrc={wopi_src_encoded}&v={int(time.time())}"
         
+        is_pdf = doc.file_name.lower().endswith('.pdf')
+        
         return templates.TemplateResponse(request=request, name="components/editor_modal.html", context={
             "request": request,
             "collabora_url": collabora_url,
             "access_token": token,
             "doc_id": doc_id,
-            "file_name": doc.file_name
+            "file_name": doc.file_name,
+            "is_pdf": is_pdf
         })
     except Exception as e:
         import traceback
@@ -155,6 +158,9 @@ async def wopi_get_file_contents(doc_id: str, access_token: str, db: AsyncSessio
         row_fallback = res_fallback.fetchone()
         if row_fallback:
             file_path = row_fallback[0]
+            if "/" not in file_path and "\\\\" not in file_path:
+                import os
+                file_path = os.path.join("uploads", str(payload["tenant_id"]), file_path)
             
     print(f"WOPI GETFILE FALLBACK RESOLVED PATH: {file_path}")
             
@@ -240,3 +246,47 @@ async def wopi_put_file_contents(doc_id: str, request: Request, access_token: st
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/api/v1/documentos/{doc_id}/view")
+async def view_document_inline(
+    doc_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db_session)
+):
+    from fastapi.responses import FileResponse, HTMLResponse
+    from app.security import session_signer
+    cookie = request.cookies.get("sessionId")
+    if not cookie: return HTMLResponse("No autorizado", status_code=401)
+    try: session_data = session_signer.loads(cookie, max_age=86400)
+    except: return HTMLResponse("Sesin invǭlida", status_code=401)
+    
+    tenant_id = session_data.get("tenant_id")
+    
+    # Intenta obtener la ultima version
+    query = text("SELECT v.file_path, d.file_name FROM document_versions v JOIN documents d ON v.document_id = d.id WHERE v.document_id = :id AND d.tenant_id = :t ORDER BY version_number DESC LIMIT 1")
+    res = await db.execute(query, {"id": doc_id, "t": tenant_id})
+    row = res.fetchone()
+    
+    if not row:
+        query_fallback = text("SELECT file_path, file_name, mime_type FROM documents WHERE id = :id AND tenant_id = :t")
+        res_fallback = await db.execute(query_fallback, {"id": doc_id, "t": tenant_id})
+        row = res_fallback.fetchone()
+        
+    if not row or not row[0]:
+        return HTMLResponse("Documento no encontrado", status_code=404)
+        
+    file_path = row[0]
+    import os
+    if "/" not in file_path and "\\\\" not in file_path:
+        file_path = os.path.join("uploads", str(tenant_id), file_path)
+        
+    import mimetypes
+    mime, _ = mimetypes.guess_type(row[1])
+    if not mime:
+        mime = "application/pdf"
+        
+    if not os.path.exists(file_path):
+        return HTMLResponse(f"El archivo fisico no se encuentra en el servidor: {file_path}", status_code=404)
+        
+    return FileResponse(file_path, media_type=mime, content_disposition_type="inline")
+

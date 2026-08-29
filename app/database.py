@@ -29,6 +29,9 @@ async def get_db_session(request: Request = None) -> AsyncGenerator[AsyncSession
                 user_id = getattr(request.state, "user_id", "")
                 is_superadmin = getattr(request.state, "is_superadmin", False)
 
+            if not tenant_id or str(tenant_id).strip() == "":
+                tenant_id = "22222222-2222-2222-2222-222222222222"
+
             await session.execute(
                 text("SELECT set_config('app.current_tenant', :tenant, false)"), 
                 {"tenant": str(tenant_id)}
