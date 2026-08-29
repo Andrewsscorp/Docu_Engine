@@ -250,6 +250,44 @@ async def get_agn_modal(
     
     return HTMLResponse(html)
 
+
+@router.get("/consecutivo_preview")
+async def get_consecutivo_preview(
+    tenant_id: str = Query(...),
+    seccion_id: str = Query(...),
+    serie_id: str = Query(...),
+    anio: int = Query(...),
+    subseccion_id: str = Query(None),
+    subserie_id: str = Query(None),
+    db: AsyncSession = Depends(get_db_session)
+):
+    subsec = subseccion_id if subseccion_id and subseccion_id.strip() else None
+    subser = subserie_id if subserie_id and subserie_id.strip() else None
+
+    # Query WITHOUT locking just to get the current sequence
+    q = text('''
+        SELECT ultimo_consecutivo 
+        FROM agn_consecutivos 
+        WHERE tenant_id = :tenant 
+          AND seccion_id = :sec 
+          AND serie_id = :ser 
+          AND (subseccion_id = :subsec OR (subseccion_id IS NULL AND :subsec IS NULL))
+          AND (subserie_id = :subser OR (subserie_id IS NULL AND :subser IS NULL))
+          AND anio = :anio 
+    ''')
+    
+    res = await db.execute(q, {
+        "tenant": tenant_id, "sec": seccion_id, "ser": serie_id, 
+        "subsec": subsec, "subser": subser, "anio": anio
+    })
+    row = res.fetchone()
+    
+    if row:
+        return {"next": str(row.ultimo_consecutivo + 1).zfill(3)}
+    else:
+        return {"next": "001"}
+
+
 @router.post("/expedientes")
 async def create_agn_expediente(
     request: Request,
