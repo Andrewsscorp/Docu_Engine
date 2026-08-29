@@ -495,18 +495,36 @@ async def get_crear_seccion_modal(
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1">Código de la Sección</label>
+                    <label class="flex items-center text-xs font-bold text-gray-600 mb-1">Código de la Sección <div class="relative group inline-flex items-center ml-1">
+                            <span class="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 px-2 py-1.5 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100] text-center leading-tight">
+                                Segundo eslabón de clasificación. Debe ser único dentro de este Fondo (Ej. 110).
+                                <div class="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-gray-800"></div>
+                            </div>
+                        </div></label>
                     <input type="text" name="codigo" required placeholder="Ej: 110" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1">Nombre de la Dependencia</label>
+                    <label class="flex items-center text-xs font-bold text-gray-600 mb-1">Nombre de la Dependencia <div class="relative group inline-flex items-center ml-1">
+                            <span class="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 px-2 py-1.5 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100] text-center leading-tight">
+                                Nombre oficial de la oficina o grupo de trabajo que produce los documentos.
+                                <div class="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-gray-800"></div>
+                            </div>
+                        </div></label>
                     <input type="text" name="nombre" required placeholder="Ej: Secretaría de Hacienda" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors">
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div x-data="{{ fileName: '' }}">
-                    <label class="block text-xs font-bold text-gray-600 mb-1">Acto Administrativo y Funciones</label>
+                    <label class="flex items-center text-xs font-bold text-gray-600 mb-1">Acto Administrativo y Funciones <div class="relative group inline-flex items-center ml-1">
+                            <span class="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 px-2 py-1.5 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100] text-center leading-tight">
+                                Ley, decreto o resolución que respalda la creación jurídica de esta oficina. ¡Debe adjuntar el PDF!
+                                <div class="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-gray-800"></div>
+                            </div>
+                        </div></label>
                     <div class="relative">
                         <input type="text" name="acto_administrativo" required placeholder="Resolución de creación..." class="w-full px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors">
                         <label class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 cursor-pointer" title="Adjuntar PDF">
@@ -527,7 +545,13 @@ async def get_crear_seccion_modal(
                     </template>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1">Estado de la Sección</label>
+                    <label class="flex items-center text-xs font-bold text-gray-600 mb-1">Estado de la Sección <div class="relative group inline-flex items-center ml-1">
+                            <span class="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 px-2 py-1.5 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100] text-center leading-tight">
+                                Si la oficina fue liquidada, márquela como Inactiva para bloquear la creación de nuevos expedientes.
+                                <div class="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-gray-800"></div>
+                            </div>
+                        </div></label>
                     <select name="estado" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors appearance-none">
                         <option value="ABIERTO">Activa</option>
                         <option value="CERRADO">Inactiva (Liquidada)</option>
@@ -537,7 +561,7 @@ async def get_crear_seccion_modal(
             
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" onclick="window.openAgnModal()" class="px-5 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancelar</button>
-                <button type="submit" class="px-5 py-2.5 text-sm font-bold text-white bg-[#10b981] hover:bg-[#059669] rounded-lg shadow-sm transition-colors">
+                <button type="submit" @click="if(!$el.form.checkValidity()) $el.form.reportValidity()" class="px-5 py-2.5 text-sm font-bold text-white bg-[#10b981] hover:bg-[#059669] rounded-lg shadow-sm transition-colors">
                     Guardar Sección
                 </button>
             </div>
