@@ -270,7 +270,7 @@ async def get_crear_fondo_modal(
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div x-data="{ fileName: '' }">
+                <div x-data="{{ fileName: '' }}">
                     <div class="flex items-center gap-1.5 mb-1">
                     <label class="block text-xs font-bold text-gray-600">Acto Administrativo</label>
                     <div class="relative group flex items-center">
