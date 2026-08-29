@@ -20,7 +20,7 @@ async def get_agn_modal(
     fondos_res = await db.execute(text("SELECT id, nombre, codigo FROM agn_dependencias WHERE tipo = 'FONDO' AND tenant_id = :t"), {"t": tenant_id})
     fondos = fondos_res.fetchall()
     
-    # Fetch Secciones
+    # Fetch Secciónes
     secciones_res = await db.execute(text("SELECT id, nombre, codigo FROM agn_dependencias WHERE tipo = 'SECCION' AND tenant_id = :t"), {"t": tenant_id})
     secciones = secciones_res.fetchall()
     
@@ -54,19 +54,55 @@ async def get_agn_modal(
             <h3 class="text-md font-bold text-gray-800 mb-3">1. Clasificación Documental (CCD/TRD)</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1">Fondo:</label>
+                    <div class="flex justify-between items-center mb-1">
+                    <label class="block text-sm font-semibold text-gray-600">Fondo:</label>
+                    <div class="flex items-center gap-1">
+                        <button type="button" class="text-[11px] font-semibold text-primary hover:bg-primary/10 px-1.5 py-0.5 rounded transition-colors">Crear</button>
+                        <div class="relative group flex items-center">
+                            <span class="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
+                            <div class="absolute bottom-full right-0 mb-1 w-max px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100]">
+                                Ayuda próximamente
+                                <div class="absolute top-full right-1 border-[3px] border-transparent border-t-gray-800"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                     <select name="fondo" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
                         {"".join([f'<option value="{f.id}">{f.nombre}</option>' for f in fondos])}
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1">Sección:</label>
+                    <div class="flex justify-between items-center mb-1">
+                    <label class="block text-sm font-semibold text-gray-600">Sección:</label>
+                    <div class="flex items-center gap-1">
+                        <button type="button" class="text-[11px] font-semibold text-primary hover:bg-primary/10 px-1.5 py-0.5 rounded transition-colors">Crear</button>
+                        <div class="relative group flex items-center">
+                            <span class="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
+                            <div class="absolute bottom-full right-0 mb-1 w-max px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100]">
+                                Ayuda próximamente
+                                <div class="absolute top-full right-1 border-[3px] border-transparent border-t-gray-800"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                     <select name="seccion" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
                         {"".join([f'<option value="{s.id}">{s.nombre}</option>' for s in secciones])}
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1">Subsección (Opcional):</label>
+                    <div class="flex justify-between items-center mb-1">
+                    <label class="block text-sm font-semibold text-gray-600">Subsección (Opcional):</label>
+                    <div class="flex items-center gap-1">
+                        <button type="button" class="text-[11px] font-semibold text-primary hover:bg-primary/10 px-1.5 py-0.5 rounded transition-colors">Crear</button>
+                        <div class="relative group flex items-center">
+                            <span class="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
+                            <div class="absolute bottom-full right-0 mb-1 w-max px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100]">
+                                Ayuda próximamente
+                                <div class="absolute top-full right-1 border-[3px] border-transparent border-t-gray-800"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                     <select name="subseccion" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
                         <option value="">-- Seleccionar --</option>
                     </select>
@@ -75,13 +111,37 @@ async def get_agn_modal(
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1">Serie:</label>
+                    <div class="flex justify-between items-center mb-1">
+                    <label class="block text-sm font-semibold text-gray-600">Serie:</label>
+                    <div class="flex items-center gap-1">
+                        <button type="button" class="text-[11px] font-semibold text-primary hover:bg-primary/10 px-1.5 py-0.5 rounded transition-colors">Crear</button>
+                        <div class="relative group flex items-center">
+                            <span class="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
+                            <div class="absolute bottom-full right-0 mb-1 w-max px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100]">
+                                Ayuda próximamente
+                                <div class="absolute top-full right-1 border-[3px] border-transparent border-t-gray-800"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                     <select name="serie" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
                         {"".join([f'<option value="{s.id}">{s.nombre}</option>' for s in series])}
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1">Subserie (Opcional):</label>
+                    <div class="flex justify-between items-center mb-1">
+                    <label class="block text-sm font-semibold text-gray-600">Subserie (Opcional):</label>
+                    <div class="flex items-center gap-1">
+                        <button type="button" class="text-[11px] font-semibold text-primary hover:bg-primary/10 px-1.5 py-0.5 rounded transition-colors">Crear</button>
+                        <div class="relative group flex items-center">
+                            <span class="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
+                            <div class="absolute bottom-full right-0 mb-1 w-max px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100]">
+                                Ayuda próximamente
+                                <div class="absolute top-full right-1 border-[3px] border-transparent border-t-gray-800"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                     <select name="subserie" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
                         <option value="">-- Seleccionar --</option>
                         {"".join([f'<option value="{s.id}">{s.nombre}</option>' for s in subseries])}
