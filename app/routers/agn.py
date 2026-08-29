@@ -403,14 +403,14 @@ async def create_agn_fondo(
     
     # Audit Logging
     audit_q = text("""
-        INSERT INTO audit_rbac_logs (accion, usuario_id, ip_origen, detalles)
-        VALUES (:accion, :user_id, :ip, :detalles)
+        INSERT INTO audit_rbac_logs (tenant_id, action, performed_by_user_id, details)
+        VALUES (:tenant, :action, :user_id, :details)
     """)
     await db.execute(audit_q, {
-        "accion": "CREAR_FONDO_AGN",
+        "tenant": tenant_id,
+        "action": "CREAR_FONDO_AGN",
         "user_id": user_id,
-        "ip": ip_address,
-        "detalles": json.dumps({"fondo_id": new_id, "codigo": codigo, "nombre": nombre, "estado": estado})
+        "details": json.dumps({"ip_origen": ip_address, "fondo_id": new_id, "codigo": codigo, "nombre": nombre, "estado": estado})
     })
     
     await db.commit()
@@ -458,14 +458,15 @@ async def cerrar_fondo(
     
     # Audit Logging for this critical action
     audit_q = text('''
-        INSERT INTO audit_rbac_logs (accion, usuario_id, ip_origen, detalles)
-        VALUES (:accion, :user_id, :ip, :detalles)
+        INSERT INTO audit_rbac_logs (tenant_id, action, target_id, performed_by_user_id, details)
+        VALUES (:tenant, :action, :target_id, :user_id, :details)
     ''')
     await db.execute(audit_q, {
-        "accion": "CERRAR_FONDO_AGN",
+        "tenant": tenant_id,
+        "action": "CERRAR_FONDO_AGN",
+        "target_id": fondo_id,
         "user_id": user_id,
-        "ip": ip_address,
-        "detalles": json.dumps({"fondo_id": fondo_id, "fecha_cierre": payload.fecha_cierre, "soporte": payload.soporte_cierre})
+        "details": json.dumps({"ip_origen": ip_address, "fecha_cierre": payload.fecha_cierre, "soporte": payload.soporte_cierre})
     })
     
     await db.commit()
