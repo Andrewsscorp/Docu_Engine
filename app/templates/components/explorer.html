@@ -193,7 +193,33 @@
 
         
           
-          window.openCrearFondoModal = function() {
+          
+            window.openCrearSeccionModal = function() {
+                const fondoSelect = document.getElementById('fondo_select');
+                const fondoId = fondoSelect ? fondoSelect.value : null;
+                if (!fondoId) {
+                    Swal.fire('Atención', 'Debe crear y seleccionar un Fondo Documental Padre primero.', 'warning');
+                    return;
+                }
+                Swal.fire({
+                    width: '600px',
+                    padding: 0,
+                    showConfirmButton: false,
+                    customClass: { popup: 'rounded-2xl overflow-hidden' },
+                    didOpen: () => {
+                        Swal.showLoading();
+                        fetch('/api/v1/agn/modal/seccion?fondo_id=' + fondoId)
+                            .then(r => r.text())
+                            .then(html => {
+                                Swal.getPopup().innerHTML = html;
+                                if (window.htmx) { htmx.process(Swal.getPopup()); }
+                                if (window.Alpine) { Alpine.initTree(Swal.getPopup()); }
+                            });
+                    }
+                });
+            };
+
+            window.openCrearFondoModal = function() {
               Swal.fire({
                   width: '600px',
                   padding: 0,

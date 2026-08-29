@@ -79,7 +79,7 @@ async def get_agn_modal(
                     <div class="flex justify-between items-center mb-1">
                     <label class="block text-sm font-semibold text-gray-600">Sección:</label>
                     <div class="flex items-center gap-1">
-                        <button type="button" class="text-[11px] font-semibold text-primary hover:bg-primary/10 px-1.5 py-0.5 rounded transition-colors">Crear</button>
+                        <button type="button" onclick="window.openCrearSeccionModal()" class="text-[11px] font-semibold text-primary hover:bg-primary/10 px-1.5 py-0.5 rounded transition-colors">Crear</button>
                         <div class="relative group flex items-center">
                             <span class="flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-400 text-gray-400 text-[9px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
                             <div class="absolute bottom-full right-0 mb-1 w-max px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100]">
@@ -453,3 +453,157 @@ async def cerrar_fondo(
     await db.commit()
     
     return JSONResponse({"status": "success", "message": "El Fondo Documental ha sido clausurado legalmente y preservado."})
+
+
+@router.get("/modal/seccion")
+async def get_crear_seccion_modal(
+    request: Request,
+    fondo_id: str,
+    session_data: dict = Depends(require_permission("documentos:crear")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    fondo_res = await db.execute(text("SELECT nombre, codigo FROM agn_dependencias WHERE id = :id AND tipo = 'FONDO'"), {"id": fondo_id})
+    fondo = fondo_res.fetchone()
+    fondo_text = f"{fondo.nombre} (Código: {fondo.codigo})" if fondo else "Fondo Desconocido"
+    
+    html = f'''
+    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
+        <div class="flex items-center gap-3">
+            <button type="button" onclick="window.openAgnModal()" class="text-[#4f46e5] hover:text-[#4338ca] hover:bg-indigo-50 p-1.5 rounded-md transition-colors" title="Volver al Expediente">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            </button>
+            <h2 class="text-xl font-bold text-[#1e293b] font-sans uppercase">Crear Nueva Sección (Dependencia)</h2>
+        </div>
+        <button type="button" onclick="Swal.close()" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    </div>
+    <div class="p-6 bg-[#f8fafc]">
+        <form id="crear-seccion-form" hx-post="/api/v1/agn/secciones" hx-encoding="multipart/form-data" hx-swap="none" @htmx:after-request.camel="if($event.detail.successful) {{ Swal.fire({{title: '¡Sección Creada!', text: 'Guardado exitosamente', icon: 'success', timer: 1500, showConfirmButton: false}}).then(() => {{ window.openAgnModal(); }}) }}" @htmx:response-error.camel="Swal.fire('Error', JSON.parse($event.detail.xhr.response).detail || 'Ocurrió un error al guardar', 'error')">
+            <input type="hidden" name="fondo_id" value="{fondo_id}">
+            
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-gray-600 mb-1">Fondo Documental Padre</label>
+                <div class="relative">
+                    <input type="text" readonly value="{fondo_text}" class="w-full px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-gray-100 text-gray-500 font-medium select-none outline-none">
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    </div>
+                </div>
+                <p class="text-[10px] text-gray-500 mt-1 font-semibold">Este campo es heredado y no puede ser modificado.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Código de la Sección</label>
+                    <input type="text" name="codigo" required placeholder="Ej: 110" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Nombre de la Dependencia</label>
+                    <input type="text" name="nombre" required placeholder="Ej: Secretaría de Hacienda" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div x-data="{{ fileName: '' }}">
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Acto Administrativo y Funciones</label>
+                    <div class="relative">
+                        <input type="text" name="acto_administrativo" required placeholder="Resolución de creación..." class="w-full px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors">
+                        <label class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 cursor-pointer" title="Adjuntar PDF">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                            <input type="file" required x-ref="fileInput" name="archivo_acto" class="hidden" accept=".pdf" @change="fileName = $refs.fileInput.files[0] ? $refs.fileInput.files[0].name : ''">
+                        </label>
+                    </div>
+                    <template x-if="fileName">
+                        <div class="mt-2 flex items-center justify-between px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded text-xs text-indigo-700 shadow-sm">
+                            <div class="flex items-center gap-2 truncate">
+                                <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <span x-text="fileName" class="truncate font-medium"></span>
+                            </div>
+                            <button type="button" @click="$refs.fileInput.value = ''; fileName = ''" class="ml-2 text-indigo-400 hover:text-red-500 focus:outline-none">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Estado de la Sección</label>
+                    <select name="estado" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors appearance-none">
+                        <option value="ABIERTO">Activa</option>
+                        <option value="CERRADO">Inactiva (Liquidada)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="window.openAgnModal()" class="px-5 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancelar</button>
+                <button type="submit" class="px-5 py-2.5 text-sm font-bold text-white bg-[#10b981] hover:bg-[#059669] rounded-lg shadow-sm transition-colors">
+                    Guardar Sección
+                </button>
+            </div>
+        </form>
+    </div>
+    '''
+    return HTMLResponse(content=html)
+
+
+@router.post("/secciones")
+async def create_agn_seccion(
+    request: Request,
+    fondo_id: str = Form(...),
+    codigo: str = Form(...),
+    nombre: str = Form(...),
+    acto_administrativo: str = Form(...),
+    estado: str = Form(...),
+    archivo_acto: UploadFile = File(...),
+    session_data: dict = Depends(require_permission("documentos:crear")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    tenant_id = session_data["tenant_id"]
+    user_id = session_data["user_id"]
+    ip_address = request.client.host
+
+    codigo = codigo.strip().upper()
+    nombre = nombre.strip().upper()
+
+    check_q = text("SELECT id FROM agn_dependencias WHERE tenant_id = :t AND parent_id = :p AND codigo = :c")
+    existing = await db.execute(check_q, {"t": tenant_id, "p": fondo_id, "c": codigo})
+    if existing.fetchone():
+        raise HTTPException(status_code=400, detail="El código de Sección ya existe para este Fondo.")
+
+    archivo_url = None
+    if archivo_acto and archivo_acto.filename:
+        archivo_url = f"/uploads/{archivo_acto.filename}"
+
+    insert_q = text("""
+        INSERT INTO agn_dependencias (tenant_id, codigo, nombre, tipo, parent_id, acto_administrativo, archivo_acto_url, estado)
+        VALUES (:tenant, :codigo, :nombre, 'SECCION', :fondo_id, :acto, :archivo, :estado)
+        RETURNING id
+    """)
+    result = await db.execute(insert_q, {
+        "tenant": tenant_id,
+        "codigo": codigo,
+        "nombre": nombre,
+        "fondo_id": fondo_id,
+        "acto": acto_administrativo,
+        "archivo": archivo_url,
+        "estado": estado
+    })
+    new_id = str(result.scalar())
+
+    import json
+    audit_q = text("""
+        INSERT INTO audit_rbac_logs (tenant_id, action, target_id, performed_by_user_id, details)
+        VALUES (:tenant, :action, :target_id, :user_id, :details)
+    """)
+    await db.execute(audit_q, {
+        "tenant": tenant_id,
+        "action": "CREAR_SECCION_AGN",
+        "target_id": new_id,
+        "user_id": user_id,
+        "details": json.dumps({"ip_origen": ip_address, "fondo_id": fondo_id, "codigo": codigo, "nombre": nombre, "estado": estado})
+    })
+
+    await db.commit()
+    return {"status": "success", "id": new_id}
+
