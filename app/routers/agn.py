@@ -27,6 +27,11 @@ async def get_agn_modal(
     # Fetch Secciónes
     secciones_res = await db.execute(text("SELECT id, nombre, codigo FROM agn_dependencias WHERE tipo = 'SECCION' AND tenant_id = :t"), {"t": tenant_id})
     secciones = secciones_res.fetchall()
+
+    # Fetch Subsecciones
+    subsecciones_res = await db.execute(text("SELECT id, nombre, codigo FROM agn_dependencias WHERE tipo = 'SUBSECCION' AND tenant_id = :t"), {"t": tenant_id})
+    subsecciones = subsecciones_res.fetchall()
+
     
     # Fetch Series
     series_res = await db.execute(text("SELECT id, nombre, codigo FROM agn_series WHERE tenant_id = :t"), {"t": tenant_id})
@@ -109,6 +114,7 @@ async def get_agn_modal(
                 </div>
                     <select name="subseccion" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
                         <option value="">-- Seleccionar --</option>
+                        {"".join([f'<option value="{s.id}">{s.nombre}</option>' for s in subsecciones])}
                     </select>
                 </div>
             </div>
