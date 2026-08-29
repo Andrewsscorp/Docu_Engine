@@ -75,7 +75,7 @@
                                 <div x-show="menuOpen" x-transition.opacity class="absolute right-0 bottom-full mb-2 w-40 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50 text-sm overflow-hidden" style="display: none;">
                                     {% if can_reassign %}
                                     <!-- Mover Button -->
-                                    <button @click.stop="menuOpen = false; Swal.fire({title: 'Mover Documento', text: 'Arrastra este documento hacia una carpeta en la parte superior.', icon: 'info'});" class="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2 font-medium">
+                                    <button @click.stop="menuOpen = false; openMoveModal('{{ doc.id }}');" class="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2 font-medium">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
                                         Mover
                                     </button>
