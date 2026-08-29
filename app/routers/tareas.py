@@ -109,12 +109,20 @@ async def obtener_bandeja_asignaciones(
         query_str += " AND d.file_name ILIKE :q "
         params["q"] = f"%{q}%"
         
+    import datetime
     if fecha_inicio:
-        query_str += " AND ta.fecha_asignacion >= :fi "
-        params["fi"] = fecha_inicio + " 00:00:00"
+        try:
+            params["fi"] = datetime.datetime.strptime(fecha_inicio, "%Y-%m-%d")
+            query_str += " AND ta.fecha_asignacion >= :fi "
+        except Exception:
+            pass
+            
     if fecha_fin:
-        query_str += " AND ta.fecha_asignacion <= :ff "
-        params["ff"] = fecha_fin + " 23:59:59"
+        try:
+            params["ff"] = datetime.datetime.strptime(fecha_fin + " 23:59:59", "%Y-%m-%d %H:%M:%S")
+            query_str += " AND ta.fecha_asignacion <= :ff "
+        except Exception:
+            pass
 
     if estado == 'enviadas':
         query_str += " ORDER BY ta.fecha_asignacion DESC "
