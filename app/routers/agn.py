@@ -434,6 +434,25 @@ async def create_agn_expediente(
         VALUES (:exp, 'APERTURA_EXPEDIENTE', :uid, :hash)
     '''), {"exp": exp_id, "uid": session_data['user_id'], "hash": xml_hash})
     
+    # Inserción en Log de Auditoría Legal (No Repudio)
+    import json
+    client_ip = request.client.host if request.client and request.client.host else "127.0.0.1"
+    payload_legal = {
+        "trd_confirmada": True if confirmTrd else False,
+        "acepta_inmutabilidad": True if confirmImmutable else False,
+        "user_agent": request.headers.get("user-agent", "Unknown")
+    }
+    
+    await db.execute(text('''
+        INSERT INTO log_auditoria_sgdea (id_expediente, id_usuario, tipo_evento, ip_origen, payload_legal)
+        VALUES (:exp_id, :usr_id, 'CREACION_EXPEDIENTE', :ip, :payload)
+    '''), {
+        "exp_id": exp_id, 
+        "usr_id": session_data['user_id'], 
+        "ip": client_ip, 
+        "payload": json.dumps(payload_legal)
+    })
+    
     await db.commit()
     
     return JSONResponse({"status": "success", "message": "Expediente electrónico creado.", "codigo_expediente": codigo_final})
