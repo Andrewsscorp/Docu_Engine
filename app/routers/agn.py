@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api/v1/agn", tags=["agn"])
 @router.get("/modal")
 async def get_agn_modal(
     request: Request,
-    session_data: dict = Depends(require_permission("documentos:subir")),
+    session_data: dict = Depends(require_permission("documentos:crear")),
     db: AsyncSession = Depends(get_db_session)
 ):
     tenant_id = session_data["tenant_id"]
@@ -208,7 +208,7 @@ async def get_agn_modal(
 @router.post("/expedientes")
 async def create_agn_expediente(
     request: Request,
-    session_data: dict = Depends(require_permission("documentos:subir")),
+    session_data: dict = Depends(require_permission("documentos:crear")),
     db: AsyncSession = Depends(get_db_session)
 ):
     return JSONResponse({"status": "success", "message": "Expediente electrónico creado y registrado en el índice."})
