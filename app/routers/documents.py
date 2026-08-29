@@ -1385,12 +1385,11 @@ async def post_reasignar(
 
 @router.post("/api/v1/folders")
 async def create_folder(
-    request: Request, 
+    request: Request,
+    session_data: dict = Depends(require_permission("documentos:subir")),
     db: AsyncSession = Depends(get_db_session)
 ):
-    uid, session_data, response = await require_permission(request, db, "documentos:subir")
-    if not uid:
-        return response
+    uid = session_data["user_id"]
     
     tenant_id = session_data["tenant_id"]
     form_data = await request.form()
@@ -1421,11 +1420,10 @@ async def create_folder(
 async def move_document(
     doc_id: str,
     request: Request,
+    session_data: dict = Depends(require_permission("documentos:editar")),
     db: AsyncSession = Depends(get_db_session)
 ):
-    uid, session_data, response = await require_permission(request, db, "documentos:editar")
-    if not uid:
-        return response
+    uid = session_data["user_id"]
         
     form_data = await request.form()
     folder_id = form_data.get("folder_id")
