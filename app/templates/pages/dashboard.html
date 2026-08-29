@@ -475,7 +475,7 @@
             processTab('rechazados');
             
             this.counts.total = unreadIds.size;
-            window.dispatchEvent(new CustomEvent('update-sidebar-counts', { detail: totalUnread }));
+            window.dispatchEvent(new CustomEvent('update-sidebar-counts', { detail: unreadIds.size }));
         }
     }"
     x-init="
