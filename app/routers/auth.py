@@ -391,9 +391,14 @@ async def get_dashboard(request: Request, db: AsyncSession = Depends(get_db_sess
             <!-- AlpineJS Badge for Unread Notifications -->
               <div x-data="{ total: 0 }" 
                    @update-sidebar-counts.window="total = $event.detail" 
-                   x-show="total > 0" x-cloak 
-                   class="absolute top-1 right-1 flex items-center justify-center bg-rose-500 text-white w-4 h-4 rounded-full text-[9px] font-bold shadow-sm ring-2 ring-rose-200"
+                   x-show="total > 0 && sidebarOpen" x-cloak 
+                   class="ml-auto flex shrink-0 items-center justify-center bg-rose-500 text-white min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-bold shadow-sm ring-1 ring-white/20"
                    x-text="total">
+              </div>
+              <div x-data="{ total: 0 }" 
+                   @update-sidebar-counts.window="total = $event.detail" 
+                   x-show="total > 0 && !sidebarOpen" x-cloak 
+                   class="absolute top-2 right-2 w-3 h-3 bg-rose-500 rounded-full border-2 border-[#1E1B4B] shadow-sm">
               </div>
           </li>'''
         if rbac.check_permission(tenant_id, role_id, "etiquetas:ver") or is_sa:

@@ -406,6 +406,18 @@
                 <label for="proximos_vencer" class="text-sm font-medium text-slate-700 cursor-pointer">Próximos a Vencer (24h)</label>
             </div>
             
+            <div class="flex items-center ml-4">
+                <button type="button" @click="
+                    const hoy = new Date().toLocaleDateString('en-CA'); 
+                    document.querySelector('input[name=fecha_inicio]').value = hoy;
+                    document.querySelector('input[name=fecha_fin]').value = hoy;
+                    setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);
+                " class="flex items-center gap-2 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 border border-blue-300 rounded-lg text-sm font-bold shadow-sm transition-all hover:-translate-y-0.5">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    Hoy
+                </button>
+            </div>
+            
             <div class="flex-1"></div>
             
             <!-- Botón Limpiar Notificaciones -->
