@@ -240,7 +240,7 @@ async def get_crear_fondo_modal(
         </button>
     </div>
     <div class="p-6 bg-[#f8fafc]">
-        <form id="crear-fondo-form" hx-post="/api/v1/agn/fondos" hx-encoding="multipart/form-data" hx-swap="none" @htmx:after-request="if(event.detail.successful) window.location.reload()">
+        <form id="crear-fondo-form" onsubmit="event.preventDefault(); submitFondoForm(this);">
             <div class="mb-4">
                 <div class="flex items-center gap-1.5 mb-1">
                     <label class="block text-xs font-bold text-gray-600">Código Oficial del Fondo</label>
@@ -319,6 +319,7 @@ async def get_crear_fondo_modal(
                 </div>
             </div>
             
+            
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" onclick="Swal.close()" class="px-5 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors">Cancelar</button>
                 <button type="submit" class="px-5 py-2.5 text-sm font-semibold text-white bg-[#4f46e5] hover:bg-[#4338ca] rounded-lg shadow-sm flex items-center gap-2 transition-colors">
@@ -327,6 +328,35 @@ async def get_crear_fondo_modal(
                 </button>
             </div>
         </form>
+        <script>
+            function submitFondoForm(form) {
+                const formData = new FormData(form);
+                fetch('/api/v1/agn/fondos', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(async response => {
+                    const data = await response.json();
+                    if (response.ok) {
+                        Swal.fire({
+                            title: '¡Fondo Creado!',
+                            text: 'El fondo documental ha sido registrado exitosamente.',
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', data.detail || 'Ocurrió un error al guardar', 'error');
+                    }
+                })
+                .catch(error => {
+                    Swal.fire('Error', 'Error de conexión', 'error');
+                });
+            }
+        </script>
+
     </div>
     <script>
         htmx.process(document.getElementById('crear-fondo-form'));
