@@ -409,7 +409,30 @@
             <div class="flex-1"></div>
             
             <!-- Botón Limpiar Notificaciones -->
-            <button type="button" @click="if(confirm('¿Eliminar todas las notificaciones?')) { localStorage.setItem('global_read_mark', Date.now().toString()); document.body.dispatchEvent(new CustomEvent('reloadBuzon')); }"
+            <button type="button" @click="Swal.fire({
+    title: '¿Limpiar Notificaciones?',
+    text: 'Se marcarán todos los documentos como leídos y los contadores volverán a cero.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#64748b',
+    confirmButtonText: 'Sí, limpiar todo',
+    cancelButtonText: 'Cancelar',
+    reverseButtons: true
+}).then((result) => {
+    if (result.isConfirmed) {
+        localStorage.setItem('global_read_mark', Date.now().toString());
+        document.body.dispatchEvent(new CustomEvent('reloadBuzon'));
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Bandeja limpia',
+            showConfirmButton: false,
+            timer: 2000
+        });
+    }
+})"
                     class="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg text-sm font-bold shadow-sm transition-all">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
