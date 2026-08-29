@@ -353,13 +353,34 @@
           };
 
           window.submitAgnExpediente = function() {
-              Swal.showLoading();
-              fetch('/api/v1/agn/expedientes', { method: 'POST' })
-                  .then(r => r.json())
-                  .then(data => {
-                      Swal.fire('Éxito', data.message, 'success');
-                  });
-          };
+                const form = document.getElementById('agn-expediente-form');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+                
+                const formData = new FormData(form);
+                Swal.showLoading();
+                fetch('/api/v1/agn/expedientes', { 
+                    method: 'POST',
+                    body: formData
+                })
+                .then(r => r.json().then(data => ({status: r.status, data})))
+                .then(({status, data}) => {
+                    if (status === 200 || status === 201 || data.status === 'success') {
+                        Swal.fire({
+                            title: '¡Expediente Creado!',
+                            html: `Expediente generado con código inmutable:<br><br><b class="text-xl text-primary font-mono">${data.codigo_expediente}</b>`,
+                            icon: 'success',
+                            confirmButtonColor: '#4f46e5'
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', data.detail || 'Ocurrió un error', 'error');
+                    }
+                });
+            };
 
           window.createFolder = function() {
             window.selectedFolderColor = '#4648d4'; // Reset default blue

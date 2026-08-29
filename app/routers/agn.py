@@ -59,7 +59,51 @@ async def get_agn_modal(
         </div>
     </div>
     <div class="p-6">
-        <form id="agn-expediente-form" onsubmit="event.preventDefault(); window.submitAgnExpediente();">
+        
+    <script>
+        document.addEventListener('alpine:init', () => {{
+            Alpine.data('agnForm', () => ({{
+                previewCode: '---',
+                updatePreview() {{
+                    const getCode = (selectId) => {{
+                        const select = document.getElementById(selectId);
+                        if (!select || !select.value) return '';
+                        const option = select.options[select.selectedIndex];
+                        return option.getAttribute('data-codigo') || '';
+                    }};
+                    
+                    const f = getCode('fondo_select');
+                    const sec = getCode('seccion_select');
+                    const subsec = getCode('subseccion_select');
+                    const ser = getCode('serie_select');
+                    const subser = getCode('subserie_select');
+                    
+                    const fecha = document.getElementById('fecha_apertura')?.value;
+                    const year = fecha ? fecha.split('-')[0] : new Date().getFullYear();
+                    
+                    let parts = [];
+                    if (f) parts.push(f);
+                    if (sec) parts.push(sec);
+                    if (subsec) parts.push(subsec);
+                    if (ser) parts.push(ser);
+                    if (subser) parts.push(subser);
+                    
+                    if (parts.length > 0) {{
+                        parts.push(year);
+                        parts.push('XXX');
+                        this.previewCode = parts.join('-');
+                    }} else {{
+                        this.previewCode = 'Seleccione la clasificación documental para generar el código...';
+                    }}
+                }},
+                init() {{
+                    this.updatePreview();
+                }}
+            }}));
+        }});
+    </script>
+    <form id="agn-expediente-form" x-data="agnForm()" onsubmit="event.preventDefault(); window.submitAgnExpediente();">
+
             <h3 class="text-md font-bold text-gray-800 mb-3">1. Clasificación Documental (CCD/TRD)</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
@@ -76,8 +120,8 @@ async def get_agn_modal(
                         </div>
                     </div>
                 </div>
-                    <select id="fondo_select" name="fondo" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
-                        {"".join([f'<option value="{f.id}">{f.nombre}</option>' for f in fondos])}
+                    <select id="fondo_select" name="fondo" @change="updatePreview()" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
+                        {"".join([f'<option value="{f.id}" data-codigo="{f.codigo}">{f.nombre}</option>' for f in fondos])}
                     </select>
                 </div>
                 <div>
@@ -94,8 +138,8 @@ async def get_agn_modal(
                         </div>
                     </div>
                 </div>
-                    <select id="seccion_select" name="seccion" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
-                        {"".join([f'<option value="{s.id}">{s.nombre}</option>' for s in secciones])}
+                    <select id="seccion_select" name="seccion" @change="updatePreview()" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
+                        {"".join([f'<option value="{s.id}" data-codigo="{s.codigo}">{s.nombre}</option>' for s in secciones])}
                     </select>
                 </div>
                 <div>
@@ -112,9 +156,9 @@ async def get_agn_modal(
                         </div>
                     </div>
                 </div>
-                    <select id="subseccion_select" name="subseccion" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
+                    <select id="subseccion_select" name="subseccion" @change="updatePreview()" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
                         <option value="">-- Seleccionar --</option>
-                        {"".join([f'<option value="{s.id}">{s.nombre}</option>' for s in subsecciones])}
+                        {"".join([f'<option value="{s.id}" data-codigo="{s.codigo}">{s.nombre}</option>' for s in subsecciones])}
                     </select>
                 </div>
             </div>
@@ -134,8 +178,8 @@ async def get_agn_modal(
                         </div>
                     </div>
                 </div>
-                    <select id="serie_select" name="serie" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
-                        {"".join([f'<option value="{s.id}">{s.nombre}</option>' for s in series])}
+                    <select id="serie_select" name="serie" @change="updatePreview()" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
+                        {"".join([f'<option value="{s.id}" data-codigo="{s.codigo}">{s.nombre}</option>' for s in series])}
                     </select>
                 </div>
                 <div>
@@ -152,16 +196,16 @@ async def get_agn_modal(
                         </div>
                     </div>
                 </div>
-                    <select id="subserie_select" name="subserie" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
+                    <select id="subserie_select" name="subserie" @change="updatePreview()" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
                         <option value="">-- Seleccionar --</option>
-                        {"".join([f'<option value="{s.id}">{s.nombre}</option>' for s in subseries])}
+                        {"".join([f'<option value="{s.id}" data-codigo="{s.codigo}">{s.nombre}</option>' for s in subseries])}
                     </select>
                 </div>
             </div>
             
             <div class="mb-6">
                 <label class="block text-sm font-semibold text-gray-600 mb-1">Código de Expediente (Generado Automáticamente):</label>
-                <input type="text" readonly value="{codigo_expediente}" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-100 font-mono text-gray-800">
+                <input type="text" readonly :value="previewCode" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-100 font-mono text-gray-800 font-bold">
                 <p class="text-xs text-gray-500 mt-1">Este código es único e inmutable.</p>
             </div>
             
@@ -180,7 +224,7 @@ async def get_agn_modal(
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                     <label class="block text-sm font-semibold text-gray-600 mb-1">Fecha de Apertura:*</label>
-                    <input type="date" name="fecha_apertura" required value="{today}" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary">
+                    <input type="date" id="fecha_apertura" name="fecha_apertura" @change="updatePreview()" required value="{today}" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary">
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-gray-600 mb-1">Responsable:*</label>
@@ -218,20 +262,132 @@ async def get_agn_modal(
 @router.post("/expedientes")
 async def create_agn_expediente(
     request: Request,
-    fondo_id: str = Form(...),
+    fondo: str = Form(...),
+    seccion: str = Form(...),
+    subseccion: str = Form(None),
+    serie: str = Form(...),
+    subserie: str = Form(None),
+    nombre_expediente: str = Form(...),
+    asunto: str = Form(None),
+    fecha_apertura: str = Form(...),
+    responsable: str = Form(...),
     session_data: dict = Depends(require_permission("documentos:crear")),
     db: AsyncSession = Depends(get_db_session)
 ):
-    # LÓGICA NORMATIVA ARCHIVÍSTICA: Bloqueo Estructural (Write Lock)
-    # Verificar que el Fondo esté ABIERTO antes de permitir la creación de un expediente
+    from datetime import datetime
+    tenant_id = session_data["tenant_id"]
+    
+    try:
+        dt = datetime.strptime(fecha_apertura, '%Y-%m-%d')
+        year = dt.year
+    except Exception:
+        raise HTTPException(status_code=400, detail="Fecha de apertura inválida")
+        
+    # Validation
     q_fondo = text("SELECT estado FROM agn_dependencias WHERE id = :id AND tipo = 'FONDO'")
-    res = await db.execute(q_fondo, {"id": fondo_id})
+    res = await db.execute(q_fondo, {"id": fondo})
     estado_fondo = res.scalar()
     
     if estado_fondo == 'CERRADO':
         raise HTTPException(status_code=403, detail="Violación Normativa: El Fondo Documental se encuentra CERRADO (Acumulado). Está estrictamente prohibido por el AGN generar nuevos expedientes bajo esta raíz.")
+
+    consecutivo = 1
+    
+    subsec_id = subseccion if subseccion and subseccion.strip() else None
+    subser_id = subserie if subserie and subserie.strip() else None
+
+    # Lógica Normativa: Bloqueo de Transacciones (Pessimistic Locking)
+    lock_q = text('''
+        SELECT id, ultimo_consecutivo 
+        FROM agn_consecutivos 
+        WHERE tenant_id = :tenant 
+          AND seccion_id = :sec 
+          AND serie_id = :ser 
+          AND (subseccion_id = :subsec OR (subseccion_id IS NULL AND :subsec IS NULL))
+          AND (subserie_id = :subser OR (subserie_id IS NULL AND :subser IS NULL))
+          AND anio = :anio 
+        FOR UPDATE
+    ''')
+    
+    lock_res = await db.execute(lock_q, {
+        "tenant": tenant_id, "sec": seccion, "ser": serie, 
+        "subsec": subsec_id, "subser": subser_id, "anio": year
+    })
+    row = lock_res.fetchone()
+    
+    if row:
+        consecutivo = row.ultimo_consecutivo + 1
+        await db.execute(text("UPDATE agn_consecutivos SET ultimo_consecutivo = :c WHERE id = :id"), {"c": consecutivo, "id": row.id})
+    else:
+        # Prevent race condition inserting the sequence row by relying on the unique constraint if needed, 
+        # but in most cases, this is safe enough in async if not intensely hammered.
+        try:
+            await db.execute(text('''
+                INSERT INTO agn_consecutivos (tenant_id, seccion_id, serie_id, subseccion_id, subserie_id, anio, ultimo_consecutivo)
+                VALUES (:tenant, :sec, :ser, :subsec, :subser, :anio, 1)
+            '''), {
+                "tenant": tenant_id, "sec": seccion, "ser": serie, 
+                "subsec": subsec_id, "subser": subser_id, "anio": year
+            })
+        except Exception:
+            # If it fails, another thread inserted it. Retry lock.
+            lock_res = await db.execute(lock_q, {
+                "tenant": tenant_id, "sec": seccion, "ser": serie, 
+                "subsec": subsec_id, "subser": subser_id, "anio": year
+            })
+            row = lock_res.fetchone()
+            consecutivo = row.ultimo_consecutivo + 1
+            await db.execute(text("UPDATE agn_consecutivos SET ultimo_consecutivo = :c WHERE id = :id"), {"c": consecutivo, "id": row.id})
+
+    # Construcción del Código Completo
+    codigo_parts = []
+    
+    f_res = await db.execute(text("SELECT codigo FROM agn_dependencias WHERE id = :id"), {"id": fondo})
+    fc = f_res.fetchone()
+    if fc: codigo_parts.append(fc.codigo)
+    
+    s_res = await db.execute(text("SELECT codigo FROM agn_dependencias WHERE id = :id"), {"id": seccion})
+    sc = s_res.fetchone()
+    if sc: codigo_parts.append(sc.codigo)
+    
+    if subsec_id:
+        ss_res = await db.execute(text("SELECT codigo FROM agn_dependencias WHERE id = :id"), {"id": subsec_id})
+        ssc = ss_res.fetchone()
+        if ssc: codigo_parts.append(ssc.codigo)
         
-    return JSONResponse({"status": "success", "message": "Expediente electrónico creado y registrado en el índice."})
+    se_res = await db.execute(text("SELECT codigo FROM agn_series WHERE id = :id"), {"id": serie})
+    sec = se_res.fetchone()
+    if sec: codigo_parts.append(sec.codigo)
+    
+    if subser_id:
+        sse_res = await db.execute(text("SELECT codigo FROM agn_subseries WHERE id = :id"), {"id": subser_id})
+        ssec = sse_res.fetchone()
+        if ssec: codigo_parts.append(ssec.codigo)
+        
+    codigo_parts.append(str(year))
+    codigo_parts.append(f"{consecutivo:03d}")
+    
+    codigo_final = "-".join(codigo_parts)
+    
+    # Insert Expediente
+    ins_q = text('''
+        INSERT INTO agn_expedientes 
+        (tenant_id, fondo_id, seccion_id, subseccion_id, serie_id, subserie_id, anio, consecutivo, codigo_expediente, nombre_expediente, asunto, fecha_apertura, responsable_id)
+        VALUES 
+        (:t, :f, :sec, :subsec, :ser, :subser, :a, :c, :cod, :nom, :asunto, :fa, :r)
+        RETURNING id
+    ''')
+    
+    res_exp = await db.execute(ins_q, {
+        "t": tenant_id, "f": fondo, "sec": seccion, "subsec": subsec_id, 
+        "ser": serie, "subser": subser_id, "a": year, "c": consecutivo, 
+        "cod": codigo_final, "nom": nombre_expediente.strip(), "asunto": asunto, 
+        "fa": dt, "r": responsable
+    })
+    
+    await db.commit()
+    
+    return JSONResponse({"status": "success", "message": "Expediente electrónico creado.", "codigo_expediente": codigo_final})
 
 @router.get("/modal/fondo")
 async def get_crear_fondo_modal(
