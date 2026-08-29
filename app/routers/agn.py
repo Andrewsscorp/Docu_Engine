@@ -17,7 +17,7 @@ async def get_agn_modal(
     tenant_id = session_data["tenant_id"]
     
     # Fetch Fondos
-    fondos_res = await db.execute(text("SELECT id, nombre, codigo FROM agn_dependencias WHERE tipo = 'FONDO' AND tenant_id = :t"), {"t": tenant_id})
+    fondos_res = await db.execute(text("SELECT id, nombre, codigo FROM agn_dependencias WHERE tipo = 'FONDO' AND estado = 'ABIERTO' AND tenant_id = :t"), {"t": tenant_id})
     fondos = fondos_res.fetchall()
     
     # Fetch Secciónes
@@ -208,9 +208,19 @@ async def get_agn_modal(
 @router.post("/expedientes")
 async def create_agn_expediente(
     request: Request,
+    fondo_id: str = Form(...),
     session_data: dict = Depends(require_permission("documentos:crear")),
     db: AsyncSession = Depends(get_db_session)
 ):
+    # LÓGICA NORMATIVA ARCHIVÍSTICA: Bloqueo Estructural (Write Lock)
+    # Verificar que el Fondo esté ABIERTO antes de permitir la creación de un expediente
+    q_fondo = text("SELECT estado FROM agn_dependencias WHERE id = :id AND tipo = 'FONDO'")
+    res = await db.execute(q_fondo, {"id": fondo_id})
+    estado_fondo = res.scalar()
+    
+    if estado_fondo == 'CERRADO':
+        raise HTTPException(status_code=403, detail="Violación Normativa: El Fondo Documental se encuentra CERRADO (Acumulado). Está estrictamente prohibido por el AGN generar nuevos expedientes bajo esta raíz.")
+        
     return JSONResponse({"status": "success", "message": "Expediente electrónico creado y registrado en el índice."})
 
 @router.get("/modal/fondo")
@@ -287,9 +297,8 @@ async def get_crear_fondo_modal(
                     </div>
                 </div>
                     <select name="estado" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors appearance-none">
-                        <option value="ACTIVA">Fondo Abierto / Activo</option>
-                        <option value="FUSIONADA">Fondo Fusionado</option>
-                        <option value="SUPRIMIDA">Fondo Suprimido / Cerrado</option>
+                        <option value="ABIERTO">Fondo Abierto (Activo)</option>
+                        <option value="CERRADO">Fondo Cerrado (Acumulado)</option>
                     </select>
                 </div>
             </div>
@@ -393,3 +402,60 @@ async def create_agn_fondo(
     await db.commit()
     
     return JSONResponse({"status": "success", "id": new_id})
+
+from pydantic import BaseModel
+from typing import Optional
+
+class CerrarFondoRequest(BaseModel):
+    fecha_cierre: str
+    soporte_cierre: str
+
+@router.put("/fondos/{fondo_id}/cerrar")
+async def cerrar_fondo(
+    fondo_id: str,
+    payload: CerrarFondoRequest,
+    request: Request,
+    session_data: dict = Depends(require_permission("documentos:crear")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    tenant_id = session_data["tenant_id"]
+    user_id = session_data["user_id"]
+    ip_address = request.client.host if request.client else "unknown"
+    
+    # Verify the fondo exists and is currently open
+    q_check = text("SELECT id, estado FROM agn_dependencias WHERE id = :id AND tipo = 'FONDO' AND tenant_id = :t")
+    res = await db.execute(q_check, {"id": fondo_id, "t": tenant_id})
+    fondo = res.fetchone()
+    
+    if not fondo:
+        raise HTTPException(status_code=404, detail="Fondo no encontrado.")
+    if fondo[1] == 'CERRADO':
+        raise HTTPException(status_code=400, detail="El fondo ya se encuentra cerrado.")
+        
+    # Perform the closure
+    q_update = text('''
+        UPDATE agn_dependencias 
+        SET estado = 'CERRADO', fecha_cierre = :fecha::timestamp, soporte_cierre = :soporte 
+        WHERE id = :id
+    ''')
+    await db.execute(q_update, {
+        "fecha": payload.fecha_cierre,
+        "soporte": payload.soporte_cierre,
+        "id": fondo_id
+    })
+    
+    # Audit Logging for this critical action
+    audit_q = text('''
+        INSERT INTO audit_rbac_logs (accion, usuario_id, ip_origen, detalles)
+        VALUES (:accion, :user_id, :ip, :detalles)
+    ''')
+    await db.execute(audit_q, {
+        "accion": "CERRAR_FONDO_AGN",
+        "user_id": user_id,
+        "ip": ip_address,
+        "detalles": json.dumps({"fondo_id": fondo_id, "fecha_cierre": payload.fecha_cierre, "soporte": payload.soporte_cierre})
+    })
+    
+    await db.commit()
+    
+    return JSONResponse({"status": "success", "message": "El Fondo Documental ha sido clausurado legalmente y preservado."})
