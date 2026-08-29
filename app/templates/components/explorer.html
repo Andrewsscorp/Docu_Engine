@@ -43,7 +43,10 @@
     <section class="mb-8" x-data="{ dragHover: null }">
         <div class="flex justify-between items-end mb-4">
             <div class="flex items-center gap-4">
-                <h3 class="text-xl text-gray-800 font-bold">Carpetas</h3>
+                <div class="flex items-center gap-6 border-b border-gray-200">
+                    <button type="button" class="text-xl text-primary font-bold pb-2 border-b-2 border-primary">Carpetas</button>
+                    <button type="button" class="text-xl text-gray-400 font-bold pb-2 border-b-2 border-transparent hover:text-gray-600 transition-colors">Expedientes</button>
+                </div>
                 <button x-show="activeFolder !== ''" @click="activeFolder = ''; document.querySelector('input[name=folder_filter]').value = ''; htmx.trigger('#explorer-search-input', 'search')" class="flex items-center gap-1 px-3 py-1 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     Volver a todos
