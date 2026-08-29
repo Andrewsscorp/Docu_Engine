@@ -1,5 +1,21 @@
-﻿<div x-data="{ vista: 'cuadricula', drawerAbierto: false, currentDocId: null, typeFilter: '', dateFilter: '', statusFilter: '' }" class="h-full flex flex-col">
-    <!-- Hidden inputs for filters -->
+﻿import re
+
+with open('app/templates/components/explorer.html', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+# Update x-data
+content = content.replace(
+    '''x-data="{ vista: 'cuadricula', drawerAbierto: false, currentDocId: null }"''',
+    '''x-data="{ vista: 'cuadricula', drawerAbierto: false, currentDocId: null, typeFilter: '', dateFilter: '', statusFilter: '' }"'''
+)
+
+# Update hx-include in the search bar
+content = content.replace(
+    '''hx-include="[name='sort'], [name='view'], [name='group_id'], [name='status']"''',
+    '''hx-include="[name='sort'], [name='view'], [name='group_id'], [name='status'], [name='type_filter'], [name='date_filter']"'''
+)
+
+folders_and_filters = '''    <!-- Hidden inputs for filters -->
     <input type="hidden" name="type_filter" x-model="typeFilter">
     <input type="hidden" name="date_filter" x-model="dateFilter">
     <input type="hidden" name="status" x-model="statusFilter">
@@ -126,62 +142,9 @@
             });
         }
     </script>
+'''
 
-    <!-- Header Controls -->
-    <div class="flex justify-between items-center mb-6 z-10 flex-shrink-0">
-        <div class="relative w-full max-w-md">
-            <input type="text" name="q" placeholder="Buscar documentos por tÃ­tulo o contenido OCR..." 
-                   class="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all card-shadow bg-white text-gray-700 placeholder-gray-400"
-                   hx-get="/api/v1/documents/explorer"
-                   hx-trigger="keyup changed delay:500ms, search"
-                   hx-target="#explorer-results"
-                   hx-include="[name='sort'], [name='view'], [name='group_id'], [name='status'], [name='type_filter'], [name='date_filter']"
-                   value="{{ q }}"
-                   autocomplete="off">
-            <svg class="w-6 h-6 absolute left-4 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-        </div>
-        
-        <div class="flex items-center gap-4">
-            <div class="flex bg-gray-100 rounded-lg p-1">
-                <button @click="vista = 'cuadricula'" :class="vista === 'cuadricula' ? 'bg-white shadow-sm text-primary' : 'text-gray-500'" class="px-3 py-1.5 rounded-md text-sm font-medium transition-all">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-                </button>
-                <button @click="vista = 'lista'" :class="vista === 'lista' ? 'bg-white shadow-sm text-primary' : 'text-gray-500'" class="px-3 py-1.5 rounded-md text-sm font-medium transition-all">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                </button>
-            </div>
-            
-            <select name="sort" class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-primary shadow-sm" hx-get="/api/v1/documents/explorer" hx-target="#explorer-results" hx-include="[name='q'], [name='view'], [name='group_id'], [name='status']">
-                <option value="desc" {% if sort == 'desc' %}selected{% endif %}>MÃ¡s recientes</option>
-                <option value="asc" {% if sort == 'asc' %}selected{% endif %}>MÃ¡s antiguos</option>
-            </select>
-        </div>
-    </div>
-    
-    {% include "components/explorer_results.html" %}
-    <!-- Drawer Overlay & Container -->
-    <div x-show="drawerAbierto" x-cloak 
-         @click.outside="drawerAbierto = false"
-         class="fixed inset-y-0 right-0 bg-white w-full max-w-lg shadow-[rgba(0,0,0,0.1)_0px_0px_50px_0px] h-full flex flex-col z-[100]" 
-         x-transition:enter="transition ease-out duration-300 transform"
-         x-transition:enter-start="translate-x-full"
-         x-transition:enter-end="translate-x-0"
-         x-transition:leave="transition ease-in duration-200 transform"
-         x-transition:leave-start="translate-x-0"
-         x-transition:leave-end="translate-x-full">
-        
-        <!-- Close Button -->
-        <button @click="drawerAbierto = false" class="absolute top-4 left-4 p-2 bg-white/80 backdrop-blur rounded-full text-gray-500 hover:text-gray-800 shadow-sm z-20">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
-            
-            <!-- HTMX Drawer Content Area -->
-            <div id="drawer-content" class="h-full w-full overflow-y-auto" @open-drawer.window="htmx.ajax('GET', '/api/v1/documents/' + $event.detail + '/drawer', {target: '#drawer-content'})" @editor-closed.window="htmx.ajax('GET', '/api/v1/documents/' + $event.detail.doc_id + '/drawer', {target: '#drawer-content'})">
-                <div class="flex justify-center items-center h-full">
-                    <div class="loader-spinner"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+content = content.replace('    <!-- Header Controls -->', folders_and_filters + '\n    <!-- Header Controls -->')
 
+with open('app/templates/components/explorer.html', 'w', encoding='utf-8') as f:
+    f.write(content)
