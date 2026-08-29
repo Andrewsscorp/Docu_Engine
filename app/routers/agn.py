@@ -329,32 +329,32 @@ async def get_crear_fondo_modal(
             </div>
         </form>
         <script>
-            function submitFondoForm(form) {
+            function submitFondoForm(form) {{
                 const formData = new FormData(form);
-                fetch('/api/v1/agn/fondos', {
+                fetch('/api/v1/agn/fondos', {{
                     method: 'POST',
                     body: formData
-                })
-                .then(async response => {
+                }})
+                .then(async response => {{
                     const data = await response.json();
-                    if (response.ok) {
-                        Swal.fire({
+                    if (response.ok) {{
+                        Swal.fire({{
                             title: '¡Fondo Creado!',
                             text: 'El fondo documental ha sido registrado exitosamente.',
                             icon: 'success',
                             timer: 1500,
                             showConfirmButton: false
-                        }).then(() => {
+                        }}).then(() => {{
                             window.location.reload();
-                        });
-                    } else {
+                        }});
+                    }} else {{
                         Swal.fire('Error', data.detail || 'Ocurrió un error al guardar', 'error');
-                    }
-                })
-                .catch(error => {
+                    }}
+                }})
+                .catch(error => {{
                     Swal.fire('Error', 'Error de conexión', 'error');
-                });
-            }
+                }});
+            }}
         </script>
 
     </div>
