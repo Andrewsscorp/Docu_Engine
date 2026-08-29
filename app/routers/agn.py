@@ -71,7 +71,7 @@ async def get_agn_modal(
                         </div>
                     </div>
                 </div>
-                    <select name="fondo" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
+                    <select id="fondo_select" name="fondo" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white transition-colors">
                         {"".join([f'<option value="{f.id}">{f.nombre}</option>' for f in fondos])}
                     </select>
                 </div>
