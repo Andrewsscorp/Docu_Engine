@@ -227,6 +227,40 @@
                 });
             };
 
+            
+            window.openCrearSubserieModal = function() {
+                const fondoSelect = document.getElementById('fondo_select');
+                const fondoId = fondoSelect ? fondoSelect.value : null;
+                const seccionSelect = document.getElementById('seccion_select');
+                const seccionId = seccionSelect ? seccionSelect.value : null;
+                const subseccionSelect = document.getElementById('subseccion_select');
+                const subseccionId = subseccionSelect ? subseccionSelect.value : '';
+                const serieSelect = document.getElementById('serie_select');
+                const serieId = serieSelect ? serieSelect.value : null;
+                
+                if (!fondoId || !seccionId || !serieId) {
+                    Swal.fire('Atención', 'Debe seleccionar obligatoriamente un Fondo, una Sección y una Serie Padre primero.', 'warning');
+                    return;
+                }
+                
+                Swal.fire({
+                    width: '800px',
+                    padding: 0,
+                    showConfirmButton: false,
+                    customClass: { popup: 'rounded-2xl' },
+                    didOpen: () => {
+                        Swal.showLoading();
+                        fetch(`/api/v1/agn/modal/subserie?fondo_id=${fondoId}&seccion_id=${seccionId}&subseccion_id=${subseccionId}&serie_id=${serieId}`)
+                            .then(r => r.text())
+                            .then(html => {
+                                Swal.getPopup().innerHTML = html;
+                                if (window.htmx) { htmx.process(Swal.getPopup()); }
+                                if (window.Alpine) { Alpine.initTree(Swal.getPopup()); }
+                            });
+                    }
+                });
+            };
+
             window.openCrearSubseccionModal = function() {
                 const fondoSelect = document.getElementById('fondo_select');
                 const fondoId = fondoSelect ? fondoSelect.value : null;
