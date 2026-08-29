@@ -1,8 +1,9 @@
-﻿<div x-data="{ vista: 'cuadricula', drawerAbierto: false, currentDocId: null, typeFilter: '', dateFilter: '', statusFilter: '' }" class="h-full flex flex-col">
+﻿<div x-data="{ vista: 'cuadricula', drawerAbierto: false, currentDocId: null, typeFilter: '', dateFilter: '', statusFilter: '', activeFolder: '' }" class="h-full flex flex-col">
     <!-- Hidden inputs for filters -->
     <input type="hidden" name="type_filter" x-model="typeFilter">
     <input type="hidden" name="date_filter" x-model="dateFilter">
     <input type="hidden" name="status" x-model="statusFilter">
+    <input type="hidden" name="folder_filter" x-model="activeFolder">
 
     <!-- Quick Filters -->
     <section class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-wrap items-center gap-4 mb-6">
@@ -41,14 +42,21 @@
     <!-- Folders Section -->
     <section class="mb-8" x-data="{ dragHover: null }">
         <div class="flex justify-between items-end mb-4">
-            <h3 class="text-xl text-gray-800 font-bold">Carpetas</h3>
+            <div class="flex items-center gap-4">
+                <h3 class="text-xl text-gray-800 font-bold">Carpetas</h3>
+                <button x-show="activeFolder !== ''" @click="activeFolder = ''; htmx.trigger('input[name=q]', 'search')" class="flex items-center gap-1 px-3 py-1 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Volver a todos
+                </button>
+            </div>
             <button class="text-primary font-medium hover:underline text-sm">Ver todo</button>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             {% for folder in folders %}
             <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4 group"
-                 :class="dragHover === '{{ folder.id }}' ? 'border-primary ring-2 ring-primary/20 bg-primary/5 scale-105' : ''"
-                 @click="htmx.ajax('GET', '/api/v1/documents/explorer?folder_filter={{ folder.id }}', {target: '#explorer-results'})"
+                 
+                 @click="activeFolder = '{{ folder.id }}'; htmx.trigger('input[name=q]', 'search')"
+                 :class="activeFolder === '{{ folder.id }}' ? 'ring-2 ring-primary border-primary bg-primary/5' : (dragHover === '{{ folder.id }}' ? 'border-primary ring-2 ring-primary/20 bg-primary/5 scale-105' : '')"
                  @dragover.prevent="dragHover = '{{ folder.id }}'"
                  @dragleave.prevent="dragHover = null"
                  @drop.prevent="dragHover = null; moveDoc(event.dataTransfer.getData('text/plain'), '{{ folder.id }}')">
@@ -79,7 +87,7 @@
                    hx-get="/api/v1/documents/explorer"
                    hx-trigger="keyup changed delay:500ms, search"
                    hx-target="#explorer-results"
-                   hx-include="[name='sort'], [name='view'], [name='group_id'], [name='status'], [name='type_filter'], [name='date_filter']"
+                   hx-include="[name='sort'], [name='view'], [name='group_id'], [name='status'], [name='type_filter'], [name='date_filter'], [name='folder_filter']"
                    value="{{ q }}"
                    autocomplete="off">
             <svg class="w-6 h-6 absolute left-4 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -95,7 +103,7 @@
                 </button>
             </div>
             
-            <select name="sort" class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-primary shadow-sm" hx-get="/api/v1/documents/explorer" hx-target="#explorer-results" hx-include="[name='q'], [name='view'], [name='group_id'], [name='status']">
+            <select name="sort" class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-primary shadow-sm" hx-get="/api/v1/documents/explorer" hx-target="#explorer-results" hx-include="[name='q'], [name='view'], [name='group_id'], [name='status'], [name='type_filter'], [name='date_filter'], [name='folder_filter']">
                 <option value="desc" {% if sort == 'desc' %}selected{% endif %}>MÃ¡s recientes</option>
                 <option value="asc" {% if sort == 'asc' %}selected{% endif %}>MÃ¡s antiguos</option>
             </select>
