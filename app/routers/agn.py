@@ -240,7 +240,7 @@ async def get_crear_fondo_modal(
         </button>
     </div>
     <div class="p-6 bg-[#f8fafc]">
-        <form id="crear-fondo-form" onsubmit="event.preventDefault(); submitFondoForm(this);">
+        <form id="crear-fondo-form" hx-post="/api/v1/agn/fondos" hx-encoding="multipart/form-data" hx-swap="none" @htmx:after-request.camel="if($event.detail.successful) {{ Swal.fire({{title: 'Fondo Creado!', text: 'Guardado exitosamente', icon: 'success', timer: 1500, showConfirmButton: false}}).then(() => {{ window.location.reload(); }}) }}" @htmx:response-error.camel="Swal.fire('Error', JSON.parse($event.detail.xhr.response).detail || 'Ocurrió un error al guardar', 'error')">
             <div class="mb-4">
                 <div class="flex items-center gap-1.5 mb-1">
                     <label class="block text-xs font-bold text-gray-600">Código Oficial del Fondo</label>
@@ -328,64 +328,10 @@ async def get_crear_fondo_modal(
                 </button>
             </div>
         </form>
-        <script>
-            function submitFondoForm(form) {{
-                const formData = new FormData(form);
-                fetch('/api/v1/agn/fondos', {{
-                    method: 'POST',
-                    body: formData
-                }})
-                .then(async response => {{
-                    const data = await response.json();
-                    if (response.ok) {{
-                        Swal.fire({{
-                            title: '¡Fondo Creado!',
-                            text: 'El fondo documental ha sido registrado exitosamente.',
-                            icon: 'success',
-                            timer: 1500,
-                            showConfirmButton: false
-                        }}).then(() => {{
-                            window.location.reload();
-                        }});
-                    }} else {{
-                        Swal.fire('Error', data.detail || 'Ocurrió un error al guardar', 'error');
-                    }}
-                }})
-                .catch(error => {{
-                    Swal.fire('Error', 'Error de conexión', 'error');
-                }});
-            }}
-        </script>
+        
 
     </div>
-    <script>
-        htmx.process(document.getElementById('crear-fondo-form'));
-        
-        document.body.addEventListener('htmx:responseError', function(evt) {{
-            if(evt.detail.elt.id === 'crear-fondo-form') {{
-                try {{
-                    const resp = JSON.parse(evt.detail.xhr.response);
-                    Swal.fire('Error', resp.detail, 'error');
-                }} catch(e) {{
-                    Swal.fire('Error', 'Ocurrió un error en el servidor.', 'error');
-                }}
-            }}
-        }});
-        document.body.addEventListener('htmx:afterRequest', function(evt) {{
-            if(evt.detail.elt.id === 'crear-fondo-form' && evt.detail.successful) {{
-                Swal.fire({{
-                    title: '¡Fondo Creado!',
-                    text: 'El fondo documental ha sido registrado exitosamente.',
-                    icon: 'success',
-                    timer: 1500,
-                    showConfirmButton: false
-                }}).then(() => {{
-                    // Reopen the main AGN modal
-                    window.openAgnModal();
-                }});
-            }}
-        }});
-    </script>
+    
     """
     return HTMLResponse(html)
 
