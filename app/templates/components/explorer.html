@@ -194,6 +194,35 @@
         
           
           
+            
+            window.openCrearSubseccionModal = function() {
+                const fondoSelect = document.getElementById('fondo_select');
+                const fondoId = fondoSelect ? fondoSelect.value : null;
+                const seccionSelect = document.getElementById('seccion_select');
+                const seccionId = seccionSelect ? seccionSelect.value : null;
+                
+                if (!fondoId || !seccionId) {
+                    Swal.fire('Atención', 'Debe seleccionar un Fondo y una Sección Padre primero.', 'warning');
+                    return;
+                }
+                Swal.fire({
+                    width: '700px',
+                    padding: 0,
+                    showConfirmButton: false,
+                    customClass: { popup: 'rounded-2xl' },
+                    didOpen: () => {
+                        Swal.showLoading();
+                        fetch('/api/v1/agn/modal/subseccion?fondo_id=' + fondoId + '&seccion_id=' + seccionId)
+                            .then(r => r.text())
+                            .then(html => {
+                                Swal.getPopup().innerHTML = html;
+                                if (window.htmx) { htmx.process(Swal.getPopup()); }
+                                if (window.Alpine) { Alpine.initTree(Swal.getPopup()); }
+                            });
+                    }
+                });
+            };
+
             window.openCrearSeccionModal = function() {
                 const fondoSelect = document.getElementById('fondo_select');
                 const fondoId = fondoSelect ? fondoSelect.value : null;
