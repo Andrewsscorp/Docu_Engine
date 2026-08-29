@@ -215,7 +215,7 @@ async def get_agn_modal(
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                     <label class="block text-sm font-semibold text-gray-600 mb-1">Fecha de Apertura:*</label>
-                    <input type="date" id="fecha_apertura" name="fecha_apertura" @change="updatePreview()" required value="{today}" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary">
+                    <input type="date" id="fecha_apertura" name="fecha_apertura" max="{today}" @change="updatePreview()" required value="{today}" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary">
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-gray-600 mb-1">Responsable:*</label>
@@ -228,17 +228,17 @@ async def get_agn_modal(
             <h3 class="text-md font-bold text-gray-800 mb-3">3. Controles y Acciones</h3>
             <div class="space-y-2 mb-6">
                 <label class="flex items-start gap-2 cursor-pointer">
-                    <input type="checkbox" required class="mt-1 border-gray-300 rounded text-primary focus:ring-primary">
+                    <input type="checkbox" name="confirmTrd" x-model="confirmTrd" required class="mt-1 border-gray-300 rounded text-primary focus:ring-primary">
                     <span class="text-sm text-gray-700">Confirmo que la clasificación corresponde a la TRD vigente.</span>
                 </label>
                 <label class="flex items-start gap-2 cursor-pointer">
-                    <input type="checkbox" required class="mt-1 border-gray-300 rounded text-primary focus:ring-primary">
+                    <input type="checkbox" name="confirmImmutable" x-model="confirmImmutable" required class="mt-1 border-gray-300 rounded text-primary focus:ring-primary">
                     <span class="text-sm text-gray-700">Entiendo que este expediente generará un índice electrónico inmutable.</span>
                 </label>
             </div>
             
             <div class="flex justify-center gap-3">
-                <button type="submit" class="px-6 py-2.5 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm flex items-center gap-2 transition-colors">
+                <button type="submit" :disabled="!canSubmit" :class="canSubmit ? \'bg-green-600 hover:bg-green-700\' : \'bg-gray-400 cursor-not-allowed\'" class="px-6 py-2.5 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm flex items-center gap-2 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     Crear Expediente
                 </button>
@@ -300,11 +300,20 @@ async def create_agn_expediente(
     asunto: str = Form(None),
     fecha_apertura: str = Form(...),
     responsable: str = Form(...),
+    confirmTrd: str = Form(None),
+    confirmImmutable: str = Form(None),
     session_data: dict = Depends(require_permission("documentos:crear")),
     db: AsyncSession = Depends(get_db_session)
 ):
+    import html
     from datetime import datetime
     tenant_id = session_data["tenant_id"]
+    
+    if not confirmTrd or not confirmImmutable:
+        raise HTTPException(status_code=400, detail="Debe confirmar los términos legales (TRD e Índice) para crear el contenedor.")
+
+    nombre_sanitizado = html.escape(nombre_expediente.strip())[:255]
+    asunto_sanitizado = html.escape(asunto.strip())[:500] if asunto else ""
     
     try:
         dt = datetime.strptime(fecha_apertura, '%Y-%m-%d')
@@ -410,9 +419,20 @@ async def create_agn_expediente(
     res_exp = await db.execute(ins_q, {
         "t": tenant_id, "f": fondo, "sec": seccion, "subsec": subsec_id, 
         "ser": serie, "subser": subser_id, "a": year, "c": consecutivo, 
-        "cod": codigo_final, "nom": nombre_expediente.strip(), "asunto": asunto, 
+        "cod": codigo_final, "nom": nombre_sanitizado, "asunto": asunto_sanitizado, 
         "fa": dt, "r": responsable
     })
+    exp_id = res_exp.scalar()
+    
+    # Generate First Index (Apertura)
+    import hashlib
+    xml_seed = f"<IndiceElectronico><Expediente>{codigo_final}</Expediente><Apertura>{dt.isoformat()}</Apertura></IndiceElectronico>"
+    xml_hash = hashlib.sha256(xml_seed.encode()).hexdigest()
+    
+    await db.execute(text('''
+        INSERT INTO agn_indice_electronico (expediente_id, accion, usuario_id, firma_indice)
+        VALUES (:exp, 'APERTURA_EXPEDIENTE', :uid, :hash)
+    '''), {"exp": exp_id, "uid": session_data['user_id'], "hash": xml_hash})
     
     await db.commit()
     
@@ -518,7 +538,7 @@ async def get_crear_fondo_modal(
             
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" onclick="window.openAgnModal()" class="px-5 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors">Cancelar</button>
-                <button type="submit" class="px-5 py-2.5 text-sm font-semibold text-white bg-[#4f46e5] hover:bg-[#4338ca] rounded-lg shadow-sm flex items-center gap-2 transition-colors">
+                <button type="submit" :disabled="!canSubmit" :class="canSubmit ? \'bg-green-600 hover:bg-green-700\' : \'bg-gray-400 cursor-not-allowed\'" class="px-5 py-2.5 text-sm font-semibold text-white bg-[#4f46e5] hover:bg-[#4338ca] rounded-lg shadow-sm flex items-center gap-2 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
                     Guardar Fondo
                 </button>
