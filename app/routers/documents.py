@@ -616,6 +616,9 @@ async def explorer_view(
     group_id: str = "",
     status: str = "",
     page: int = 1,
+    folder_filter: str = "",
+    type_filter: str = "",
+    date_filter: str = "",
     db: AsyncSession = Depends(get_db_session)
 ):
     cookie = request.cookies.get("sessionId")
@@ -633,6 +636,15 @@ async def explorer_view(
     can_delete = hierarchy == 99 or check_permission(tenant_id, role_id, "documentos:eliminar")
     can_reassign = hierarchy == 99 or check_permission(tenant_id, role_id, "documentos:reasignar")
     
+    folders = []
+    if request.headers.get("hx-target") != "explorer-results":
+        f_res = await db.execute(
+            text("SELECT f.id, f.name, f.color, (SELECT COUNT(id) FROM documents WHERE folder_id = f.id) as doc_count FROM folders f WHERE f.tenant_id = :t ORDER BY f.created_at DESC"),
+            {"t": tenant_id}
+        )
+        for r in f_res.fetchall():
+            folders.append(dict(r._mapping))
+
     # Base query for FTS
     base_query = """
         SELECT d.id, d.file_name, d.status, d.created_at, d.thumbnail_path, d.mime_type, d.file_size_bytes, g.name as group_name,
@@ -646,6 +658,29 @@ async def explorer_view(
     """
     params = {"t": tenant_id}
     
+
+    if q:
+        # Also match if q matches a folder name
+        base_query += " AND (d.fts_vector @@ plainto_tsquery('spanish', :q) OR d.folder_id IN (SELECT id FROM folders WHERE name ILIKE :q_like AND tenant_id = :t))"
+        params["q"] = q
+        params["q_like"] = f"%{q}%"
+        
+    if folder_filter:
+        base_query += " AND d.folder_id = :f"
+        params["f"] = folder_filter
+        
+    if type_filter == "pdf":
+        base_query += " AND d.mime_type ILIKE '%pdf%'"
+    elif type_filter == "images":
+        base_query += " AND d.mime_type ILIKE '%image%'"
+        
+    if date_filter == "week":
+        base_query += " AND d.created_at >= NOW() - INTERVAL '7 days'"
+    elif date_filter == "month":
+        base_query += " AND d.created_at >= date_trunc('month', NOW())"
+    elif date_filter == "year":
+        base_query += " AND d.created_at >= date_trunc('year', NOW())"
+
     # RLS logic
     if hierarchy != 99:
         user_groups = get_user_groups(tenant_id, user_id)
@@ -713,6 +748,10 @@ async def explorer_view(
     return templates.TemplateResponse(request=request, name=template_name, context={
         "request": request,
         "docs": docs,
+        "folders": folders,
+        "type_filter": type_filter,
+        "date_filter": date_filter,
+        "folder_filter": folder_filter,
         "view": view,
         "page": page,
         "has_more": len(docs) == limit,
