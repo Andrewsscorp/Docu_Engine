@@ -408,10 +408,11 @@
             
             <div class="flex items-center ml-4">
                 <button type="button" @click="
-                    const hoy = new Date().toLocaleDateString('en-CA'); 
-                    document.querySelector('input[name=fecha_inicio]').value = hoy;
-                    document.querySelector('input[name=fecha_fin]').value = hoy;
-                    setTimeout(() => htmx.trigger('#buzon-filters', 'submit'), 10);
+                    const hoy = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+                    let i1 = document.querySelector('input[name=fecha_inicio]');
+                    let i2 = document.querySelector('input[name=fecha_fin]');
+                    i1.value = hoy; i2.value = hoy;
+                    i1.dispatchEvent(new Event('change', {bubbles: true}));
                 " class="flex items-center gap-2 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 border border-blue-300 rounded-lg text-sm font-bold shadow-sm transition-all hover:-translate-y-0.5">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     Hoy
