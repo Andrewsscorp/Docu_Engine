@@ -270,30 +270,30 @@ async def get_crear_fondo_modal(
     <script>
         htmx.process(document.getElementById('crear-fondo-form'));
         
-        document.body.addEventListener('htmx:responseError', function(evt) {
-            if(evt.detail.elt.id === 'crear-fondo-form') {
-                try {
+        document.body.addEventListener('htmx:responseError', function(evt) {{
+            if(evt.detail.elt.id === 'crear-fondo-form') {{
+                try {{
                     const resp = JSON.parse(evt.detail.xhr.response);
                     Swal.fire('Error', resp.detail, 'error');
-                } catch(e) {
+                }} catch(e) {{
                     Swal.fire('Error', 'Ocurrió un error en el servidor.', 'error');
-                }
-            }
-        });
-        document.body.addEventListener('htmx:afterRequest', function(evt) {
-            if(evt.detail.elt.id === 'crear-fondo-form' && evt.detail.successful) {
-                Swal.fire({
+                }}
+            }}
+        }});
+        document.body.addEventListener('htmx:afterRequest', function(evt) {{
+            if(evt.detail.elt.id === 'crear-fondo-form' && evt.detail.successful) {{
+                Swal.fire({{
                     title: '¡Fondo Creado!',
                     text: 'El fondo documental ha sido registrado exitosamente.',
                     icon: 'success',
                     timer: 1500,
                     showConfirmButton: false
-                }).then(() => {
+                }}).then(() => {{
                     // Reopen the main AGN modal
                     window.openAgnModal();
-                });
-            }
-        });
+                }});
+            }}
+        }});
     </script>
     """
     return HTMLResponse(html)
