@@ -8,13 +8,13 @@
     <!-- Quick Filters -->
     <section class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-wrap items-center gap-4 mb-6">
       <div class="flex flex-wrap gap-2 border-r border-gray-200 pr-4">
-        <button @click="typeFilter = ''; document.querySelector('input[name=type_filter]').value = ''; htmx.trigger('input[name=q]', 'search')" :class="typeFilter === '' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'" class="px-4 py-2 rounded-lg font-medium text-sm transition-colors">Todos</button>
-        <button @click="typeFilter = 'pdf'; document.querySelector('input[name=type_filter]').value = 'pdf'; htmx.trigger('input[name=q]', 'search')" :class="typeFilter === 'pdf' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'" class="px-4 py-2 rounded-lg font-medium text-sm transition-colors">PDFs</button>
-        <button @click="typeFilter = 'images'; document.querySelector('input[name=type_filter]').value = 'images'; htmx.trigger('input[name=q]', 'search')" :class="typeFilter === 'images' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'" class="px-4 py-2 rounded-lg font-medium text-sm transition-colors">Imágenes</button>
+        <button @click="typeFilter = ''; document.querySelector('input[name=type_filter]').value = ''; htmx.trigger('#explorer-search-input', 'search')" :class="typeFilter === '' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'" class="px-4 py-2 rounded-lg font-medium text-sm transition-colors">Todos</button>
+        <button @click="typeFilter = 'pdf'; document.querySelector('input[name=type_filter]').value = 'pdf'; htmx.trigger('#explorer-search-input', 'search')" :class="typeFilter === 'pdf' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'" class="px-4 py-2 rounded-lg font-medium text-sm transition-colors">PDFs</button>
+        <button @click="typeFilter = 'images'; document.querySelector('input[name=type_filter]').value = 'images'; htmx.trigger('#explorer-search-input', 'search')" :class="typeFilter === 'images' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'" class="px-4 py-2 rounded-lg font-medium text-sm transition-colors">Imágenes</button>
       </div>
       <div class="flex flex-1 flex-wrap gap-3 items-center">
         <div class="relative">
-          <select x-model="dateFilter" @change="htmx.trigger('input[name=q]', 'search')" class="appearance-none bg-gray-50 border border-gray-200 rounded-lg py-2 pl-3 pr-10 text-sm text-gray-700 focus:outline-none focus:border-primary">
+          <select x-model="dateFilter" @change="htmx.trigger('#explorer-search-input', 'search')" class="appearance-none bg-gray-50 border border-gray-200 rounded-lg py-2 pl-3 pr-10 text-sm text-gray-700 focus:outline-none focus:border-primary">
             <option value="">Cualquier fecha</option>
             <option value="week">Última semana</option>
             <option value="month">Este mes</option>
@@ -23,7 +23,7 @@
           <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
         </div>
         <div class="relative">
-          <select x-model="statusFilter" @change="htmx.trigger('input[name=q]', 'search')" class="appearance-none bg-gray-50 border border-gray-200 rounded-lg py-2 pl-3 pr-10 text-sm text-gray-700 focus:outline-none focus:border-primary">
+          <select x-model="statusFilter" @change="htmx.trigger('#explorer-search-input', 'search')" class="appearance-none bg-gray-50 border border-gray-200 rounded-lg py-2 pl-3 pr-10 text-sm text-gray-700 focus:outline-none focus:border-primary">
             <option value="">Todos los estados</option>
             <option value="COMPLETED">Listo</option>
             <option value="PENDING">Pendiente</option>
@@ -44,7 +44,7 @@
         <div class="flex justify-between items-end mb-4">
             <div class="flex items-center gap-4">
                 <h3 class="text-xl text-gray-800 font-bold">Carpetas</h3>
-                <button x-show="activeFolder !== ''" @click="activeFolder = ''; document.querySelector('input[name=folder_filter]').value = ''; htmx.trigger('input[name=q]', 'search')" class="flex items-center gap-1 px-3 py-1 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
+                <button x-show="activeFolder !== ''" @click="activeFolder = ''; document.querySelector('input[name=folder_filter]').value = ''; htmx.trigger('#explorer-search-input', 'search')" class="flex items-center gap-1 px-3 py-1 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     Volver a todos
                 </button>
@@ -55,7 +55,7 @@
             {% for folder in folders %}
             <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4 group"
                  
-                 @click="activeFolder = '{{ folder.id }}'; document.querySelector('input[name=folder_filter]').value = '{{ folder.id }}'; htmx.trigger('input[name=q]', 'search')"
+                 @click="activeFolder = '{{ folder.id }}'; document.querySelector('input[name=folder_filter]').value = '{{ folder.id }}'; htmx.trigger('#explorer-search-input', 'search')"
                  :class="activeFolder === '{{ folder.id }}' ? 'ring-2 ring-primary border-primary bg-primary/5' : (dragHover === '{{ folder.id }}' ? 'border-primary ring-2 ring-primary/20 bg-primary/5 scale-105' : '')"
                  @dragover.prevent="dragHover = '{{ folder.id }}'"
                  @dragleave.prevent="dragHover = null"
@@ -82,7 +82,7 @@
     <!-- Header Controls -->
     <div class="flex justify-between items-center mb-6 z-10 flex-shrink-0">
         <div class="relative w-full max-w-md">
-            <input type="text" name="q" placeholder="Buscar documentos por tÃ­tulo o contenido OCR..." 
+            <input type="text" id="explorer-search-input" name="q" placeholder="Buscar documentos por tÃ­tulo o contenido OCR..." 
                    class="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all card-shadow bg-white text-gray-700 placeholder-gray-400"
                    hx-get="/api/v1/documents/explorer"
                    hx-trigger="keyup changed delay:500ms, search"
