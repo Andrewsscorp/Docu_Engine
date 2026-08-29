@@ -8,9 +8,9 @@
     <!-- Quick Filters -->
     <section class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-wrap items-center gap-4 mb-6">
       <div class="flex flex-wrap gap-2 border-r border-gray-200 pr-4">
-        <button @click="typeFilter = ''; htmx.trigger('input[name=q]', 'search')" :class="typeFilter === '' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'" class="px-4 py-2 rounded-lg font-medium text-sm transition-colors">Todos</button>
-        <button @click="typeFilter = 'pdf'; htmx.trigger('input[name=q]', 'search')" :class="typeFilter === 'pdf' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'" class="px-4 py-2 rounded-lg font-medium text-sm transition-colors">PDFs</button>
-        <button @click="typeFilter = 'images'; htmx.trigger('input[name=q]', 'search')" :class="typeFilter === 'images' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'" class="px-4 py-2 rounded-lg font-medium text-sm transition-colors">Imágenes</button>
+        <button @click="typeFilter = ''; document.querySelector('input[name=type_filter]').value = ''; htmx.trigger('input[name=q]', 'search')" :class="typeFilter === '' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'" class="px-4 py-2 rounded-lg font-medium text-sm transition-colors">Todos</button>
+        <button @click="typeFilter = 'pdf'; document.querySelector('input[name=type_filter]').value = 'pdf'; htmx.trigger('input[name=q]', 'search')" :class="typeFilter === 'pdf' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'" class="px-4 py-2 rounded-lg font-medium text-sm transition-colors">PDFs</button>
+        <button @click="typeFilter = 'images'; document.querySelector('input[name=type_filter]').value = 'images'; htmx.trigger('input[name=q]', 'search')" :class="typeFilter === 'images' ? 'bg-primary text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'" class="px-4 py-2 rounded-lg font-medium text-sm transition-colors">Imágenes</button>
       </div>
       <div class="flex flex-1 flex-wrap gap-3 items-center">
         <div class="relative">
@@ -44,7 +44,7 @@
         <div class="flex justify-between items-end mb-4">
             <div class="flex items-center gap-4">
                 <h3 class="text-xl text-gray-800 font-bold">Carpetas</h3>
-                <button x-show="activeFolder !== ''" @click="activeFolder = ''; htmx.trigger('input[name=q]', 'search')" class="flex items-center gap-1 px-3 py-1 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
+                <button x-show="activeFolder !== ''" @click="activeFolder = ''; document.querySelector('input[name=folder_filter]').value = ''; htmx.trigger('input[name=q]', 'search')" class="flex items-center gap-1 px-3 py-1 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     Volver a todos
                 </button>
@@ -55,7 +55,7 @@
             {% for folder in folders %}
             <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4 group"
                  
-                 @click="activeFolder = '{{ folder.id }}'; htmx.trigger('input[name=q]', 'search')"
+                 @click="activeFolder = '{{ folder.id }}'; document.querySelector('input[name=folder_filter]').value = '{{ folder.id }}'; htmx.trigger('input[name=q]', 'search')"
                  :class="activeFolder === '{{ folder.id }}' ? 'ring-2 ring-primary border-primary bg-primary/5' : (dragHover === '{{ folder.id }}' ? 'border-primary ring-2 ring-primary/20 bg-primary/5 scale-105' : '')"
                  @dragover.prevent="dragHover = '{{ folder.id }}'"
                  @dragleave.prevent="dragHover = null"
