@@ -319,7 +319,7 @@ async def obtener_conteos_tabs(request: Request, db: AsyncSession = Depends(get_
             ta.asignado_a,
             ta.asignado_por,
             COALESCE(
-                (SELECT MAX(fecha_envio) FROM tarea_mensajes WHERE id_tarea = ta.id_asignacion),
+                (SELECT MAX(fecha_envio) FROM tarea_mensajes WHERE id_tarea = ta.id_asignacion AND remitente_id != :uid),
                 ta.fecha_asignacion
             ) as last_update
         FROM tareas_asignaciones ta
@@ -329,8 +329,15 @@ async def obtener_conteos_tabs(request: Request, db: AsyncSession = Depends(get_
     rows = res.fetchall()
     
     def get_list(category_condition):
+        import datetime
+        def to_ts(dt):
+            if not dt: return 0
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=datetime.timezone.utc)
+            return int(dt.timestamp() * 1000)
+            
         return [
-            {"id": str(r.id_asignacion), "ts": r.last_update.isoformat()} 
+            {"id": str(r.id_asignacion), "ts": to_ts(r.last_update)} 
             for r in rows if category_condition(r)
         ]
 

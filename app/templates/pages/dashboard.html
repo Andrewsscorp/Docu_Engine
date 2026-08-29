@@ -390,7 +390,7 @@
         isUnread(task) {
             const stored = localStorage.getItem('read_' + task.id);
             if (!stored) return true;
-            return new Date(task.ts) > new Date(stored);
+            return parseInt(task.ts) > parseInt(stored);
         },
         async fetchCounts() {
             const res = await fetch('/api/v1/buzon/conteos');
