@@ -228,18 +228,45 @@ async def get_crear_fondo_modal(
     <div class="p-6 bg-[#f8fafc]">
         <form id="crear-fondo-form" hx-post="/api/v1/agn/fondos" hx-encoding="multipart/form-data" hx-swap="none" @htmx:after-request="if(event.detail.successful) window.location.reload()">
             <div class="mb-4">
-                <label class="block text-xs font-bold text-gray-600 mb-1">Código Oficial del Fondo</label>
+                <div class="flex items-center gap-1.5 mb-1">
+                    <label class="block text-xs font-bold text-gray-600">Código Oficial del Fondo</label>
+                    <div class="relative group flex items-center">
+                        <span class="flex items-center justify-center w-3 h-3 rounded-full border border-gray-400 text-gray-400 text-[8px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 text-center px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100] whitespace-normal leading-tight">
+                            Identificador alfanumérico único e irrepetible asignado a la entidad.
+                            <div class="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-gray-800"></div>
+                        </div>
+                    </div>
+                </div>
                 <input type="text" name="codigo" required placeholder="Ej. F-001" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors">
             </div>
             
             <div class="mb-4">
-                <label class="block text-xs font-bold text-gray-600 mb-1">Nombre de la Entidad Productora</label>
+                <div class="flex items-center gap-1.5 mb-1">
+                    <label class="block text-xs font-bold text-gray-600">Nombre de la Entidad Productora</label>
+                    <div class="relative group flex items-center">
+                        <span class="flex items-center justify-center w-3 h-3 rounded-full border border-gray-400 text-gray-400 text-[8px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 text-center px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100] whitespace-normal leading-tight">
+                            Razón social legal y completa de la institución productora.
+                            <div class="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-gray-800"></div>
+                        </div>
+                    </div>
+                </div>
                 <input type="text" name="nombre" required placeholder="Ingrese el nombre completo de la entidad" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors">
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1">Acto Administrativo</label>
+                    <div class="flex items-center gap-1.5 mb-1">
+                    <label class="block text-xs font-bold text-gray-600">Acto Administrativo</label>
+                    <div class="relative group flex items-center">
+                        <span class="flex items-center justify-center w-3 h-3 rounded-full border border-gray-400 text-gray-400 text-[8px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 text-center px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100] whitespace-normal leading-tight">
+                            Ley, decreto o resolución que crea formalmente la entidad.
+                            <div class="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-gray-800"></div>
+                        </div>
+                    </div>
+                </div>
                     <div class="relative">
                         <input type="text" name="acto_administrativo" required placeholder="Resolución, Decreto, etc." class="w-full px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors">
                         <label class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 cursor-pointer">
@@ -249,7 +276,16 @@ async def get_crear_fondo_modal(
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1">Estado del Fondo</label>
+                    <div class="flex items-center gap-1.5 mb-1">
+                    <label class="block text-xs font-bold text-gray-600">Estado del Fondo</label>
+                    <div class="relative group flex items-center">
+                        <span class="flex items-center justify-center w-3 h-3 rounded-full border border-gray-400 text-gray-400 text-[8px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 text-center px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100] whitespace-normal leading-tight">
+                            Condición activa o liquidada para habilitar o restringir expedientes.
+                            <div class="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-gray-800"></div>
+                        </div>
+                    </div>
+                </div>
                     <select name="estado" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors appearance-none">
                         <option value="ACTIVA">Fondo Abierto / Activo</option>
                         <option value="FUSIONADA">Fondo Fusionado</option>
