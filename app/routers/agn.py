@@ -61,15 +61,15 @@ async def get_agn_modal(
     <div class="p-6">
         
     
-    <form id="agn-expediente-form" x-data="{
+    <form id="agn-expediente-form" x-data="{{
     previewCode: 'Seleccione la clasificación documental para generar el código...',
-    updatePreview() {
-        const getCode = (selectId) => {
+    updatePreview() {{
+        const getCode = (selectId) => {{
             const select = document.getElementById(selectId);
             if (!select || !select.value) return '';
             const option = select.options[select.selectedIndex];
             return option.getAttribute('data-codigo') || '';
-        };
+        }};
         const f = getCode('fondo_select');
         const sec = getCode('seccion_select');
         const subsec = getCode('subseccion_select');
@@ -85,15 +85,15 @@ async def get_agn_modal(
         if (ser) parts.push(ser);
         if (subser) parts.push(subser);
         
-        if (parts.length > 0) {
+        if (parts.length > 0) {{
             parts.push(year);
             parts.push('XXX');
             this.previewCode = parts.join('-');
-        } else {
+        }} else {{
             this.previewCode = 'Seleccione la clasificación documental para generar el código...';
-        }
-    }
-}" x-init="updatePreview()" onsubmit="event.preventDefault(); window.submitAgnExpediente();">
+        }}
+    }}
+}}" x-init="updatePreview()" onsubmit="event.preventDefault(); window.submitAgnExpediente();">
 
             <h3 class="text-md font-bold text-gray-800 mb-3">1. Clasificación Documental (CCD/TRD)</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
