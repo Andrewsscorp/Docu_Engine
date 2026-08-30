@@ -493,3 +493,13 @@ async def add_hsts_header(request: Request, call_next):
 from fastapi.staticfiles import StaticFiles
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
+
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi import Request
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    with open("422_debug.log", "w", encoding="utf-8") as lf:
+        lf.write("URL: " + str(request.url) + chr(10))
+        lf.write("Errors: " + str(exc.errors()) + chr(10))
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
