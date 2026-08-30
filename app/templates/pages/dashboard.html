@@ -1155,6 +1155,7 @@ window.openAgnModal = function() {
 
     // Global HTMX Confirm to SweetAlert2
     document.body.addEventListener('htmx:confirm', function(evt) {
+        if (!evt.detail.question) return; // Only intercept if hx-confirm is actually present
         evt.preventDefault();
         Swal.fire({
             title: '¿Estás seguro?',
