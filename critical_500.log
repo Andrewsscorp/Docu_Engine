@@ -32,7 +32,7 @@ Traceback (most recent call last):
     )
     ^
   File "asyncpg/protocol/protocol.pyx", line 165, in prepare
-asyncpg.exceptions.UndefinedColumnError: column t.nombre does not exist
+asyncpg.exceptions.PostgresSyntaxError: syntax error at or near ":"
 
 The above exception was the direct cause of the following exception:
 
@@ -68,7 +68,7 @@ Traceback (most recent call last):
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
     raise translated_error from error
-sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column t.nombre does not exist
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.PostgresSyntaxError'>: syntax error at or near ":"
 
 The above exception was the direct cause of the following exception:
 
@@ -118,12 +118,12 @@ Traceback (most recent call last):
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\fastapi\routing.py", line 352, in run_endpoint_function
     return await dependant.call(**values)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\app\routers\agn.py", line 1611, in get_expediente_inner_view
-    docs_res = await db.execute(text('''
-               ^^^^^^^^^^^^^^^^^^^^^^^^^
-    ...<5 lines>...
-    '''), {"eid": expediente_id})
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\app\routers\agn.py", line 1966, in post_crear_tipologia_diccionario
+    res = await db.execute(text('''
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<14 lines>...
+    })
+    ^^
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 448, in execute
     result = await greenlet_spawn(
              ^^^^^^^^^^^^^^^^^^^^^
@@ -212,13 +212,14 @@ Traceback (most recent call last):
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
     raise translated_error from error
-sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column t.nombre does not exist
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.PostgresSyntaxError'>: syntax error at or near ":"
 [SQL: 
-        SELECT d.*, t.nombre as tipo_nombre 
-        FROM documents d
-        LEFT JOIN agn_tipologias t ON d.tipologia_id = t.id
-        WHERE d.agn_expediente_id = $1
-        ORDER BY d.folio ASC
+        INSERT INTO agn_tipologias (
+            nombre_oficial, soporte_origen, formatos_permitidos, 
+            clasificacion, exige_firma, tenant_id, usuario_creador, estado_activo
+        )
+        VALUES ($1, $2, :form::jsonb, $3, $4, $5, $6, TRUE)
+        RETURNING id
     ]
-[parameters: ('ba9e2af6-0002-4c1d-8cb0-38115c838f8c',)]
+[parameters: ('RESOLUCION DE ANDRES 001', 'FISICO_DIGITALIZADO', 'CLASIFICADA', True, '22222222-2222-2222-2222-222222222222', 'b412b9c0-ac23-4020-9001-d77cc0328013')]
 (Background on this error at: https://sqlalche.me/e/20/f405)

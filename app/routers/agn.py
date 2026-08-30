@@ -1968,7 +1968,7 @@ async def post_crear_tipologia_diccionario(
             nombre_oficial, soporte_origen, formatos_permitidos, 
             clasificacion, exige_firma, tenant_id, usuario_creador, estado_activo
         )
-        VALUES (:nom, :sop, :form::jsonb, :clas, :firma, :t, :uid, TRUE)
+        VALUES (:nom, :sop, CAST(:form AS JSONB), :clas, :firma, :t, :uid, TRUE)
         RETURNING id
     '''), {
         "nom": nombre_limpio,
