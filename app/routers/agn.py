@@ -2344,6 +2344,7 @@ async def post_upload_direct_expediente(
 async def get_fuid_subserie(
     subserie_id: str,
     request: Request,
+    expediente_id: Optional[str] = None,
     session_data: dict = Depends(require_permission("documentos:leer")),
     db: AsyncSession = Depends(get_db_session)
 ):
@@ -2420,5 +2421,6 @@ async def get_fuid_subserie(
     return templates.TemplateResponse(request=request, name="pages/fuid_view.html", context={
         "request": request,
         "subserie": subserie_dict,
-        "registros": registros
+        "registros": registros,
+        "expediente_id_origen": expediente_id
     })

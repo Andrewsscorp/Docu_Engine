@@ -5,7 +5,11 @@
         <nav class="flex text-sm text-slate-500 mb-4" aria-label="Breadcrumb">
             <ol class="inline-flex items-center space-x-1 md:space-x-3">
                 <li class="inline-flex items-center">
-                    <span class="inline-flex items-center hover:text-indigo-600 transition-colors cursor-pointer">Reportes</span>
+                    {% if expediente_id_origen %}
+<span hx-get="/api/v1/agn/expedientes/{{ expediente_id_origen }}/view" hx-target="#expediente-inner-container" class="inline-flex items-center hover:text-indigo-600 transition-colors cursor-pointer text-indigo-500 font-medium tooltip" title="Volver al Expediente">Expediente Origen</span>
+{% else %}
+<span class="inline-flex items-center hover:text-indigo-600 transition-colors cursor-pointer">Reportes</span>
+{% endif %}
                 </li>
                 <li>
                     <div class="flex items-center">
