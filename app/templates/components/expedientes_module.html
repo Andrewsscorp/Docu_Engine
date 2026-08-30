@@ -168,6 +168,25 @@
         });
     }
 
+        function verMetadatos(id) {
+        Swal.fire({
+            title: 'Metadatos del Expediente',
+            html: 'Cargando...',
+            showConfirmButton: true,
+            confirmButtonText: 'Cerrar',
+            confirmButtonColor: '#4f46e5',
+            didOpen: () => {
+                Swal.showLoading();
+                fetch(`/api/v1/agn/expedientes/${id}/metadata`)
+                    .then(r => r.text())
+                    .then(html => {
+                        Swal.hideLoading();
+                        Swal.getHtmlContainer().innerHTML = html;
+                    });
+            }
+        });
+    }
+
     function cerrarExpediente(id) {
         Swal.fire({
             title: 'Sellar Expediente',
@@ -182,13 +201,13 @@
                 fetch(`/api/v1/agn/expedientes/${id}/cierre`, {
                     method: 'POST'
                 })
-                .then(r => r.json())
-                .then(data => {
-                    if(data.status === 'success') {
+                .then(async r => {
+                    const data = await r.json();
+                    if(r.ok && data.status === 'success') {
                         Swal.fire('Sellado!', data.detail, 'success');
                         htmx.trigger('#expedientes-filters', 'reloadExpedientes');
                     } else {
-                        Swal.fire('Error', 'No se pudo sellar el expediente.', 'error');
+                        Swal.fire('Operación Denegada', data.detail || 'No se pudo sellar el expediente.', 'error');
                     }
                 });
             }
