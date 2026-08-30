@@ -2527,14 +2527,16 @@ async def firmar_fuid(
             "expedientes_vinculados": len(exp_validos),
             "user_agent": request.headers.get("user-agent", "unknown")
         })
-        await db.execute(text('''
-            INSERT INTO log_auditoria_sgdea (id_expediente, id_usuario, tipo_evento, ip_origen, payload_legal)
-            VALUES ('00000000-0000-0000-0000-000000000000', :u, 'FIRMA_FUID_TRANSFERENCIA', :ip, CAST(:det AS JSONB))
-        '''), {
-            "u": session_data["user_id"],
-            "ip": request.client.host if request.client else "unknown",
-            "det": payload_legal
-        })
+        for r in exp_validos:
+            await db.execute(text('''
+                INSERT INTO log_auditoria_sgdea (id_expediente, id_usuario, tipo_evento, ip_origen, payload_legal)
+                VALUES (:eid, :u, 'FIRMA_FUID_TRANSFERENCIA', :ip, CAST(:det AS JSONB))
+            '''), {
+                "eid": r.exp_id,
+                "u": session_data["user_id"],
+                "ip": request.client.host if request.client else "unknown",
+                "det": payload_legal
+            })
         
         await db.commit()
         return JSONResponse({"status": "success", "hash": fuid_hash})
@@ -2555,14 +2557,21 @@ async def descargar_plana_fuid(
         "subserie_id": subserie_id,
         "user_agent": request.headers.get("user-agent", "unknown")
     })
-    await db.execute(text('''
-        INSERT INTO log_auditoria_sgdea (id_expediente, id_usuario, tipo_evento, ip_origen, payload_legal)
-        VALUES ('00000000-0000-0000-0000-000000000000', :u, 'DESCARGA_METADATOS_PLANA', :ip, CAST(:det AS JSONB))
-    '''), {
-        "u": session_data["user_id"],
-        "ip": request.client.host if request.client else "unknown",
-        "det": payload_legal
-    })
+    
+    # We must log this action for EVERY expediente in the subserie
+    exp_res = await db.execute(text("SELECT id FROM agn_expedientes WHERE subserie_id = :sid AND fase_archivo = 'GESTION'"), {"sid": subserie_id})
+    exp_validos = exp_res.fetchall()
+    
+    for r in exp_validos:
+        await db.execute(text('''
+            INSERT INTO log_auditoria_sgdea (id_expediente, id_usuario, tipo_evento, ip_origen, payload_legal)
+            VALUES (:eid, :u, 'DESCARGA_METADATOS_PLANA', :ip, CAST(:det AS JSONB))
+        '''), {
+            "eid": r.id,
+            "u": session_data["user_id"],
+            "ip": request.client.host if request.client else "unknown",
+            "det": payload_legal
+        })
     await db.commit()
     
     # Just returning a dummy string for the file content
