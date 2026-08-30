@@ -1609,7 +1609,7 @@ async def get_expediente_inner_view(
     
     # 2. Documentos del Expediente
     docs_res = await db.execute(text('''
-        SELECT d.*, t.nombre as tipo_nombre 
+        SELECT d.*, t.nombre_oficial as tipo_nombre 
         FROM documents d
         LEFT JOIN agn_tipologias t ON d.tipologia_id = t.id
         WHERE d.agn_expediente_id = :eid
