@@ -2361,6 +2361,16 @@ async def get_fuid_subserie(
     except Exception as e:
         # Transaction is aborted due to missing view, so we must rollback before running fallback query
         await db.rollback()
+        # Re-apply RLS config because rollback clears it!
+        await db.execute(
+            text("SELECT set_config('app.current_tenant', :tenant, false)"), 
+            {"tenant": session_data["tenant_id"]}
+        )
+        if session_data.get("user_id"):
+            await db.execute(
+                text("SELECT set_config('app.current_user_id', :uid, false)"), 
+                {"uid": session_data["user_id"]}
+            )
         # Fallback raw query if the view hasn't been created yet by the admin
         fallback_sql = """
         SELECT 
@@ -2396,6 +2406,13 @@ async def get_fuid_subserie(
             
         FROM agn_expedientes exp
         WHERE exp.estado = 'CERRADO' AND exp.subserie_id = :sid
+        -- NUEVA REGLA NORMATIVA: El candado de evidencia real
+        AND EXISTS (
+            SELECT 1 
+            FROM documents doc 
+            WHERE doc.agn_expediente_id = exp.id 
+              AND doc.status IN ('COMPLETED', 'ARCHIVED')
+        )
         """
         fuid_res = await db.execute(text(fallback_sql), {"sid": subserie_id})
         filas = fuid_res.fetchall()
