@@ -2568,7 +2568,7 @@ async def post_upload_direct_expediente(
         "eid": expediente_id, "did": new_doc_id, "uid": session_data["user_id"], "ihash": new_index_hash
     })
     
-    # background_tasks.add_task(iniciar_extraccion_ocr, new_doc_id) # DELEGATED TO REAL OCR WORKER
+    background_tasks.add_task(iniciar_extraccion_ocr, new_doc_id) # DELEGATED TO REAL OCR WORKER
     
     await db.commit()
     
