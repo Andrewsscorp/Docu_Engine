@@ -1,9 +1,31 @@
-﻿import requests
+﻿from fastapi.testclient import TestClient
+from app.main import app
+import json
+import asyncio
+from app.security import session_signer
 
-try:
-    res = requests.get("http://127.0.0.1:8000/api/v1/agn/subseries/75db37c0-c195-4dcc-8826-5013353327e9/tipologias/disponibles", 
-                       headers={"Authorization": "Bearer YOUR_TOKEN_IF_NEEDED"})
-    print("Status:", res.status_code)
-    print("Body:", res.text)
-except Exception as e:
-    print("Error:", e)
+client = TestClient(app)
+
+# Create a valid session token for SuperAdmin
+session_data = {
+    "user_id": "11111111-1111-1111-1111-111111111111",
+    "tenant_id": "22222222-2222-2222-2222-222222222222",
+    "role_id": "33333333-3333-3333-3333-333333333333" # Assuming this is SuperAdmin
+}
+cookie = session_signer.dumps(session_data)
+
+client.cookies.set("sessionId", cookie)
+
+response = client.post(
+    "/api/v1/agn/tipologias/diccionario",
+    json={
+        "nombre_oficial": "TEST TIPOLOGIA HTTPX",
+        "soporte_origen": "ELECTRONICO_NATIVO",
+        "formatos_permitidos": ["PDF/A"],
+        "clasificacion": "PUBLICA",
+        "exige_firma": False
+    }
+)
+
+print("Status:", response.status_code)
+print("Response:", response.text)

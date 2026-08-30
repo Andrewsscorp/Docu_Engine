@@ -59,8 +59,7 @@
                 const data = await res.json();
                 if(res.ok) {
                     Swal.fire({toast:true, position:'top-end', icon:'success', title:'Guardado en Diccionario', showConfirmButton:false, timer:2000});
-                    this.tipologias.push(data.data);
-                    this.tipologias.sort((a,b) => a.text.localeCompare(b.text));
+                    this.tipologias = [...this.tipologias, data.data].sort((a,b) => a.text.localeCompare(b.text));
                     this.seleccion = data.data.id;
                     this.mostrarNuevaTipologia = false;
                     this.nuevaNom = ''; this.nuevaSoporte = ''; this.nuevaFirma = false;
