@@ -2444,7 +2444,7 @@ async def post_crear_tipologia_diccionario(
     # Verificar si el nombre ya existe (Unicidad)
     exist_res = await db.execute(text("SELECT id FROM agn_tipologias WHERE nombre_oficial = :nom"), {"nom": nombre_limpio})
     if exist_res.fetchone():
-        return JSONResponse({"status": "error", "message": "Ya existe una tipolog├¡a con ese nombre oficial en el cat├ílogo."}, status_code=409)
+        return JSONResponse({"status": "error", "message": "Ya existe una tipología con ese nombre oficial en el catálogo."}, status_code=409)
         
     res = await db.execute(text('''
         INSERT INTO agn_tipologias (
