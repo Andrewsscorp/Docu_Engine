@@ -1,38 +1,22 @@
 Traceback (most recent call last):
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 526, in _prepare_and_execute
-    prepared_stmt, attributes = await adapt_connection._prepare(
-                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        operation, self._invalidate_schema_cache_asof
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 773, in _prepare
-    prepared_stmt = await self._connection.prepare(
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        operation, name=self._prepared_statement_name_func()
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\asyncpg\connection.py", line 638, in prepare
-    return await self._prepare(
-           ^^^^^^^^^^^^^^^^^^^^
-    ...<4 lines>...
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\asyncpg\connection.py", line 657, in _prepare
-    stmt = await self._get_statement(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    ...<5 lines>...
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\asyncpg\connection.py", line 443, in _get_statement
-    statement = await self._protocol.prepare(
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    ...<5 lines>...
-    )
-    ^
-  File "asyncpg/protocol/protocol.pyx", line 165, in prepare
-asyncpg.exceptions.PostgresSyntaxError: syntax error at or near ":"
+  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 550, in _prepare_and_execute
+    self._rows = deque(await prepared_stmt.fetch(*parameters))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\asyncpg\prepared_stmt.py", line 177, in fetch
+    data = await self.__bind_execute(args, 0, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\asyncpg\prepared_stmt.py", line 268, in __bind_execute
+    data, status, _ = await self.__do_execute(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^
+        lambda protocol: protocol.bind_execute(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            self._state, args, '', limit, True, timeout))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\asyncpg\prepared_stmt.py", line 257, in __do_execute
+    return await executor(protocol)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 205, in bind_execute
+asyncpg.exceptions.UniqueViolationError: duplicate key value violates unique constraint "uq_tenant_file_hash"
 
 The above exception was the direct cause of the following exception:
 
@@ -68,7 +52,7 @@ Traceback (most recent call last):
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
     raise translated_error from error
-sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.PostgresSyntaxError'>: syntax error at or near ":"
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.IntegrityError: <class 'asyncpg.exceptions.UniqueViolationError'>: duplicate key value violates unique constraint "uq_tenant_file_hash"
 
 The above exception was the direct cause of the following exception:
 
@@ -118,9 +102,12 @@ Traceback (most recent call last):
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\fastapi\routing.py", line 352, in run_endpoint_function
     return await dependant.call(**values)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\app\routers\agn.py", line 1591, in get_expedientes_module
-    res_count = await db.execute(text(count_query), params)
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\app\routers\agn.py", line 2372, in post_upload_direct_expediente
+    res_doc = await db.execute(text('''
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    })
+    ^^
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 448, in execute
     result = await greenlet_spawn(
              ^^^^^^^^^^^^^^^^^^^^^
@@ -209,7 +196,11 @@ Traceback (most recent call last):
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
     raise translated_error from error
-sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.PostgresSyntaxError'>: syntax error at or near ":"
-[SQL: SELECT COUNT(*) FROM agn_expedientes e WHERE e.tenant_id = $1 AND e.soporte = $2 AND e.subserie_id = :subid::uuid]
-[parameters: ('22222222-2222-2222-2222-222222222222', 'ELECTRÓNICO')]
-(Background on this error at: https://sqlalche.me/e/20/f405)
+sqlalchemy.exc.IntegrityError: (sqlalchemy.dialects.postgresql.asyncpg.IntegrityError) <class 'asyncpg.exceptions.UniqueViolationError'>: duplicate key value violates unique constraint "uq_tenant_file_hash"
+[SQL: 
+        INSERT INTO documents (tenant_id, file_name, file_path, uploaded_by, status, is_private, mime_type, file_size_bytes, file_hash, agn_expediente_id, tipologia_id, paginas_cantidad, thumbnail_path)
+        VALUES ($1, $2, $3, $4, 'PENDING', FALSE, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING id
+    ]
+[parameters: ('22222222-2222-2222-2222-222222222222', '1. PROYECTO - VIABILIDAD - PRESUPUESTO - ARMONIZACIÓN 202600000009431.pdf', '1cdd0ff4502374fda1ceff8d5a82176a7df9b890e56d220b53bc97e3aef165bd_1. PROYECTO - VIABILIDAD - PRESUPUESTO - ARMONIZACIÓN 202600000009431.pdf', 'b412b9c0-ac23-4020-9001-d77cc0328013', 'application/pdf', 2127082, '1cdd0ff4502374fda1ceff8d5a82176a7df9b890e56d220b53bc97e3aef165bd', '496acade-8037-4f03-ba71-6b75ab32468c', None, 29, '/api/v1/documents/thumbnail/22222222-2222-2222-2222-222222222222/thumb_1cdd0ff4502374fda1ceff8d5a82176a7df9b890e56d220b53bc97e3aef165bd.webp')]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)

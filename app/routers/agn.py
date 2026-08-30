@@ -1543,8 +1543,8 @@ async def get_expedientes_module(
     fecha_inicio: str = "",
     fecha_fin: str = "",
     soporte: str = "",
-    page: int = 1,
-    limit: int = 20,
+    ultimo_fecha: str = "",
+    ultimo_id: str = "",
     session_data: dict = Depends(require_permission("documentos:leer")),
     db: AsyncSession = Depends(get_db_session)
 ):
@@ -1552,31 +1552,29 @@ async def get_expedientes_module(
     templates = Jinja2Templates(directory="app/templates")
     
     tenant_id = session_data["tenant_id"]
-    offset = (page - 1) * limit
+    limit = 12
     
-    params = {"t": tenant_id}
+    params = {"t": tenant_id, "limit": limit}
     where_clauses = ["e.tenant_id = :t"]
     
+    is_filtered = bool(q or status or subserie_id or fecha_inicio or fecha_fin or soporte)
+    
     if q:
-        # Full-text search with to_tsvector
-        where_clauses.append("(to_tsvector('spanish', e.codigo_expediente || ' ' || e.nombre_expediente) @@ plainto_tsquery('spanish', :q))")
+        where_clauses.append("(to_tsvector('spanish', coalesce(e.codigo_expediente, '') || ' ' || coalesce(e.nombre_expediente, '')) @@ plainto_tsquery('spanish', :q))")
         params["q"] = q
         
     if status:
         if status == 'abierto':
-            where_clauses.append("e.estado = 'ABIERTO'")
+            where_clauses.append("e.estado_abierto = TRUE")
         elif status == 'cerrado':
-            where_clauses.append("e.estado = 'CERRADO'")
+            where_clauses.append("e.estado_abierto = FALSE AND e.fase_archivo = 'GESTION'")
         elif status == 'transferencia':
-            where_clauses.append("e.fecha_transferencia_central IS NOT NULL")
+            where_clauses.append("e.fase_archivo = 'TRANSFERENCIA'")
             
-    if fecha_inicio:
-        where_clauses.append("e.fecha_apertura >= CAST(:fi AS date)")
-        params["fi"] = fecha_inicio
-        
-    if fecha_fin:
-        where_clauses.append("e.fecha_apertura <= CAST(:ff AS date)")
-        params["ff"] = fecha_fin
+    if fecha_inicio and fecha_fin:
+        where_clauses.append("e.fecha_apertura BETWEEN CAST(:fi AS timestamp with time zone) AND CAST(:ff AS timestamp with time zone)")
+        params["fi"] = fecha_inicio + " 00:00:00"
+        params["ff"] = fecha_fin + " 23:59:59"
         
     if soporte:
         where_clauses.append("e.soporte = :soporte")
@@ -1586,56 +1584,74 @@ async def get_expedientes_module(
         where_clauses.append("e.subserie_id = CAST(:subid AS uuid)")
         params["subid"] = subserie_id
         
+    # Keyset Pagination
+    if ultimo_fecha and ultimo_id:
+        where_clauses.append("(e.created_at, e.id) < (CAST(:uf AS timestamp with time zone), CAST(:uid AS uuid))")
+        params["uf"] = ultimo_fecha
+        params["uid"] = ultimo_id
+        
     where_sql = " AND ".join(where_clauses)
     
-    # Get total count safely without scanning everything unless filters are applied
-    # For large datasets, pg_class could be used, but since we are filtering, we do an exact count
-    count_query = f"SELECT COUNT(*) FROM agn_expedientes e WHERE {where_sql}"
-    res_count = await db.execute(text(count_query), params)
-    total_count = res_count.scalar()
-    
+    # Global count using pg_class for un-filtered view to avoid scanning, exact count if filtered
+    total_count = 0
+    if is_filtered:
+        count_query = f"SELECT COUNT(*) FROM agn_expedientes e WHERE {where_sql.replace('AND (e.created_at, e.id) < (CAST(:uf AS timestamp with time zone), CAST(:uid AS uuid))', '')}"
+        res_count = await db.execute(text(count_query), {k: v for k, v in params.items() if k not in ['uf', 'uid', 'limit']})
+        total_count = res_count.scalar()
+    else:
+        res_count = await db.execute(text("SELECT reltuples::bigint FROM pg_class WHERE relname = 'agn_expedientes'"))
+        total_count = res_count.scalar() or 0
+        
     # Fetch subseries for the dropdown
     res_sub = await db.execute(text("SELECT id, codigo, nombre FROM agn_subseries WHERE tenant_id = :t ORDER BY codigo"), {"t": tenant_id})
     subseries = [dict(r._mapping) for r in res_sub.fetchall()]
     
-    # Query with filters and pagination
+    # Optimized query loading relations
     query_str = f'''
-        SELECT e.id, e.codigo_expediente, e.nombre_expediente, e.fecha_apertura, (e.estado = 'ABIERTO') as estado_abierto,
-               (SELECT COUNT(d.id) FROM documents d WHERE d.agn_expediente_id = e.id) as doc_count,
-               e.soporte
+        SELECT e.id, e.codigo_expediente, e.nombre_expediente, e.fecha_apertura, e.estado_abierto, e.fase_archivo,
+               e.cantidad_documentos as doc_count, e.soporte, e.created_at,
+               u.nombres || ' ' || u.apellidos as responsable_nombre
         FROM agn_expedientes e
+        LEFT JOIN usuarios u ON e.responsable_id = CAST(u.id AS VARCHAR)
         WHERE {where_sql}
-        ORDER BY e.created_at DESC
-        LIMIT :l OFFSET :o
+        ORDER BY e.created_at DESC, e.id DESC
+        LIMIT :limit
     '''
-    params["l"] = limit
-    params["o"] = offset
-    
     res = await db.execute(text(query_str), params)
-    expedientes = [dict(row._mapping) for row in res.fetchall()]
-    
-    has_more = len(expedientes) == limit
+    rows = res.fetchall()
+    expedientes = [dict(r._mapping) for r in rows]
     
     context = {
         "request": request, 
-        "expedientes": expedientes, 
-        "q": q, 
-        "status": status,
-        "subserie_id": subserie_id,
-        "fecha_inicio": fecha_inicio,
-        "fecha_fin": fecha_fin,
-        "soporte": soporte,
-        "page": page,
+        "expedientes": expedientes,
         "subseries": subseries,
-        "has_more": has_more,
-        "total_count": total_count
+        "total_count": total_count,
+        "has_more": len(expedientes) == limit,
+        "q": q, "status": status, "subserie_id": subserie_id,
+        "fecha_inicio": fecha_inicio, "fecha_fin": fecha_fin, "soporte": soporte,
+        "is_append": bool(ultimo_id)
     }
     
-    # Check if requested just the grid (htmx search/pagination) or the full module
+    # HTMX Target Check
     if request.headers.get("hx-target") == "expedientes-results-grid" or request.headers.get("hx-target") == "expedientes-append-target":
-        # If it's a "Cargar más", we append to the list
         template_name = "components/expedientes_grid_items.html" if request.headers.get("hx-target") == "expedientes-append-target" else "components/expedientes_grid.html"
         return templates.TemplateResponse(request=request, name=template_name, context=context)
+        
+    return templates.TemplateResponse(request=request, name="components/expedientes_module.html", context=context)
+    
+@router.post("/expedientes/{id}/cierre")
+async def post_cierre_expediente(
+    id: str,
+    session_data: dict = Depends(require_permission("expedientes:editar")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    tenant_id = session_data["tenant_id"]
+    res = await db.execute(text("UPDATE agn_expedientes SET estado_abierto = FALSE, fecha_cierre = CURRENT_TIMESTAMP WHERE id = :id AND tenant_id = :t RETURNING id"), {"id": id, "t": tenant_id})
+    if not res.scalar():
+        raise HTTPException(status_code=404, detail="Expediente no encontrado")
+    await db.commit()
+    return {"status": "success", "detail": "Expediente sellado correctamente (Inmutabilidad Activada)"}
+
     
     # Full module response
     return templates.TemplateResponse(request=request, name="components/expedientes_module.html", context=context)
@@ -2773,3 +2789,30 @@ async def delete_all_expediente_tipologias(
     '''), {"eid": expediente_id})
     await db.commit()
     return await get_control_tipologias_view(expediente_id, request, session_data, db)
+
+@router.put("/expedientes/{id}")
+async def update_expediente(
+    id: str,
+    request: Request,
+    session_data: dict = Depends(require_permission("expedientes:editar")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    form_data = await request.form()
+    nombre = form_data.get("nombre_expediente")
+    resp_id = form_data.get("responsable_id")
+    
+    tenant_id = session_data["tenant_id"]
+    
+    # Validation constraint
+    res_check = await db.execute(text("SELECT estado_abierto, fase_archivo FROM agn_expedientes WHERE id = :id AND tenant_id = :t"), {"id": id, "t": tenant_id})
+    row = res_check.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Expediente no encontrado")
+        
+    if not row.estado_abierto or row.fase_archivo == 'TRANSFERENCIA':
+        return JSONResponse(status_code=403, content={"error": "Inmutabilidad Activa: No se puede modificar un expediente cerrado o en transferencia según Ley 527."})
+        
+    await db.execute(text("UPDATE agn_expedientes SET nombre_expediente = :n, responsable_id = :r WHERE id = :id"), {"n": nombre, "r": resp_id, "id": id})
+    await db.commit()
+    
+    return {"status": "success"}

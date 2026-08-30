@@ -83,4 +83,80 @@
     </div>
 </div>
 
-</div>
+</div><script>
+    function editExpediente(id, nombre, canEdit) {
+        if (!canEdit) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Operacin Denegada',
+                text: 'Inmutabilidad Activa: No se puede modificar un expediente cerrado o en transferencia segn Ley 527.',
+                confirmButtonColor: '#4f46e5'
+            });
+            return;
+        }
+        
+        Swal.fire({
+            title: 'Editar Expediente',
+            input: 'text',
+            inputValue: nombre,
+            inputLabel: 'Nombre del Expediente',
+            showCancelButton: true,
+            confirmButtonText: 'Guardar',
+            cancelButtonText: 'Cancelar',
+            showLoaderOnConfirm: true,
+            preConfirm: (newNombre) => {
+                const formData = new FormData();
+                formData.append('nombre_expediente', newNombre);
+                // In a real app we'd have a select for responsable_id
+                
+                return fetch(`/api/v1/agn/expedientes/${id}`, {
+                    method: 'PUT',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => { throw new Error(data.error || 'Error desconocido') })
+                    }
+                    return response.json()
+                })
+                .catch(error => {
+                    Swal.showValidationMessage(`Error: ${error.message}`)
+                })
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire('Guardado!', '', 'success');
+                // Reload the grid
+                htmx.trigger('#expedientes-filters', 'reloadExpedientes');
+            }
+        });
+    }
+
+    function cerrarExpediente(id) {
+        Swal.fire({
+            title: 'Sellar Expediente',
+            text: "Esta accin marcar el expediente como CERRADO, inyectar la marca de tiempo e iniciar la cuenta regresiva de retencin. Esta accin activa la inmutabilidad y no se puede deshacer.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Sellar Expediente'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/api/v1/agn/expedientes/${id}/cierre`, {
+                    method: 'POST'
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if(data.status === 'success') {
+                        Swal.fire('Sellado!', data.detail, 'success');
+                        htmx.trigger('#expedientes-filters', 'reloadExpedientes');
+                    } else {
+                        Swal.fire('Error', 'No se pudo sellar el expediente.', 'error');
+                    }
+                });
+            }
+        });
+    }
+</script>

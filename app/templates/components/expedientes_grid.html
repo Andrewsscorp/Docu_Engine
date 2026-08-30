@@ -1,7 +1,7 @@
 <div id="expedientes-grid-wrapper" class="grid gap-4" x-bind:class="viewMode === 'list' ? 'grid-cols-1 md:grid-cols-1 lg:grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'">
     {% include 'components/expedientes_grid_items.html' %}
     
-    {% if not expedientes and page == 1 %}
+    {% if not expedientes and not is_append %}
     <div class="col-span-full py-16 text-center bg-white rounded-2xl border border-dashed border-gray-300">
         <svg class="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
         <h3 class="text-gray-500 font-medium">No hay expedientes que coincidan con los filtros</h3>
