@@ -1868,11 +1868,10 @@ async def get_modal_trd(
     # In a real app we'd query the permissions, but since we rely on require_permission dependency, 
     # we can do a quick check:
     perm_res = await db.execute(text('''
-        SELECT 1 FROM user_groups ug
-        JOIN groups g ON ug.group_id = g.id
-        JOIN role_permissions rp ON g.role_id = rp.role_id
+        SELECT 1 FROM users u
+        JOIN role_permissions rp ON u.role_id = rp.role_id
         JOIN permissions p ON rp.permission_id = p.id
-        WHERE ug.user_id = :uid AND p.name = 'tipologias:crear'
+        WHERE u.id = :uid AND p.name = 'tipologias:crear'
     '''), {"uid": session_data["user_id"]})
     has_perm = perm_res.fetchone() is not None
     
@@ -1905,7 +1904,7 @@ async def get_tipologias_disponibles(
     
     tipologias = [dict(r._mapping) for r in res.fetchall()]
     # Formatear para Select2 o frontend JSON:
-    return JSONResponse([{"id": str(t["id"]), "text": f"[{t['codigo_tipologia']}] {t['nombre']}"} for t in tipologias])
+    return JSONResponse([{"id": str(t["id"]), "text": f"[{t['codigo_tipologia']}] {t['nombre']}" if t['codigo_tipologia'] else t['nombre']} for t in tipologias])
 
 class TRDLinkPayload(BaseModel):
     id_tipologia: str
