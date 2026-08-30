@@ -1152,6 +1152,30 @@ window.openAgnModal = function() {
         }
     });
 };
+
+    // Global HTMX Confirm to SweetAlert2
+    document.body.addEventListener('htmx:confirm', function(evt) {
+        evt.preventDefault();
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: evt.detail.question,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#ef4444',
+            confirmButtonText: 'Sí, continuar',
+            cancelButtonText: 'Cancelar',
+            customClass: {
+                popup: 'rounded-2xl',
+                confirmButton: 'rounded-xl font-bold px-6 py-2',
+                cancelButton: 'rounded-xl font-bold px-6 py-2'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                evt.detail.issueRequest(true); 
+            }
+        });
+    });
 </script>
 </body>
 
