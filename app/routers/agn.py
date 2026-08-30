@@ -2396,13 +2396,6 @@ async def get_fuid_subserie(
             
         FROM agn_expedientes exp
         WHERE exp.estado = 'CERRADO' AND exp.subserie_id = :sid
-          -- NUEVA REGLA NORMATIVA: El candado de evidencia real
-          AND EXISTS (
-              SELECT 1 
-              FROM documents doc 
-              WHERE doc.agn_expediente_id = exp.id 
-                AND doc.status IN ('COMPLETED', 'ARCHIVED')
-          )
         """
         fuid_res = await db.execute(text(fallback_sql), {"sid": subserie_id})
         filas = fuid_res.fetchall()
