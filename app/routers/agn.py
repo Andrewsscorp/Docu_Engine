@@ -1741,7 +1741,7 @@ async def cerrar_expediente(
                s.retencion_ag
         FROM agn_expedientes e
         LEFT JOIN agn_subseries s ON e.subserie_id = s.id
-        WHERE e.id = :eid FOR UPDATE
+        WHERE e.id = :eid FOR UPDATE OF e
     '''), {"eid": expediente_id})
     exp = exp_res.fetchone()
     if not exp:
