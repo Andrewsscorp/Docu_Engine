@@ -1026,9 +1026,16 @@ from fastapi import BackgroundTasks
 
 # Mock OCR function as requested
 async def iniciar_extraccion_ocr(document_id: str):
-    # This simulates a background task taking time without blocking the main event loop
+    import asyncio
+    from app.database import AsyncSessionLocal
+    from sqlalchemy import text
     await asyncio.sleep(2)
-    # Here it would update the DB...
+    try:
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("UPDATE documents SET status = 'COMPLETED', ocr_confidence_score = 0.99, extracted_text = 'Texto extraído por OCR simulado' WHERE id = :id"), {"id": document_id})
+            await session.commit()
+    except Exception as e:
+        print(f"Error in OCR: {e}")
     print(f"OCR finished for {document_id}")
 
 @router.post("/api/v1/documents/upload-initial", response_class=HTMLResponse)

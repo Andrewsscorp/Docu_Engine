@@ -2237,6 +2237,7 @@ async def post_crear_tipologia_diccionario(
 @router.post("/expedientes/{expediente_id}/upload_direct")
 async def post_upload_direct_expediente(
     expediente_id: str,
+    background_tasks: BackgroundTasks,
     tipologia_id: str = Form(...),
     file: UploadFile = File(...),
     session_data: dict = Depends(require_permission("documentos:crear")),
@@ -2245,6 +2246,7 @@ async def post_upload_direct_expediente(
     import os
     import hashlib
     import fitz
+    from app.routers.documents import iniciar_extraccion_ocr
     
     tenant_id = session_data["tenant_id"]
     upload_dir = os.path.join("uploads", str(tenant_id))
@@ -2269,7 +2271,7 @@ async def post_upload_direct_expediente(
             
     res_doc = await db.execute(text('''
         INSERT INTO documents (tenant_id, file_name, file_path, uploaded_by, status, is_private, mime_type, file_size_bytes, file_hash, agn_expediente_id, tipologia_id, paginas_cantidad)
-        VALUES (:t, :n, :p, :u, 'COMPLETED', FALSE, :m, :s, :h, :eid, :tid, :pages)
+        VALUES (:t, :n, :p, :u, 'PENDING', FALSE, :m, :s, :h, :eid, :tid, :pages)
         RETURNING id
     '''), {
         "t": tenant_id, "n": file.filename, "p": file_path, "u": session_data["user_id"],
@@ -2279,7 +2281,7 @@ async def post_upload_direct_expediente(
     
     new_doc_id = str(res_doc.scalar())
     
-    # ├ìndice Electr├│nico
+    # Índice Electrónico
     index_seed = f"{expediente_id}|{new_doc_id}|{session_data['user_id']}"
     new_index_hash = hashlib.sha256(index_seed.encode()).hexdigest()
     
@@ -2289,6 +2291,8 @@ async def post_upload_direct_expediente(
     '''), {
         "eid": expediente_id, "did": new_doc_id, "uid": session_data["user_id"], "ihash": new_index_hash
     })
+    
+    background_tasks.add_task(iniciar_extraccion_ocr, new_doc_id)
     
     await db.commit()
     
