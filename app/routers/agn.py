@@ -2358,6 +2358,8 @@ async def get_fuid_subserie(
         fuid_res = await db.execute(text("SELECT * FROM vista_fuid_detalle_subserie WHERE subserie_id = :sid ORDER BY no_orden ASC"), {"sid": subserie_id})
         filas = fuid_res.fetchall()
     except Exception as e:
+        # Transaction is aborted due to missing view, so we must rollback before running fallback query
+        await db.rollback()
         # Fallback raw query if the view hasn't been created yet by the admin
         fallback_sql = """
         SELECT 
