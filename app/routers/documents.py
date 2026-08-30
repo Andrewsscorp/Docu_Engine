@@ -1306,7 +1306,7 @@ async def finalizar_enrutamiento(
         # 5. Background Task
         # REMOVED if not es_privado: ALL documents (private or not) must run through OCR
         # otherwise they stay in PENDING forever and user cannot search their contents.
-        background_tasks.add_task(iniciar_extraccion_ocr, documento_id)
+        # background_tasks.add_task(iniciar_extraccion_ocr, documento_id) # DELEGATED TO REAL OCR WORKER
             
         await db.commit()
     except Exception as e:
