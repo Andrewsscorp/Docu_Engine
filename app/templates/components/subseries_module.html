@@ -1,0 +1,75 @@
+﻿<div class="flex flex-col h-full w-full">
+    <!-- Header Level 1 -->
+    <div class="px-8 pt-8 pb-6 bg-white border-b border-gray-100 flex flex-col gap-6">
+        <div class="flex justify-between items-end">
+            <div>
+                <h1 class="text-[28px] font-bold text-gray-900 leading-tight flex items-center gap-3">
+                    Cuadro de Clasificacin (TRD)
+                    <span class="text-sm font-semibold bg-gray-100 text-gray-500 px-3 py-1 rounded-full border border-gray-200">
+                        {{ total_folders|default(0) }} Carpetas
+                    </span>
+                </h1>
+                <p class="text-sm font-medium text-gray-500 mt-1">Selecciona una Serie/Subserie para ver sus expedientes.</p>
+            </div>
+            
+            <button type="button" onclick="window.openAgnModal('{{ subserie_id if subserie_id else '' }}')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-2 hover:scale-105 active:scale-95">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Nuevo Expediente
+            </button>
+        </div>
+    </div>
+
+    <!-- Master Folders Grid -->
+    <div class="flex-1 p-8 overflow-y-auto bg-gray-50/50">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {% for carpeta in carpetas %}
+            <!-- Card Carpeta Maestra -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer flex flex-col overflow-hidden relative group"
+                 hx-get="/api/v1/agn/expedientes/module?subserie_id={{ carpeta.id }}"
+                 hx-target="closest section"
+                 hx-swap="innerHTML">
+                 
+                <!-- Carpeta Top Tab Design -->
+                <div class="h-3 w-1/3 bg-indigo-100 rounded-br-lg absolute top-0 left-0"></div>
+                <div class="h-1 w-full bg-indigo-500 absolute top-0 left-0"></div>
+                
+                <div class="p-5 pt-6 flex-1 flex flex-col">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                            <!-- Folder Icon -->
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                        </div>
+                        <span class="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-mono font-bold rounded-md border border-gray-200">
+                            {{ carpeta.codigo_jerarquico }}
+                        </span>
+                    </div>
+                    
+                    <h3 class="text-lg font-bold text-gray-900 leading-tight mb-2 group-hover:text-indigo-700 transition-colors">
+                        {{ carpeta.subserie_nombre }}
+                    </h3>
+                    
+                    <div class="bg-amber-50 border border-amber-100 rounded-lg p-3 mt-auto mb-4">
+                        <h4 class="text-[10px] uppercase font-bold text-amber-800 tracking-wider mb-1.5">Reglas de Retencin</h4>
+                        <ul class="text-[11px] text-amber-900 space-y-1 font-medium">
+                            <li class="flex justify-between"><span>Archivo Gestin:</span> <span>{{ carpeta.retencion_ag }} Aos</span></li>
+                            <li class="flex justify-between"><span>Archivo Central:</span> <span>{{ carpeta.retencion_ac }} Aos</span></li>
+                            <li class="flex justify-between"><span>Disposicin Final:</span> <span class="font-bold">{{ carpeta.disposicion }}</span></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="flex items-center justify-between text-xs font-medium text-gray-500 border-t border-gray-100 pt-3">
+                        <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> 
+                        <strong class="text-gray-700">{{ carpeta.total_expedientes }}</strong> Expedientes
+                        </span>
+                        <span class="text-indigo-600 group-hover:translate-x-1 transition-transform">&rarr;</span>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-span-full text-center py-12">
+                <p class="text-gray-500 font-medium">No hay series o subseries configuradas en el Cuadro de Clasificacin (TRD).</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

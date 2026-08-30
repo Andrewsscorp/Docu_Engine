@@ -10,8 +10,8 @@ async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False
 
 async def main():
     async with async_session() as session:
-        res = await session.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"))
+        res = await session.execute(text("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'users'"))
         for row in res.fetchall():
-            print(row[0])
+            print(f"{row[0]}: {row[1]}")
 
 asyncio.run(main())

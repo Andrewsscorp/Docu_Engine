@@ -1550,10 +1550,42 @@ async def get_expedientes_module(
 ):
     from fastapi.templating import Jinja2Templates
     templates = Jinja2Templates(directory="app/templates")
-    
     tenant_id = session_data["tenant_id"]
-    limit = 12
     
+    # ---------------------------------------------------------
+    # NIVEL 1: CARPETAS MAESTRAS (Si no hay subserie seleccionada)
+    # ---------------------------------------------------------
+    if not subserie_id and request.headers.get("hx-target") != "expedientes-results-grid" and request.headers.get("hx-target") != "expedientes-append-target":
+        # Render the master folders view
+        query_sub = '''
+            SELECT ss.id, ss.codigo as subserie_codigo, ss.nombre as subserie_nombre,
+                   s.codigo as serie_codigo, s.nombre as serie_nombre,
+                   d.codigo as dep_codigo, d.nombre as dep_nombre,
+                   ss.retencion_ag, ss.retencion_ac, ss.disposicion, ss.total_expedientes
+            FROM agn_subseries ss
+            JOIN agn_series s ON ss.serie_id = s.id
+            JOIN agn_dependencias d ON s.seccion_id = d.id OR s.subseccion_id = d.id
+            WHERE ss.tenant_id = :t
+            ORDER BY d.codigo, s.codigo, ss.codigo
+        '''
+        res_sub = await db.execute(text(query_sub), {"t": tenant_id})
+        carpetas = []
+        for row in res_sub.fetchall():
+            d = dict(row._mapping)
+            d["codigo_jerarquico"] = f"{d['dep_codigo']}-{d['serie_codigo']}-{d['subserie_codigo']}"
+            carpetas.append(d)
+            
+        total_folders = len(carpetas)
+        return templates.TemplateResponse("components/subseries_module.html", {
+            "request": request,
+            "carpetas": carpetas,
+            "total_folders": total_folders
+        })
+
+    # ---------------------------------------------------------
+    # NIVEL 2: EXPEDIENTES (Interior de la Subserie)
+    # ---------------------------------------------------------
+    limit = 12
     params = {"t": tenant_id, "limit": limit}
     where_clauses = ["e.tenant_id = :t"]
     
@@ -1592,7 +1624,6 @@ async def get_expedientes_module(
         
     where_sql = " AND ".join(where_clauses)
     
-    # Global count using pg_class for un-filtered view to avoid scanning, exact count if filtered
     total_count = 0
     if is_filtered:
         count_query = f"SELECT COUNT(*) FROM agn_expedientes e WHERE {where_sql.replace('AND (e.created_at, e.id) < (CAST(:uf AS timestamp with time zone), CAST(:uid AS uuid))', '')}"
@@ -1602,34 +1633,45 @@ async def get_expedientes_module(
         res_count = await db.execute(text("SELECT reltuples::bigint FROM pg_class WHERE relname = 'agn_expedientes'"))
         total_count = res_count.scalar() or 0
         
-    # Fetch subseries for the dropdown
-    res_sub = await db.execute(text("SELECT id, codigo, nombre FROM agn_subseries WHERE tenant_id = :t ORDER BY codigo"), {"t": tenant_id})
-    subseries = [dict(r._mapping) for r in res_sub.fetchall()]
+    # Fetch breadcrumbs context if inside a subserie
+    breadcrumb = None
+    if subserie_id:
+        bc_query = '''
+            SELECT ss.nombre as subserie_nombre, s.nombre as serie_nombre, d.nombre as dep_nombre
+            FROM agn_subseries ss
+            JOIN agn_series s ON ss.serie_id = s.id
+            JOIN agn_dependencias d ON s.seccion_id = d.id OR s.subseccion_id = d.id
+            WHERE ss.id = CAST(:subid AS uuid)
+        '''
+        res_bc = await db.execute(text(bc_query), {"subid": subserie_id})
+        bc_row = res_bc.fetchone()
+        if bc_row:
+            bc = dict(bc_row._mapping)
+            import datetime
+breadcrumb = f"Fondo > {bc['dep_nombre']} > {bc['serie_nombre']} > {bc['subserie_nombre']} > Vigencia {datetime.datetime.now().year}"
     
-    # Optimized query loading relations
     query_str = f'''
         SELECT e.id, e.codigo_expediente, e.nombre_expediente, e.fecha_apertura, e.estado_abierto, e.fase_archivo,
                e.cantidad_documentos as doc_count, e.soporte, e.created_at,
-               u.nombres || ' ' || u.apellidos as responsable_nombre
+               u.username as responsable_nombre
         FROM agn_expedientes e
-        LEFT JOIN usuarios u ON e.responsable_id = CAST(u.id AS VARCHAR)
+        LEFT JOIN users u ON e.responsable_id = CAST(u.id AS VARCHAR)
         WHERE {where_sql}
         ORDER BY e.created_at DESC, e.id DESC
         LIMIT :limit
     '''
     res = await db.execute(text(query_str), params)
-    rows = res.fetchall()
-    expedientes = [dict(r._mapping) for r in rows]
+    expedientes = [dict(r._mapping) for r in res.fetchall()]
     
     context = {
         "request": request, 
         "expedientes": expedientes,
-        "subseries": subseries,
         "total_count": total_count,
         "has_more": len(expedientes) == limit,
         "q": q, "status": status, "subserie_id": subserie_id,
         "fecha_inicio": fecha_inicio, "fecha_fin": fecha_fin, "soporte": soporte,
-        "is_append": bool(ultimo_id)
+        "is_append": bool(ultimo_id),
+        "breadcrumb": breadcrumb
     }
     
     # HTMX Target Check
@@ -1638,6 +1680,7 @@ async def get_expedientes_module(
         return templates.TemplateResponse(request=request, name=template_name, context=context)
         
     return templates.TemplateResponse(request=request, name="components/expedientes_module.html", context=context)
+
     
 @router.post("/expedientes/{id}/cierre")
 async def post_cierre_expediente(

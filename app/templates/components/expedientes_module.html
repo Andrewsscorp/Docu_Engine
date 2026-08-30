@@ -1,16 +1,40 @@
 <div class="flex flex-col h-full w-full" x-data="{ viewMode: 'grid' }">
 ﻿<div class="px-8 pt-8 pb-6 bg-white border-b border-gray-100 flex flex-col gap-6">
     <div class="flex justify-between items-end">
-        <div>
+                <div class="flex flex-col gap-2">
+            {% if breadcrumb %}
+            <nav class="flex text-sm text-gray-500 font-medium" aria-label="Breadcrumb">
+              <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                <li class="inline-flex items-center">
+                  <a href="#" hx-get="/api/v1/agn/expedientes/module" hx-target="closest section" class="inline-flex items-center hover:text-indigo-600 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
+                    TRD
+                  </a>
+                </li>
+                {% set parts = breadcrumb.split(" > ") %}
+                {% for part in parts %}
+                {% if not loop.first %}
+                <li>
+                  <div class="flex items-center">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    <span class="ml-1 md:ml-2 text-gray-700 font-bold">{{ part }}</span>
+                  </div>
+                </li>
+                {% endif %}
+                {% endfor %}
+              </ol>
+            </nav>
+            {% else %}
             <h1 class="text-[28px] font-bold text-gray-900 leading-tight flex items-center gap-3">
-                Gestión de Expedientes 
+                Gestin de Expedientes 
                 <span id="total-expedientes-badge" class="text-sm font-semibold bg-gray-100 text-gray-500 px-3 py-1 rounded-full border border-gray-200">
                     {{ total_count|default(0) }} Total
                 </span>
             </h1>
+            {% endif %}
         </div>
         
-        <button type="button" onclick="window.openAgnModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-2 hover:scale-105 active:scale-95">
+        <button type="button" onclick="window.openAgnModal('{{ subserie_id if subserie_id else '' }}')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-2 hover:scale-105 active:scale-95">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             Nuevo Expediente
         </button>
@@ -38,12 +62,17 @@
             <option value="transferencia" {% if status == 'transferencia' %}selected{% endif %}>En Transferencia</option>
         </select>
         
+        {% if breadcrumb %}
+        <input type="hidden" name="subserie_id" value="{{ subserie_id }}">
+        {% else %}
         <select name="subserie_id" class="h-[42px] bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl focus:ring-primary focus:border-primary block px-3 shadow-sm min-w-[180px] max-w-[240px] outline-none truncate" title="Filtrar por Subserie">
             <option value="">Serie / Subserie</option>
             {% for sub in subseries %}
             <option value="{{ sub.id }}" {% if subserie_id == sub.id|string %}selected{% endif %}>{{ sub.codigo }} - {{ sub.nombre }}</option>
             {% endfor %}
         </select>
+        {% endif %}
+        <!-- HIDDEN REPLACEMENT ANCHOR -->
         
         <!-- Fecha Rango (Simplified as inputs) -->
         <div class="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-2 h-[42px] shadow-sm">
