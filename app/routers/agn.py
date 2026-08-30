@@ -1564,7 +1564,7 @@ async def get_expedientes_module(
                    ss.retencion_ag, ss.retencion_ac, ss.disposicion, ss.total_expedientes
             FROM agn_subseries ss
             JOIN agn_series s ON ss.serie_id = s.id
-            JOIN agn_dependencias d ON s.seccion_id = d.id OR s.subseccion_id = d.id
+            JOIN agn_dependencias d ON d.id = COALESCE(s.subseccion_id, s.seccion_id)
             WHERE ss.tenant_id = :t
             ORDER BY d.codigo, s.codigo, ss.codigo
         '''
@@ -1576,7 +1576,7 @@ async def get_expedientes_module(
             carpetas.append(d)
             
         total_folders = len(carpetas)
-        return templates.TemplateResponse("components/subseries_module.html", {
+        return templates.TemplateResponse(request=request, name="components/subseries_module.html", context={
             "request": request,
             "carpetas": carpetas,
             "total_folders": total_folders
@@ -1640,7 +1640,7 @@ async def get_expedientes_module(
             SELECT ss.nombre as subserie_nombre, s.nombre as serie_nombre, d.nombre as dep_nombre
             FROM agn_subseries ss
             JOIN agn_series s ON ss.serie_id = s.id
-            JOIN agn_dependencias d ON s.seccion_id = d.id OR s.subseccion_id = d.id
+            JOIN agn_dependencias d ON d.id = COALESCE(s.subseccion_id, s.seccion_id)
             WHERE ss.id = CAST(:subid AS uuid)
         '''
         res_bc = await db.execute(text(bc_query), {"subid": subserie_id})
@@ -1648,7 +1648,7 @@ async def get_expedientes_module(
         if bc_row:
             bc = dict(bc_row._mapping)
             import datetime
-breadcrumb = f"Fondo > {bc['dep_nombre']} > {bc['serie_nombre']} > {bc['subserie_nombre']} > Vigencia {datetime.datetime.now().year}"
+            breadcrumb = f"Fondo > {bc['dep_nombre']} > {bc['serie_nombre']} > {bc['subserie_nombre']} > Vigencia {datetime.datetime.now().year}"
     
     query_str = f'''
         SELECT e.id, e.codigo_expediente, e.nombre_expediente, e.fecha_apertura, e.estado_abierto, e.fase_archivo,

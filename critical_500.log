@@ -1,78 +1,4 @@
 Traceback (most recent call last):
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 526, in _prepare_and_execute
-    prepared_stmt, attributes = await adapt_connection._prepare(
-                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        operation, self._invalidate_schema_cache_asof
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 773, in _prepare
-    prepared_stmt = await self._connection.prepare(
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        operation, name=self._prepared_statement_name_func()
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\asyncpg\connection.py", line 638, in prepare
-    return await self._prepare(
-           ^^^^^^^^^^^^^^^^^^^^
-    ...<4 lines>...
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\asyncpg\connection.py", line 657, in _prepare
-    stmt = await self._get_statement(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    ...<5 lines>...
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\asyncpg\connection.py", line 443, in _get_statement
-    statement = await self._protocol.prepare(
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    ...<5 lines>...
-    )
-    ^
-  File "asyncpg/protocol/protocol.pyx", line 165, in prepare
-asyncpg.exceptions.UndefinedTableError: relation "usuarios" does not exist
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1969, in _exec_single_context
-    self.dialect.do_execute(
-    ~~~~~~~~~~~~~~~~~~~~~~~^
-        cursor, str_statement, effective_parameters, context
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
-    cursor.execute(statement, parameters)
-    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 585, in execute
-    self._adapt_connection.await_(
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
-        self._prepare_and_execute(operation, parameters)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
-    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
-           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
-    value = await result
-            ^^^^^^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 563, in _prepare_and_execute
-    self._handle_exception(error)
-    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 513, in _handle_exception
-    self._adapt_connection._handle_exception(error)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
-    raise translated_error from error
-sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedTableError'>: relation "usuarios" does not exist
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\app\main.py", line 78, in catch_exceptions_middleware
     return await call_next(request)
            ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -118,107 +44,31 @@ Traceback (most recent call last):
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\fastapi\routing.py", line 352, in run_endpoint_function
     return await dependant.call(**values)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\app\routers\agn.py", line 1620, in get_expedientes_module
-    res = await db.execute(text(query_str), params)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 448, in execute
-    result = await greenlet_spawn(
-             ^^^^^^^^^^^^^^^^^^^^^
-    ...<6 lines>...
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 201, in greenlet_spawn
-    result = context.throw(*sys.exc_info())
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2373, in execute
-    return self._execute_internal(
-           ~~~~~~~~~~~~~~~~~~~~~~^
-        statement,
-        ^^^^^^^^^^
-    ...<4 lines>...
-        _add_event=_add_event,
-        ^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2280, in _execute_internal
-    result = conn.execute(
-        statement, params or {}, execution_options=execution_options
-    )
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1421, in execute
-    return meth(
-        self,
-        distilled_parameters,
-        execution_options or NO_OPTIONS,
-    )
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 526, in _execute_on_connection
-    return connection._execute_clauseelement(
-           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
-        self, distilled_params, execution_options
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1643, in _execute_clauseelement
-    ret = self._execute_context(
-        dialect,
-    ...<8 lines>...
-        cache_hit=cache_hit,
-    )
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1848, in _execute_context
-    return self._exec_single_context(
-           ~~~~~~~~~~~~~~~~~~~~~~~~~^
-        dialect, context, statement, parameters
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1988, in _exec_single_context
-    self._handle_dbapi_exception(
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
-        e, str_statement, effective_parameters, cursor, context
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2365, in _handle_dbapi_exception
-    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1969, in _exec_single_context
-    self.dialect.do_execute(
-    ~~~~~~~~~~~~~~~~~~~~~~~^
-        cursor, str_statement, effective_parameters, context
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
-    cursor.execute(statement, parameters)
-    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 585, in execute
-    self._adapt_connection.await_(
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
-        self._prepare_and_execute(operation, parameters)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
-    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
-           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
-    value = await result
-            ^^^^^^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 563, in _prepare_and_execute
-    self._handle_exception(error)
-    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 513, in _handle_exception
-    self._adapt_connection._handle_exception(error)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
-    raise translated_error from error
-sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedTableError'>: relation "usuarios" does not exist
-[SQL: 
-        SELECT e.id, e.codigo_expediente, e.nombre_expediente, e.fecha_apertura, e.estado_abierto, e.fase_archivo,
-               e.cantidad_documentos as doc_count, e.soporte, e.created_at,
-               u.nombres || ' ' || u.apellidos as responsable_nombre
-        FROM agn_expedientes e
-        LEFT JOIN usuarios u ON e.responsable_id = CAST(u.id AS VARCHAR)
-        WHERE e.tenant_id = $1
-        ORDER BY e.created_at DESC, e.id DESC
-        LIMIT $2
-    ]
-[parameters: ('22222222-2222-2222-2222-222222222222', 12)]
-(Background on this error at: https://sqlalche.me/e/20/f405)
+  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\app\routers\agn.py", line 1579, in get_expedientes_module
+    return templates.TemplateResponse("components/subseries_module.html", {
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "request": request,
+        ^^^^^^^^^^^^^^^^^^^
+        "carpetas": carpetas,
+        ^^^^^^^^^^^^^^^^^^^^^
+        "total_folders": total_folders
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    })
+    ^^
+  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\starlette\templating.py", line 148, in TemplateResponse
+    template = self.get_template(name)
+  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\starlette\templating.py", line 115, in get_template
+    return self.env.get_template(name)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\jinja2\environment.py", line 1016, in get_template
+    return self._load_template(name, globals)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\jinja2\environment.py", line 964, in _load_template
+    template = self.cache.get(cache_key)
+  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\jinja2\utils.py", line 477, in get
+    return self[key]
+           ~~~~^^^^^
+  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\jinja2\utils.py", line 515, in __getitem__
+    rv = self._mapping[key]
+         ~~~~~~~~~~~~~^^^^^
+TypeError: cannot use 'tuple' as a dict key (unhashable type: 'dict')
