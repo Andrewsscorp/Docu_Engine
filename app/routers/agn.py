@@ -2383,7 +2383,7 @@ async def post_upload_direct_expediente(
         new_doc_id = str(res_doc.scalar())
     except IntegrityError:
         await db.rollback()
-        return JSONResponse({"error": "El documento ya existe en el sistema (Hash duplicado)."}, status_code=409)
+        return JSONResponse({"detail": "El documento ya existe en el sistema (Hash duplicado)."}, status_code=409)
     
     # Índice Electrónico
     index_seed = f"{expediente_id}|{new_doc_id}|{session_data['user_id']}"

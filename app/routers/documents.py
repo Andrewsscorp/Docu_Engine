@@ -310,14 +310,14 @@ async def upload_document(
             "status": final_status,
             "text": fast_route_text,
             "score": 1.0 if final_status == "COMPLETED" else None,
-            "path": file_path,
+            "path": f"{file_hash}_{file.filename}",
             "thumb": thumbnail_path,
             "uid": user_id
         })
         await db.commit()
     except IntegrityError:
         await db.rollback()
-        return JSONResponse({"error": "Archivo ya procesado (Duplicate Hash)"}, status_code=409)
+        return JSONResponse({"detail": "Archivo ya procesado (Duplicate Hash)"}, status_code=409)
     except Exception as e:
         await db.rollback()
         import traceback
