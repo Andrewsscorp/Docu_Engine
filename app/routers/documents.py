@@ -1069,9 +1069,10 @@ async def iniciar_extraccion_ocr(document_id: str):
 async def upload_inicial_documento(
     request: Request,
     archivo: UploadFile = File(...),
+    session_data: dict = Depends(require_permission("documentos:subir")),
     db: AsyncSession = Depends(get_db_session)
 ):
-    session_data = {"tenant_id": "22222222-2222-2222-2222-222222222222", "user_id": 1}
+    # session_data passed correctly
     tenant_id = session_data["tenant_id"]
     user_id = session_data["user_id"]
     
