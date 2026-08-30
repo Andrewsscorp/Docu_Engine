@@ -1451,6 +1451,15 @@ async def vincular_documento_expediente(
     import hashlib
     import os
     
+    # 0. Check Expediente is not CERRADO
+    exp_status_res = await db.execute(text("SELECT estado FROM agn_expedientes WHERE id = :eid AND tenant_id = :t"),
+                                      {"eid": expediente_id, "t": session_data["tenant_id"]})
+    exp_status_row = exp_status_res.fetchone()
+    if not exp_status_row:
+        raise HTTPException(status_code=404, detail="Expediente no encontrado")
+    if exp_status_row[0] == 'CERRADO':
+        raise HTTPException(status_code=403, detail="No se pueden vincular documentos a un expediente CERRADO")
+
     # 1. Fetch document
     doc_res = await db.execute(text("SELECT id, file_path, file_name FROM documents WHERE id = :did AND tenant_id = :t"), 
                                {"did": documento_id, "t": session_data["tenant_id"]})
@@ -2039,18 +2048,10 @@ async def cerrar_expediente(
         
     xml_content += "  </ListaDocumentos>\n"
     
-    # Generate PKI Signature Hash
+    # Generate Integrity Hash
     raw_hash = hashlib.sha256(xml_content.encode()).hexdigest()
-    # Mocking W3C XMLDSig standard payload inside FirmaIndice
-    xml_content += f"""  <FirmaIndice>
-    <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
-      <SignedInfo>
-         <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
-         <SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha256"/>
-      </SignedInfo>
-      <SignatureValue>{raw_hash}</SignatureValue>
-    </Signature>
-  </FirmaIndice>
+
+    xml_content += f"""  <HashIntegridad>{raw_hash}</HashIntegridad>
 </IndiceElectronico>"""
     
     # 5. Save XML to Blob Storage
@@ -2409,6 +2410,13 @@ async def post_vincular_trd(
     session_data: dict = Depends(require_permission("documentos:crear")),
     db: AsyncSession = Depends(get_db_session)
 ):
+    # Check if expediente is closed
+    exp_status_res = await db.execute(text("SELECT estado FROM agn_expedientes WHERE id = :eid AND tenant_id = :t"),
+                                      {"eid": expediente_id, "t": session_data["tenant_id"]})
+    exp_status_row = exp_status_res.fetchone()
+    if exp_status_row and exp_status_row[0] == 'CERRADO':
+        return JSONResponse({"status": "error", "message": "No se puede vincular a un expediente CERRADO."}, status_code=403)
+
     # Validar si ya existe
     exist_res = await db.execute(text("SELECT id FROM agn_expediente_tipologia WHERE expediente_id = :eid AND tipologia_id = :tid"), {"eid": expediente_id, "tid": payload.id_tipologia})
     if exist_res.fetchone():

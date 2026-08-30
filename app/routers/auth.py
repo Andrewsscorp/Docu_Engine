@@ -63,8 +63,8 @@ def invalidate_settings_cache(tenant_id: str):
 
 
 # Moved to main.py
-# @app.exception_handler(CsrfProtectError)
-def csrf_protect_exception_handler(request: Request, exc: CsrfProtectError):
+# @app.exception_handler(Exception)
+def csrf_protect_exception_handler(request: Request, exc: Exception):
     return templates.TemplateResponse('component_1.html', {'request': request, 'exc': exc})
 
 

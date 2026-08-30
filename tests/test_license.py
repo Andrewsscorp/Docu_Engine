@@ -22,16 +22,17 @@ async def test_license_ui_unauthenticated(async_client: AsyncClient):
     assert response.status_code == 401
 
 async def test_license_ui_authenticated_admin(async_client: AsyncClient, mock_db_session, admin_cookies):
-    mock_result = AsyncMock()
+    from unittest.mock import MagicMock
+    mock_result = MagicMock()
     mock_row = ['{"exp_timestamp": 2000000000, "max_activations": 100}']
     mock_result.fetchone.return_value = mock_row
     
-    mock_count_result = AsyncMock()
+    mock_count_result = MagicMock()
     mock_count_result.fetchone.return_value = [5]
     
     mock_db_session.execute.side_effect = [mock_result, mock_count_result]
 
-    with patch('app.security.check_permission', return_value=True):
+    with patch('app.rbac.check_permission', return_value=True):
         response = await async_client.get("/api/v1/license/ui", cookies=admin_cookies)
         assert response.status_code == 200
         assert "Tiempo Restante" in response.text
@@ -40,7 +41,7 @@ async def test_license_ui_authenticated_admin(async_client: AsyncClient, mock_db
 async def test_license_renew_invalid_signature(async_client: AsyncClient, admin_cookies):
     malformed_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_payload.invalid_signature"
     
-    with patch('app.security.check_permission', return_value=True):
+    with patch('app.rbac.check_permission', return_value=True):
         with patch('fastapi_csrf_protect.CsrfProtect.validate_csrf', return_value=None):
             response = await async_client.post(
                 "/api/v1/license/renew",
