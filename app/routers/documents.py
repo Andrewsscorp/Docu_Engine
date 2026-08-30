@@ -208,7 +208,12 @@ async def upload_document(
     except:
         pass # Ignore on Windows if not supported
         
-    file_path = os.path.join(upload_dir, f"{file_hash}_{file.filename}").replace("\\", "/")
+    import uuid
+    import os
+
+    file_ext = os.path.splitext(file.filename)[1]
+    disk_filename = f"{uuid.uuid4().hex}{file_ext}"
+    file_path = os.path.join(upload_dir, disk_filename).replace("\\", "/")
     
     # Read file content
     content = await file.read()
@@ -310,7 +315,7 @@ async def upload_document(
             "status": final_status,
             "text": fast_route_text,
             "score": 1.0 if final_status == "COMPLETED" else None,
-            "path": f"{file_hash}_{file.filename}",
+            "path": disk_filename,
             "thumb": thumbnail_path,
             "uid": user_id
         })
@@ -554,7 +559,9 @@ async def download_document(
         
     if hierarchy != 99:
         user_groups = get_user_groups(tenant_id, user_id)
-        if doc.group_id not in user_groups:
+        # Using index for group_id since row from asyncpg could be tuple
+        doc_group_id = doc.group_id if hasattr(doc, 'group_id') else doc[3]
+        if doc_group_id not in user_groups:
             # Check if user has an active/historical task for this document (assigned to them or by them)
             task_check_q = text("""
                 SELECT 1 FROM tareas_asignaciones 
