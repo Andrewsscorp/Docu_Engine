@@ -382,25 +382,25 @@ async def create_agn_expediente(
     
     f_res = await db.execute(text("SELECT codigo FROM agn_dependencias WHERE id = :id"), {"id": fondo})
     fc = f_res.fetchone()
-    if fc: codigo_parts.append(fc.codigo)
+    if fc: codigo_parts.append(fc.codigo if hasattr(fc, 'codigo') else fc[0])
     
     s_res = await db.execute(text("SELECT codigo FROM agn_dependencias WHERE id = :id"), {"id": seccion})
     sc = s_res.fetchone()
-    if sc: codigo_parts.append(sc.codigo)
+    if sc: codigo_parts.append(sc.codigo if hasattr(sc, 'codigo') else sc[0])
     
     if subsec_id:
         ss_res = await db.execute(text("SELECT codigo FROM agn_dependencias WHERE id = :id"), {"id": subsec_id})
         ssc = ss_res.fetchone()
-        if ssc: codigo_parts.append(ssc.codigo)
+        if ssc: codigo_parts.append(ssc.codigo if hasattr(ssc, 'codigo') else ssc[0])
         
     se_res = await db.execute(text("SELECT codigo FROM agn_series WHERE id = :id"), {"id": serie})
     sec = se_res.fetchone()
-    if sec: codigo_parts.append(sec.codigo)
+    if sec: codigo_parts.append(sec.codigo if hasattr(sec, 'codigo') else sec[0])
     
     if subser_id:
         sse_res = await db.execute(text("SELECT codigo FROM agn_subseries WHERE id = :id"), {"id": subser_id})
         ssec = sse_res.fetchone()
-        if ssec: codigo_parts.append(ssec.codigo)
+        if ssec: codigo_parts.append(ssec.codigo if hasattr(ssec, 'codigo') else ssec[0])
         
     codigo_parts.append(str(year))
     codigo_parts.append(f"{consecutivo:03d}")
