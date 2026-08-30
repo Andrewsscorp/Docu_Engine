@@ -4,3 +4,5 @@ pydantic
 argon2-cffi
 asyncpg
 SQLAlchemy
+
+python-dateutil==2.9.0.post0
