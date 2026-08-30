@@ -1684,7 +1684,7 @@ async def get_expediente_inner_view(
 
     from fastapi.templating import Jinja2Templates
     templates = Jinja2Templates(directory="app/templates")
-    return templates.TemplateResponse("pages/expediente_view.html", {
+    return templates.TemplateResponse(request=request, name="pages/expediente_view.html", context={
         "request": request,
         "exp": exp,
         "docs": docs,
