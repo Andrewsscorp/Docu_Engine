@@ -63,7 +63,8 @@
         </select>
         
         {% if breadcrumb %}
-        <input type="hidden" name="subserie_id" value="{{ subserie_id }}">
+        <input type="hidden" name="serie_id" value="{{ serie_id|default('') }}">
+        <input type="hidden" name="subserie_id" value="{{ subserie_id|default('') }}">
         {% else %}
         <select name="subserie_id" class="h-[42px] bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl focus:ring-primary focus:border-primary block px-3 shadow-sm min-w-[180px] max-w-[240px] outline-none truncate" title="Filtrar por Subserie">
             <option value="">Serie / Subserie</option>

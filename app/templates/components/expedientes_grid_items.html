@@ -61,7 +61,7 @@
 <div id="expedientes-load-more" class="col-span-full flex justify-center py-6">
     <!-- Keyset pagination passing ultimo_id and ultimo_fecha -->
     <button hx-get="/api/v1/agn/expedientes/module?ultimo_id={{ expedientes[-1].id }}&ultimo_fecha={{ expedientes[-1].created_at }}" 
-            hx-include="[name='q'], [name='status'], [name='subserie_id'], [name='fecha_inicio'], [name='fecha_fin'], [name='soporte']" 
+            hx-include="[name='q'], [name='status'], [name='serie_id'], [name='subserie_id'], [name='fecha_inicio'], [name='fecha_fin'], [name='soporte']" 
             hx-target="#expedientes-load-more" 
             hx-swap="outerHTML"
             hx-indicator="#load-more-spinner"

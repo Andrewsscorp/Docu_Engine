@@ -1539,6 +1539,7 @@ async def get_expedientes_module(
     request: Request,
     q: str = "",
     status: str = "",
+    serie_id: str = "",
     subserie_id: str = "",
     fecha_inicio: str = "",
     fecha_fin: str = "",
@@ -1555,25 +1556,56 @@ async def get_expedientes_module(
     # ---------------------------------------------------------
     # NIVEL 1: CARPETAS MAESTRAS (Si no hay subserie seleccionada)
     # ---------------------------------------------------------
-    if not subserie_id and request.headers.get("hx-target") != "expedientes-results-grid" and request.headers.get("hx-target") != "expedientes-append-target":
+    if not subserie_id and not serie_id and request.headers.get("hx-target") != "expedientes-results-grid" and request.headers.get("hx-target") != "expedientes-append-target":
         # Render the master folders view
         query_sub = '''
-            SELECT ss.id, ss.codigo as subserie_codigo, ss.nombre as subserie_nombre,
-                   s.codigo as serie_codigo, s.nombre as serie_nombre,
+            -- 1. Subseries
+            SELECT ss.id as subserie_id, ss.codigo as subserie_codigo, ss.nombre as subserie_nombre,
+                   s.id as serie_id, s.codigo as serie_codigo, s.nombre as serie_nombre,
                    d.codigo as dep_codigo, d.nombre as dep_nombre,
-                   ss.retencion_ag, ss.retencion_ac, ss.disposicion, ss.total_expedientes
+                   ss.retencion_ag, ss.retencion_ac, ss.disposicion, ss.total_expedientes,
+                   'SUBSERIE' as tipo_carpeta
             FROM agn_subseries ss
             JOIN agn_series s ON ss.serie_id = s.id
             JOIN agn_dependencias d ON d.id = COALESCE(s.subseccion_id, s.seccion_id)
             WHERE ss.tenant_id = :t
-            ORDER BY d.codigo, s.codigo, ss.codigo
+            
+            UNION ALL
+            
+            -- 2. Series (como carpetas maestras para expedientes sin subserie)
+            SELECT NULL as subserie_id, '' as subserie_codigo, '' as subserie_nombre,
+                   s.id as serie_id, s.codigo as serie_codigo, s.nombre as serie_nombre,
+                   d.codigo as dep_codigo, d.nombre as dep_nombre,
+                   s.retencion_ag, s.retencion_ac, s.disposicion, 
+                   (SELECT COUNT(*) FROM agn_expedientes WHERE serie_id = s.id AND subserie_id IS NULL) as total_expedientes,
+                   'SERIE' as tipo_carpeta
+            FROM agn_series s
+            JOIN agn_dependencias d ON d.id = COALESCE(s.subseccion_id, s.seccion_id)
+            WHERE s.tenant_id = :t 
+              AND (
+                  -- Mostrar Serie si no tiene subseries, o si ya tiene expedientes directos
+                  NOT EXISTS (SELECT 1 FROM agn_subseries WHERE serie_id = s.id)
+                  OR 
+                  (SELECT COUNT(*) FROM agn_expedientes WHERE serie_id = s.id AND subserie_id IS NULL) > 0
+              )
         '''
         res_sub = await db.execute(text(query_sub), {"t": tenant_id})
         carpetas = []
         for row in res_sub.fetchall():
             d = dict(row._mapping)
-            d["codigo_jerarquico"] = f"{d['dep_codigo']}-{d['serie_codigo']}-{d['subserie_codigo']}"
+            # Orden logico manual si es necesario, o lo hacemos aqui:
+            if d['tipo_carpeta'] == 'SUBSERIE':
+                d["codigo_jerarquico"] = f"{d['dep_codigo']}-{d['serie_codigo']}-{d['subserie_codigo']}"
+                d["nombre_mostrar"] = d["subserie_nombre"]
+                d["filtro_id"] = f"&subserie_id={d['subserie_id']}"
+            else:
+                d["codigo_jerarquico"] = f"{d['dep_codigo']}-{d['serie_codigo']}"
+                d["nombre_mostrar"] = d["serie_nombre"]
+                d["filtro_id"] = f"&serie_id={d['serie_id']}&subserie_id="
             carpetas.append(d)
+            
+        # Sort carpetas by codigo_jerarquico
+        carpetas.sort(key=lambda x: x["codigo_jerarquico"])
             
         total_folders = len(carpetas)
         return templates.TemplateResponse(request=request, name="components/subseries_module.html", context={
@@ -1615,6 +1647,9 @@ async def get_expedientes_module(
     if subserie_id:
         where_clauses.append("e.subserie_id = CAST(:subid AS uuid)")
         params["subid"] = subserie_id
+    elif serie_id:
+        where_clauses.append("e.serie_id = CAST(:serid AS uuid) AND e.subserie_id IS NULL")
+        params["serid"] = serie_id
         
     # Keyset Pagination
     if ultimo_fecha and ultimo_id:
@@ -1649,6 +1684,19 @@ async def get_expedientes_module(
             bc = dict(bc_row._mapping)
             import datetime
             breadcrumb = f"Fondo > {bc['dep_nombre']} > {bc['serie_nombre']} > {bc['subserie_nombre']} > Vigencia {datetime.datetime.now().year}"
+    elif serie_id:
+        bc_query = '''
+            SELECT s.nombre as serie_nombre, d.nombre as dep_nombre
+            FROM agn_series s
+            JOIN agn_dependencias d ON d.id = COALESCE(s.subseccion_id, s.seccion_id)
+            WHERE s.id = CAST(:serid AS uuid)
+        '''
+        res_bc = await db.execute(text(bc_query), {"serid": serie_id})
+        bc_row = res_bc.fetchone()
+        if bc_row:
+            bc = dict(bc_row._mapping)
+            import datetime
+            breadcrumb = f"Fondo > {bc['dep_nombre']} > {bc['serie_nombre']} > Vigencia {datetime.datetime.now().year}"
     
     query_str = f'''
         SELECT e.id, e.codigo_expediente, e.nombre_expediente, e.fecha_apertura, e.estado_abierto, e.fase_archivo,
@@ -1668,7 +1716,7 @@ async def get_expedientes_module(
         "expedientes": expedientes,
         "total_count": total_count,
         "has_more": len(expedientes) == limit,
-        "q": q, "status": status, "subserie_id": subserie_id,
+        "q": q, "status": status, "serie_id": serie_id, "subserie_id": subserie_id,
         "fecha_inicio": fecha_inicio, "fecha_fin": fecha_fin, "soporte": soporte,
         "is_append": bool(ultimo_id),
         "breadcrumb": breadcrumb
