@@ -1642,7 +1642,7 @@ async def get_expediente_inner_view(
     # 4. Motor TRD (Completitud)
     subserie_id = exp["subserie_id"]
     requeridas_res = await db.execute(text('''
-        SELECT t.id, t.nombre, st.obligatoria 
+        SELECT t.id, t.nombre_oficial, st.obligatoria 
         FROM agn_tipologias t
         LEFT JOIN agn_subserie_tipologia st ON st.tipologia_id = t.id AND st.subserie_id = :sid
         WHERE st.obligatoria = TRUE OR t.tenant_id = :t
@@ -1790,8 +1790,7 @@ async def get_control_tipologias_view(
     matrix_res = await db.execute(text('''
         SELECT 
             t.id as tipologia_id, 
-            t.codigo_tipologia,
-            t.nombre as oficial, 
+            t.nombre_oficial as oficial, 
             t.formatos_permitidos,
             st.obligatoria,
             st.orden_sugerido,
@@ -1805,7 +1804,7 @@ async def get_control_tipologias_view(
         LEFT JOIN documents doc ON st.tipologia_id = doc.tipologia_id AND doc.agn_expediente_id = :eid AND (doc.status = 'COMPLETED' OR doc.status = 'ARCHIVED')
         LEFT JOIN users u ON doc.uploaded_by = u.id
         WHERE st.subserie_id = :sid
-        ORDER BY st.obligatoria DESC, st.orden_sugerido ASC NULLS LAST, t.nombre ASC
+        ORDER BY st.obligatoria DESC, st.orden_sugerido ASC NULLS LAST, t.nombre_oficial ASC
     '''), {"eid": expediente_id, "sid": exp["subserie_id"]})
     
     tipologias = []
@@ -1892,19 +1891,19 @@ async def get_tipologias_disponibles(
 ):
     # Trae tipologías maestras que NO estén vinculadas a esta subserie
     res = await db.execute(text('''
-        SELECT t.id, t.codigo_tipologia, t.nombre 
+        SELECT t.id, t.nombre_oficial 
         FROM agn_tipologias t
         WHERE t.estado_activo = TRUE 
           AND t.tenant_id = :t
           AND t.id NOT IN (
               SELECT tipologia_id FROM agn_subserie_tipologia WHERE subserie_id = :sid AND estado_regla = TRUE
           )
-        ORDER BY t.nombre ASC
+        ORDER BY t.nombre_oficial ASC
     '''), {"t": session_data["tenant_id"], "sid": subserie_id})
     
     tipologias = [dict(r._mapping) for r in res.fetchall()]
     # Formatear para Select2 o frontend JSON:
-    return JSONResponse([{"id": str(t["id"]), "text": f"[{t['codigo_tipologia']}] {t['nombre']}" if t['codigo_tipologia'] else t['nombre']} for t in tipologias])
+    return JSONResponse([{"id": str(t["id"]), "text": t["nombre_oficial"]} for t in tipologias])
 
 class TRDLinkPayload(BaseModel):
     id_tipologia: str
@@ -1939,10 +1938,14 @@ async def post_vincular_trd(
     await db.commit()
     return JSONResponse({"status": "success"}, status_code=201)
 
+from typing import List
+
 class NuevaTipologiaPayload(BaseModel):
-    codigo: str
-    nombre: str
-    formatos: str
+    nombre_oficial: str
+    soporte_origen: str
+    formatos_permitidos: List[str]
+    clasificacion: str
+    exige_firma: bool
 
 @router.post("/tipologias/diccionario")
 async def post_crear_tipologia_diccionario(
@@ -1951,21 +1954,30 @@ async def post_crear_tipologia_diccionario(
     session_data: dict = Depends(require_permission("tipologias:crear")),
     db: AsyncSession = Depends(get_db_session)
 ):
-    # Verificar si el código ya existe
-    exist_res = await db.execute(text("SELECT id FROM agn_tipologias WHERE codigo_tipologia = :cod AND tenant_id = :t"), 
-                                 {"cod": payload.codigo, "t": session_data["tenant_id"]})
+    import json
+    # Normalización estricta (Sanitización Semántica)
+    nombre_limpio = payload.nombre_oficial.strip().upper()
+    
+    # Verificar si el nombre ya existe (Unicidad)
+    exist_res = await db.execute(text("SELECT id FROM agn_tipologias WHERE nombre_oficial = :nom"), {"nom": nombre_limpio})
     if exist_res.fetchone():
-        return JSONResponse({"status": "error", "message": "Ya existe una tipología con ese código en el catálogo."}, status_code=409)
+        return JSONResponse({"status": "error", "message": "Ya existe una tipología con ese nombre oficial en el catálogo."}, status_code=409)
         
     res = await db.execute(text('''
-        INSERT INTO agn_tipologias (codigo_tipologia, nombre, formatos_permitidos, tenant_id, estado_activo)
-        VALUES (:cod, :nom, :form, :t, TRUE)
+        INSERT INTO agn_tipologias (
+            nombre_oficial, soporte_origen, formatos_permitidos, 
+            clasificacion, exige_firma, tenant_id, usuario_creador, estado_activo
+        )
+        VALUES (:nom, :sop, :form::jsonb, :clas, :firma, :t, :uid, TRUE)
         RETURNING id
     '''), {
-        "cod": payload.codigo,
-        "nom": payload.nombre.upper(),
-        "form": payload.formatos.upper(),
-        "t": session_data["tenant_id"]
+        "nom": nombre_limpio,
+        "sop": payload.soporte_origen,
+        "form": json.dumps(payload.formatos_permitidos),
+        "clas": payload.clasificacion,
+        "firma": payload.exige_firma,
+        "t": session_data["tenant_id"],
+        "uid": session_data["user_id"]
     })
     
     nuevo_id = str(res.scalar())
@@ -1975,6 +1987,6 @@ async def post_crear_tipologia_diccionario(
         "status": "success", 
         "data": {
             "id": nuevo_id,
-            "text": f"[{payload.codigo}] {payload.nombre.upper()}"
+            "text": f"{nombre_limpio}"
         }
     }, status_code=201)

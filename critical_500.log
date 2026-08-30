@@ -32,7 +32,7 @@ Traceback (most recent call last):
     )
     ^
   File "asyncpg/protocol/protocol.pyx", line 165, in prepare
-asyncpg.exceptions.UndefinedColumnError: column doc.user_id does not exist
+asyncpg.exceptions.UndefinedColumnError: column t.nombre does not exist
 
 The above exception was the direct cause of the following exception:
 
@@ -68,7 +68,7 @@ Traceback (most recent call last):
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
     raise translated_error from error
-sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column doc.user_id does not exist
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column t.nombre does not exist
 
 The above exception was the direct cause of the following exception:
 
@@ -118,12 +118,12 @@ Traceback (most recent call last):
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\fastapi\routing.py", line 352, in run_endpoint_function
     return await dependant.call(**values)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\app\routers\agn.py", line 1790, in get_control_tipologias_view
-    matrix_res = await db.execute(text('''
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^
-    ...<17 lines>...
-    '''), {"eid": expediente_id, "sid": exp["subserie_id"]})
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\app\routers\agn.py", line 1611, in get_expediente_inner_view
+    docs_res = await db.execute(text('''
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    '''), {"eid": expediente_id})
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 448, in execute
     result = await greenlet_spawn(
              ^^^^^^^^^^^^^^^^^^^^^
@@ -212,25 +212,13 @@ Traceback (most recent call last):
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
     raise translated_error from error
-sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column doc.user_id does not exist
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column t.nombre does not exist
 [SQL: 
-        SELECT 
-            t.id as tipologia_id, 
-            t.codigo_tipologia,
-            t.nombre as oficial, 
-            t.formatos_permitidos,
-            st.obligatoria,
-            st.orden_sugerido,
-            doc.id as documento_id,
-            doc.file_name,
-            doc.created_at as fecha_carga,
-            doc.user_id as autor_carga,
-            (CASE WHEN doc.id IS NOT NULL THEN 'CARGADO' ELSE 'FALTANTE' END) as estado_carga
-        FROM agn_subserie_tipologia st
-        INNER JOIN agn_tipologias t ON st.tipologia_id = t.id
-        LEFT JOIN documents doc ON st.tipologia_id = doc.tipologia_id AND doc.agn_expediente_id = $1 AND (doc.status = 'COMPLETED' OR doc.status = 'ARCHIVED')
-        WHERE st.subserie_id = $2
-        ORDER BY st.obligatoria DESC, st.orden_sugerido ASC NULLS LAST, t.nombre ASC
+        SELECT d.*, t.nombre as tipo_nombre 
+        FROM documents d
+        LEFT JOIN agn_tipologias t ON d.tipologia_id = t.id
+        WHERE d.agn_expediente_id = $1
+        ORDER BY d.folio ASC
     ]
-[parameters: ('ba9e2af6-0002-4c1d-8cb0-38115c838f8c', UUID('75db37c0-c195-4dcc-8826-5013353327e9'))]
+[parameters: ('ba9e2af6-0002-4c1d-8cb0-38115c838f8c',)]
 (Background on this error at: https://sqlalche.me/e/20/f405)
