@@ -23,7 +23,7 @@
         },
         
         async cargarDisponibles() {
-            const res = await fetch('/api/v1/agn/subseries/{{ subserie.id }}/tipologias/disponibles');
+            const res = await fetch('/api/v1/agn/subseries/{{ expediente.id }}/tipologias/disponibles');
             this.tipologias = await res.json();
             this.seleccion = '';
         },
@@ -80,7 +80,7 @@
             }
             this.cargando = true;
             try {
-                const res = await fetch('/api/v1/agn/subseries/{{ subserie.id }}/tipologias', {
+                const res = await fetch('/api/v1/agn/subseries/{{ expediente.id }}/tipologias', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -135,7 +135,7 @@
         <div class="p-6 space-y-6">
             <div class="bg-indigo-50/50 p-4 rounded-xl flex items-start gap-3 border border-indigo-100">
                 <svg class="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <p class="text-sm text-slate-600">Está configurando la retención documental para la subserie activa <b>({{ subserie.nombre }})</b>. Seleccione la tipología documental aplicable desde el catálogo maestro.</p>
+                <p class="text-sm text-slate-600">Está configurando la retención documental para la subserie activa <b>({{ expediente.nombre_expediente }})</b>. Seleccione la tipología documental aplicable desde el catálogo maestro.</p>
             </div>
             
             <div class="space-y-1">

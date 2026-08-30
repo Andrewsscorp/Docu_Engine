@@ -1674,11 +1674,11 @@ async def get_expediente_inner_view(
         SELECT 
             st.obligatoria,
             doc.id as documento_id
-        FROM agn_subserie_tipologia st
+        FROM agn_expediente_tipologia st
         INNER JOIN agn_tipologias t ON st.tipologia_id = t.id
         LEFT JOIN documents doc ON st.tipologia_id = doc.tipologia_id AND doc.agn_expediente_id = :eid AND (doc.status = 'COMPLETED' OR doc.status = 'ARCHIVED')
-        WHERE st.subserie_id = :sid
-    '''), {"eid": expediente_id, "sid": exp.get("subserie_id")})
+        WHERE st.expediente_id = :eid
+    '''), {"eid": expediente_id})
     
     requeridas = 0
     completadas = 0
@@ -1717,7 +1717,7 @@ async def get_expediente_inner_view(
         FROM agn_tipologias t
         LEFT JOIN agn_subserie_tipologia st ON st.tipologia_id = t.id AND st.subserie_id = :sid
         WHERE st.obligatoria = TRUE OR t.tenant_id = :t
-    '''), {"sid": subserie_id, "t": session_data["tenant_id"]})
+    '''), {"eid": expediente_id, "t": session_data["tenant_id"]})
     
     tipologias = []
     req_ids = []
@@ -2111,11 +2111,11 @@ async def get_control_tipologias_view(
             doc.created_at as fecha_carga,
             u.username as autor_carga,
             (CASE WHEN doc.id IS NOT NULL THEN 'CARGADO' ELSE 'FALTANTE' END) as estado_carga
-        FROM agn_subserie_tipologia st
+        FROM agn_expediente_tipologia st
         INNER JOIN agn_tipologias t ON st.tipologia_id = t.id
         LEFT JOIN documents doc ON st.tipologia_id = doc.tipologia_id AND doc.agn_expediente_id = :eid AND (doc.status = 'COMPLETED' OR doc.status = 'ARCHIVED')
         LEFT JOIN users u ON doc.uploaded_by = u.id
-        WHERE st.subserie_id = :sid
+        WHERE st.expediente_id = :eid
         ORDER BY st.obligatoria DESC, st.orden_sugerido ASC NULLS LAST, t.nombre_oficial ASC
     '''), {"eid": expediente_id, "sid": exp["subserie_id"]})
     
@@ -2165,15 +2165,15 @@ async def get_control_tipologias_view(
         "user_docs": user_docs
     })
 
-@router.get("/subseries/{subserie_id}/modal_trd")
+@router.get("/expedientes/{expediente_id}/modal_trd")
 async def get_modal_trd(
-    subserie_id: str,
+    expediente_id: str,
     request: Request,
     session_data: dict = Depends(require_permission("documentos:crear")),
     db: AsyncSession = Depends(get_db_session)
 ):
-    sub_res = await db.execute(text("SELECT * FROM agn_subseries WHERE id = :sid"), {"sid": subserie_id})
-    sub = dict(sub_res.fetchone()._mapping)
+    exp_res = await db.execute(text("SELECT * FROM agn_expedientes WHERE id = :eid"), {"eid": expediente_id})
+    exp = dict(exp_res.fetchone()._mapping)
     
     # Check if user has tipologias:crear permission
     # In a real app we'd query the permissions, but since we rely on require_permission dependency, 
@@ -2190,13 +2190,13 @@ async def get_modal_trd(
     templates = Jinja2Templates(directory="app/templates")
     return templates.TemplateResponse(request=request, name="components/modal_vincular_trd.html", context={
         "request": request,
-        "subserie": sub,
+        "expediente": exp,
         "puede_crear_tipologias": has_perm
     })
 
-@router.get("/subseries/{subserie_id}/tipologias/disponibles")
+@router.get("/expedientes/{expediente_id}/tipologias/disponibles")
 async def get_tipologias_disponibles(
-    subserie_id: str,
+    expediente_id: str,
     request: Request,
     session_data: dict = Depends(require_permission("documentos:leer")),
     db: AsyncSession = Depends(get_db_session)
@@ -2208,10 +2208,10 @@ async def get_tipologias_disponibles(
         WHERE t.estado_activo = TRUE 
           AND t.tenant_id = :t
           AND t.id NOT IN (
-              SELECT tipologia_id FROM agn_subserie_tipologia WHERE subserie_id = :sid AND estado_regla = TRUE
+              SELECT tipologia_id FROM agn_expediente_tipologia WHERE expediente_id = :eid AND estado_regla = TRUE
           )
         ORDER BY t.nombre_oficial ASC
-    '''), {"t": session_data["tenant_id"], "sid": subserie_id})
+    '''), {"t": session_data["tenant_id"], "eid": expediente_id})
     
     tipologias = [dict(r._mapping) for r in res.fetchall()]
     # Formatear para Select2 o frontend JSON:
@@ -2222,24 +2222,24 @@ class TRDLinkPayload(BaseModel):
     es_obligatorio: bool
     orden: Optional[int] = None
 
-@router.post("/subseries/{subserie_id}/tipologias")
+@router.post("/expedientes/{expediente_id}/tipologias")
 async def post_vincular_trd(
-    subserie_id: str,
+    expediente_id: str,
     payload: TRDLinkPayload,
     request: Request,
     session_data: dict = Depends(require_permission("documentos:crear")),
     db: AsyncSession = Depends(get_db_session)
 ):
     # Validar si ya existe
-    exist_res = await db.execute(text("SELECT id FROM agn_subserie_tipologia WHERE subserie_id = :sid AND tipologia_id = :tid"), {"sid": subserie_id, "tid": payload.id_tipologia})
+    exist_res = await db.execute(text("SELECT id FROM agn_subserie_tipologia WHERE subserie_id = :sid AND tipologia_id = :tid"), {"eid": expediente_id, "tid": payload.id_tipologia})
     if exist_res.fetchone():
         return JSONResponse({"status": "error", "message": "Esta tipolog├¡a ya pertenece a la Subserie."}, status_code=409)
         
     await db.execute(text('''
-        INSERT INTO agn_subserie_tipologia (subserie_id, tipologia_id, obligatoria, orden_sugerido, usuario_creador)
-        VALUES (:sid, :tid, :obl, :ord, :uid)
+        INSERT INTO agn_expediente_tipologia (expediente_id, tipologia_id, obligatoria, orden_sugerido, usuario_creador)
+        VALUES (:eid, :tid, :obl, :ord, :uid)
     '''), {
-        "sid": subserie_id,
+        "eid": expediente_id,
         "tid": payload.id_tipologia,
         "obl": payload.es_obligatorio,
         "ord": payload.orden,
@@ -2549,7 +2549,7 @@ async def firmar_fuid(
             VALUES (:sid, :consecutivo, :user_id, :hash, :ruta, :t)
             RETURNING id
         '''), {
-            "sid": subserie_id, 
+            "eid": expediente_id, 
             "consecutivo": f"FUID-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "user_id": session_data["user_id"],
             "hash": fuid_hash,
