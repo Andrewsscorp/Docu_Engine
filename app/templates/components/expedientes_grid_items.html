@@ -30,9 +30,9 @@
 {% if has_more %}
 <div id="expedientes-load-more" class="col-span-full flex justify-center py-6">
     <button hx-get="/api/v1/agn/expedientes/module?page={{ page + 1 }}" 
-            hx-include="[name='q'], [name='status'], [name='fecha_inicio'], [name='fecha_fin'], [name='soporte']" 
-            hx-target="#expedientes-append-target" 
-            hx-swap="beforeend"
+            hx-include="[name='q'], [name='status'], [name='subserie_id'], [name='fecha_inicio'], [name='fecha_fin'], [name='soporte']" 
+            hx-target="#expedientes-load-more" 
+            hx-swap="outerHTML"
             hx-indicator="#load-more-spinner"
             onclick="this.style.display='none'"
             class="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">

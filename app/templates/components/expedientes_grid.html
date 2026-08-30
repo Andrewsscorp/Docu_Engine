@@ -1,8 +1,5 @@
-﻿<div id="expedientes-grid-wrapper" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" x-bind:class="viewMode === 'list' ? 'grid-cols-1 md:grid-cols-1 lg:grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'">
-    
-    <div id="expedientes-append-target" class="contents">
-        {% include 'components/expedientes_grid_items.html' %}
-    </div>
+<div id="expedientes-grid-wrapper" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" x-bind:class="viewMode === 'list' ? 'grid-cols-1 md:grid-cols-1 lg:grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'">
+    {% include 'components/expedientes_grid_items.html' %}
     
     {% if not expedientes and page == 1 %}
     <div class="col-span-full py-16 text-center bg-white rounded-2xl border border-dashed border-gray-300">
@@ -13,6 +10,5 @@
     {% endif %}
 </div>
 <script>
-    // Update the total count badge visually when a search completes
     document.getElementById('total-expedientes-badge').innerText = "{{ total_count|default(0) }} Total";
 </script>

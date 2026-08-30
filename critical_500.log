@@ -32,7 +32,7 @@ Traceback (most recent call last):
     )
     ^
   File "asyncpg/protocol/protocol.pyx", line 165, in prepare
-asyncpg.exceptions.UndefinedColumnError: column "fase_archivo" does not exist
+asyncpg.exceptions.PostgresSyntaxError: syntax error at or near ":"
 
 The above exception was the direct cause of the following exception:
 
@@ -68,7 +68,7 @@ Traceback (most recent call last):
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
     raise translated_error from error
-sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column "fase_archivo" does not exist
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.PostgresSyntaxError'>: syntax error at or near ":"
 
 The above exception was the direct cause of the following exception:
 
@@ -118,9 +118,9 @@ Traceback (most recent call last):
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\fastapi\routing.py", line 352, in run_endpoint_function
     return await dependant.call(**values)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\app\routers\agn.py", line 2562, in descargar_plana_fuid
-    exp_res = await db.execute(text("SELECT id FROM agn_expedientes WHERE subserie_id = :sid AND fase_archivo = 'GESTION'"), {"sid": subserie_id})
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\app\routers\agn.py", line 1591, in get_expedientes_module
+    res_count = await db.execute(text(count_query), params)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 448, in execute
     result = await greenlet_spawn(
              ^^^^^^^^^^^^^^^^^^^^^
@@ -209,7 +209,7 @@ Traceback (most recent call last):
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
   File "C:\Users\Hawk\.gemini\antigravity\scratch\DocuEngine\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 797, in _handle_exception
     raise translated_error from error
-sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column "fase_archivo" does not exist
-[SQL: SELECT id FROM agn_expedientes WHERE subserie_id = $1 AND fase_archivo = 'GESTION']
-[parameters: ('75db37c0-c195-4dcc-8826-5013353327e9',)]
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.PostgresSyntaxError'>: syntax error at or near ":"
+[SQL: SELECT COUNT(*) FROM agn_expedientes e WHERE e.tenant_id = $1 AND e.soporte = $2 AND e.subserie_id = :subid::uuid]
+[parameters: ('22222222-2222-2222-2222-222222222222', 'ELECTRÓNICO')]
 (Background on this error at: https://sqlalche.me/e/20/f405)

@@ -1568,11 +1568,11 @@ async def get_expedientes_module(
             where_clauses.append("e.fecha_transferencia_central IS NOT NULL")
             
     if fecha_inicio:
-        where_clauses.append("e.fecha_apertura >= :fi::date")
+        where_clauses.append("e.fecha_apertura >= CAST(:fi AS date)")
         params["fi"] = fecha_inicio
         
     if fecha_fin:
-        where_clauses.append("e.fecha_apertura <= :ff::date")
+        where_clauses.append("e.fecha_apertura <= CAST(:ff AS date)")
         params["ff"] = fecha_fin
         
     if soporte:
@@ -1580,7 +1580,7 @@ async def get_expedientes_module(
         params["soporte"] = soporte
         
     if subserie_id:
-        where_clauses.append("e.subserie_id = :subid::uuid")
+        where_clauses.append("e.subserie_id = CAST(:subid AS uuid)")
         params["subid"] = subserie_id
         
     where_sql = " AND ".join(where_clauses)
