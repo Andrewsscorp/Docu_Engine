@@ -1621,6 +1621,29 @@ async def get_expediente_inner_view(
         d["fecha_str"] = d["created_at"].strftime("%Y-%m-%d") if d["created_at"] else ""
         docs.append(d)
         
+    # 2.5 Completitud TRD
+    matrix_res = await db.execute(text('''
+        SELECT 
+            st.obligatoria,
+            doc.id as documento_id
+        FROM agn_subserie_tipologia st
+        INNER JOIN agn_tipologias t ON st.tipologia_id = t.id
+        LEFT JOIN documents doc ON st.tipologia_id = doc.tipologia_id AND doc.agn_expediente_id = :eid AND (doc.status = 'COMPLETED' OR doc.status = 'ARCHIVED')
+        WHERE st.subserie_id = :sid
+    '''), {"eid": expediente_id, "sid": exp.get("subserie_id")})
+    
+    requeridas = 0
+    completadas = 0
+    
+    for row in matrix_res.fetchall():
+        r = dict(row._mapping)
+        if r["obligatoria"]:
+            requeridas += 1
+            if r["documento_id"]:
+                completadas += 1
+                
+    completitud_pct = int((completadas / requeridas * 100)) if requeridas > 0 else 100
+    
     # 3. Índice Electrónico
     idx_res = await db.execute(text('''
         SELECT accion, usuario_id, firma_indice, fecha_accion
@@ -1990,3 +2013,63 @@ async def post_crear_tipologia_diccionario(
             "text": f"{nombre_limpio}"
         }
     }, status_code=201)
+
+@router.post("/expedientes/{expediente_id}/upload_direct")
+async def post_upload_direct_expediente(
+    expediente_id: str,
+    tipologia_id: str = Form(...),
+    file: UploadFile = File(...),
+    session_data: dict = Depends(require_permission("documentos:crear")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    import os
+    import hashlib
+    import fitz
+    
+    tenant_id = session_data["tenant_id"]
+    upload_dir = os.path.join("uploads", str(tenant_id))
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    file_content = await file.read()
+    file_hash = hashlib.sha256(file_content).hexdigest()
+    
+    disk_filename = f"{file_hash}_{file.filename}"
+    file_path = os.path.join(upload_dir, disk_filename)
+    
+    with open(file_path, "wb") as buffer:
+        buffer.write(file_content)
+        
+    pages = 1
+    if file_path.lower().endswith('.pdf'):
+        try:
+            doc_pdf = fitz.open(file_path)
+            pages = doc_pdf.page_count
+        except:
+            pass
+            
+    res_doc = await db.execute(text('''
+        INSERT INTO documents (tenant_id, file_name, file_path, uploaded_by, status, is_private, mime_type, file_size_bytes, file_hash, agn_expediente_id, tipologia_id, paginas_cantidad)
+        VALUES (:t, :n, :p, :u, 'COMPLETED', FALSE, :m, :s, :h, :eid, :tid, :pages)
+        RETURNING id
+    '''), {
+        "t": tenant_id, "n": file.filename, "p": file_path, "u": session_data["user_id"],
+        "m": file.content_type, "s": len(file_content), "h": file_hash, "eid": expediente_id, "tid": tipologia_id,
+        "pages": pages
+    })
+    
+    new_doc_id = str(res_doc.scalar())
+    
+    # Índice Electrónico
+    index_seed = f"{expediente_id}|{new_doc_id}|{session_data['user_id']}"
+    new_index_hash = hashlib.sha256(index_seed.encode()).hexdigest()
+    
+    await db.execute(text('''
+        INSERT INTO agn_indice_electronico (expediente_id, documento_id, accion, usuario_id, firma_indice)
+        VALUES (:eid, :did, 'VINCULAR_DOCUMENTO', :uid, :ihash)
+    '''), {
+        "eid": expediente_id, "did": new_doc_id, "uid": session_data["user_id"], "ihash": new_index_hash
+    })
+    
+    await db.commit()
+    
+    return JSONResponse({"status": "success"})
