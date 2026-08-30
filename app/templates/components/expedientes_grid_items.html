@@ -1,0 +1,43 @@
+﻿{% for exp in expedientes %}
+<div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col gap-3 group relative"
+     @click="currentView = 'expediente'; htmx.ajax('GET', '/api/v1/agn/expedientes/{{ exp.id }}/view', '#expediente-inner-container');">
+     
+    <div class="flex justify-between items-start">
+        <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+        </div>
+        {% if exp.estado_abierto %}
+        <span class="px-2.5 py-1 text-[10px] font-bold tracking-wider rounded-md bg-emerald-100 text-emerald-700 border border-emerald-200">Abierto</span>
+        {% elif exp.fecha_transferencia_central %}
+        <span class="px-2.5 py-1 text-[10px] font-bold tracking-wider rounded-md bg-orange-100 text-orange-700 border border-orange-200">En Transferencia</span>
+        {% else %}
+        <span class="px-2.5 py-1 text-[10px] font-bold tracking-wider rounded-md bg-slate-100 text-slate-700 border border-slate-200">Cerrado</span>
+        {% endif %}
+    </div>
+    
+    <div>
+        <h3 class="font-bold text-gray-900 text-base leading-tight mb-1 group-hover:text-primary transition-colors line-clamp-2" title="{{ exp.nombre_expediente }}">{{ exp.nombre_expediente }}</h3>
+        <p class="text-xs font-mono text-gray-500 bg-gray-50 px-2 py-1 rounded inline-block border border-gray-100">{{ exp.codigo_expediente }}</p>
+    </div>
+    
+    <div class="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+        <span class="flex items-center gap-1.5 font-medium" title="Apertura"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> {{ exp.fecha_apertura.strftime('%d %b %Y') if exp.fecha_apertura else 'N/A' }}</span>
+        <span class="flex items-center gap-1.5 font-medium"><svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg> {{ exp.doc_count }} docs</span>
+    </div>
+</div>
+{% endfor %}
+
+{% if has_more %}
+<div id="expedientes-load-more" class="col-span-full flex justify-center py-6">
+    <button hx-get="/api/v1/agn/expedientes/module?page={{ page + 1 }}" 
+            hx-include="[name='q'], [name='status'], [name='fecha_inicio'], [name='fecha_fin'], [name='soporte']" 
+            hx-target="#expedientes-append-target" 
+            hx-swap="beforeend"
+            hx-indicator="#load-more-spinner"
+            onclick="this.style.display='none'"
+            class="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+        Cargar más expedientes
+    </button>
+    <div id="load-more-spinner" class="htmx-indicator animate-spin rounded-full h-6 w-6 border-b-2 border-primary hidden"></div>
+</div>
+{% endif %}

@@ -1536,6 +1536,12 @@ async def get_expedientes_module(
     request: Request,
     q: str = "",
     status: str = "",
+    subserie_id: str = "",
+    fecha_inicio: str = "",
+    fecha_fin: str = "",
+    soporte: str = "",
+    page: int = 1,
+    limit: int = 20,
     session_data: dict = Depends(require_permission("documentos:leer")),
     db: AsyncSession = Depends(get_db_session)
 ):
@@ -1543,44 +1549,93 @@ async def get_expedientes_module(
     templates = Jinja2Templates(directory="app/templates")
     
     tenant_id = session_data["tenant_id"]
+    offset = (page - 1) * limit
     
-    # Query with filters
-    query_str = '''
-        SELECT e.id, e.codigo_expediente, e.nombre_expediente, e.fecha_apertura, (e.estado = 'ABIERTO') as estado_abierto,
-               (SELECT COUNT(d.id) FROM documents d WHERE d.agn_expediente_id = e.id) as doc_count
-        FROM agn_expedientes e
-        WHERE e.tenant_id = :t
-    '''
     params = {"t": tenant_id}
+    where_clauses = ["e.tenant_id = :t"]
     
     if q:
-        query_str += " AND (e.codigo_expediente ILIKE :q OR e.nombre_expediente ILIKE :q)"
-        params["q"] = f"%{q}%"
+        # Full-text search with to_tsvector
+        where_clauses.append("(to_tsvector('spanish', e.codigo_expediente || ' ' || e.nombre_expediente) @@ plainto_tsquery('spanish', :q))")
+        params["q"] = q
         
-    if status == 'abierto':
-        query_str += " AND e.estado = 'ABIERTO'"
-    elif status == 'cerrado':
-        query_str += " AND e.estado = 'CERRADO'"
+    if status:
+        if status == 'abierto':
+            where_clauses.append("e.estado = 'ABIERTO'")
+        elif status == 'cerrado':
+            where_clauses.append("e.estado = 'CERRADO'")
+        elif status == 'transferencia':
+            where_clauses.append("e.fecha_transferencia_central IS NOT NULL")
+            
+    if fecha_inicio:
+        where_clauses.append("e.fecha_apertura >= :fi::date")
+        params["fi"] = fecha_inicio
         
-    query_str += " ORDER BY e.created_at DESC"
+    if fecha_fin:
+        where_clauses.append("e.fecha_apertura <= :ff::date")
+        params["ff"] = fecha_fin
+        
+    if soporte:
+        where_clauses.append("e.soporte = :soporte")
+        params["soporte"] = soporte
+        
+    if subserie_id:
+        where_clauses.append("e.subserie_id = :subid::uuid")
+        params["subid"] = subserie_id
+        
+    where_sql = " AND ".join(where_clauses)
+    
+    # Get total count safely without scanning everything unless filters are applied
+    # For large datasets, pg_class could be used, but since we are filtering, we do an exact count
+    count_query = f"SELECT COUNT(*) FROM agn_expedientes e WHERE {where_sql}"
+    res_count = await db.execute(text(count_query), params)
+    total_count = res_count.scalar()
+    
+    # Fetch subseries for the dropdown
+    res_sub = await db.execute(text("SELECT id, codigo, nombre FROM agn_subseries WHERE tenant_id = :t ORDER BY codigo"), {"t": tenant_id})
+    subseries = [dict(r._mapping) for r in res_sub.fetchall()]
+    
+    # Query with filters and pagination
+    query_str = f'''
+        SELECT e.id, e.codigo_expediente, e.nombre_expediente, e.fecha_apertura, (e.estado = 'ABIERTO') as estado_abierto,
+               (SELECT COUNT(d.id) FROM documents d WHERE d.agn_expediente_id = e.id) as doc_count,
+               e.soporte
+        FROM agn_expedientes e
+        WHERE {where_sql}
+        ORDER BY e.created_at DESC
+        LIMIT :l OFFSET :o
+    '''
+    params["l"] = limit
+    params["o"] = offset
     
     res = await db.execute(text(query_str), params)
     expedientes = [dict(row._mapping) for row in res.fetchall()]
     
-    # Check if requested just the grid (htmx search) or the full module
-    if request.headers.get("hx-target") == "expedientes-results-grid":
-        return templates.TemplateResponse(
-            request=request, 
-            name="components/expedientes_grid.html", 
-            context={"expedientes": expedientes}
-        )
+    has_more = len(expedientes) == limit
+    
+    context = {
+        "request": request, 
+        "expedientes": expedientes, 
+        "q": q, 
+        "status": status,
+        "subserie_id": subserie_id,
+        "fecha_inicio": fecha_inicio,
+        "fecha_fin": fecha_fin,
+        "soporte": soporte,
+        "page": page,
+        "subseries": subseries,
+        "has_more": has_more,
+        "total_count": total_count
+    }
+    
+    # Check if requested just the grid (htmx search/pagination) or the full module
+    if request.headers.get("hx-target") == "expedientes-results-grid" or request.headers.get("hx-target") == "expedientes-append-target":
+        # If it's a "Cargar más", we append to the list
+        template_name = "components/expedientes_grid_items.html" if request.headers.get("hx-target") == "expedientes-append-target" else "components/expedientes_grid.html"
+        return templates.TemplateResponse(request=request, name=template_name, context=context)
     
     # Full module response
-    return templates.TemplateResponse(
-        request=request, 
-        name="components/expedientes_module.html", 
-        context={"request": request, "expedientes": expedientes, "q": q, "status": status}
-    )
+    return templates.TemplateResponse(request=request, name="components/expedientes_module.html", context=context)
 
 
 @router.get("/expedientes/{expediente_id}/view")
