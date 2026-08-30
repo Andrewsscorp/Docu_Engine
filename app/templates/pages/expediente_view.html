@@ -1,0 +1,233 @@
+﻿<div class="bg-slate-50 min-h-screen rounded-3xl p-6 shadow-inner font-sans" x-data="{ addDocModal: false, selectedDoc: '', selectedTipo: '' }">
+    <!-- Header -->
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <span class="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-bold rounded-full tracking-widest">CLASIFICACIÓN: CONFIDENCIAL</span>
+                <h2 class="text-3xl font-extrabold text-slate-800 tracking-tight">Expediente: {{ exp.codigo_expediente }}</h2>
+                {% if exp.estado_abierto %}
+                <span class="px-3 py-1 bg-emerald-100 text-emerald-800 text-sm font-bold rounded-full flex items-center gap-2 border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>Estado: Abierto
+                </span>
+                {% else %}
+                <span class="px-3 py-1 bg-red-100 text-red-800 text-sm font-bold rounded-full flex items-center gap-2 border border-red-200">
+                    <span class="w-2 h-2 rounded-full bg-red-500"></span>Estado: Cerrado
+                </span>
+                {% endif %}
+            </div>
+            <p class="text-slate-500 font-medium flex items-center gap-2 text-lg">
+                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                {{ exp.nombre_expediente }}
+            </p>
+        </div>
+        
+        <!-- Progress Bars -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 w-full lg:w-80">
+            <div class="mb-3">
+                <div class="flex justify-between text-xs font-bold text-slate-600 mb-1">
+                    <span>Completitud Documental</span>
+                    <span class="text-indigo-600">{{ completitud_pct }}%</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2">
+                    <div class="bg-indigo-600 h-2 rounded-full transition-all duration-1000" style="width: {{ completitud_pct }}%"></div>
+                </div>
+            </div>
+            <div>
+                <div class="flex justify-between text-xs font-bold text-slate-600 mb-1">
+                    <span>Tipologías Obligatorias</span>
+                    <span class="text-emerald-600">{{ completadas }}/{{ requeridas }}</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2">
+                    <div class="bg-emerald-500 h-2 rounded-full transition-all duration-1000" style="width: {{ completitud_pct }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        
+        <!-- Left: PDF Documents -->
+        <div class="xl:col-span-2 flex flex-col gap-4">
+            <div class="flex justify-between items-center">
+                <button {% if exp.estado_abierto %}@click="addDocModal = true"{% else %}disabled{% endif %} class="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold py-2.5 px-6 rounded-xl shadow-md transition-all flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Nuevo Documento
+                </button>
+            </div>
+            
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                        Documentos PDF <span class="px-2 py-0.5 bg-slate-200 text-slate-600 rounded-full text-xs">{{ docs|length }} items</span>
+                    </h3>
+                    <div class="flex gap-2">
+                        <button class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg></button>
+                        <button class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg></button>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs text-slate-400 uppercase bg-white border-b border-slate-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-4 font-bold tracking-wider">FOLIO</th>
+                                <th scope="col" class="px-6 py-4 font-bold tracking-wider">FECHA</th>
+                                <th scope="col" class="px-6 py-4 font-bold tracking-wider">TIPO DOCUMENTAL</th>
+                                <th scope="col" class="px-6 py-4 font-bold tracking-wider">NOMBRE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in docs %}
+                            <tr class="bg-white border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                                <td class="px-6 py-4 font-mono font-bold text-slate-600">
+                                    {% if doc.folio_fin and doc.folio_fin > doc.folio %}
+                                        {{ "%03d"|format(doc.folio) }}-{{ "%03d"|format(doc.folio_fin) }}
+                                    {% else %}
+                                        {{ "%03d"|format(doc.folio) }}
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 text-slate-500 font-medium">{{ doc.fecha_str }}</td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold border border-indigo-100">{{ doc.tipo_nombre }}</span>
+                                </td>
+                                <td class="px-6 py-4 font-medium text-slate-700 flex items-center gap-2">
+                                    <div class="p-1.5 bg-red-50 text-red-500 rounded-lg"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 2v20h14V8l-6-6H8zm12 18H10V4h5v5h5v11zm-5-9h4v2h-4v-2zm-2 4h6v2h-6v-2z"></path></svg></div>
+                                    <span class="truncate max-wxs">{{ doc.file_name }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if not docs %}
+                            <tr>
+                                <td colspan="4" class="px-6 py-12 text-center text-slate-400">No hay documentos vinculados a este expediente.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right: Índice Electrónico (Timeline) -->
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col overflow-hidden h-[800px]">
+            <div class="px-6 py-5 border-b border-slate-100 bg-slate-50 flex items-center gap-3">
+                <div class="p-2 bg-indigo-100 text-indigo-600 rounded-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-800 text-lg">Índice Electrónico</h3>
+                    <p class="text-xs text-slate-500">Trazabilidad criptográfica</p>
+                </div>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6">
+                <div class="relative border-l-2 border-indigo-100 ml-3 space-y-8 pb-4">
+                    {% for ev in eventos %}
+                    <div class="relative pl-6">
+                        <div class="absolute -left-1.5 top-1.5 w-3 h-3 bg-indigo-500 rounded-full ring-4 ring-indigo-50"></div>
+                        <div class="text-xs text-indigo-600 font-bold mb-1">{{ ev.fecha_str }}</div>
+                        <div class="font-bold text-slate-800 mb-0.5">{{ ev.accion_str }}</div>
+                        <div class="text-xs text-slate-500 mb-2">Usuario: {{ ev.usuario_id }}</div>
+                        <div class="bg-slate-50 p-2 rounded-lg border border-slate-200 font-mono text-[10px] text-slate-400 break-all">
+                            Tx: {{ ev.firma_indice }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-slate-100 bg-slate-50">
+                <p class="text-xs text-slate-500 text-center mb-3">El cierre sellará el índice permanentemente.</p>
+                <button onclick="cerrarExpediente()" {% if not exp.estado_abierto or completitud_pct < 100 %}disabled{% endif %} class="w-full bg-red-600 hover:bg-red-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl shadow-lg shadow-red-600/20 transition-all flex justify-center items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    Cerrar Expediente
+                </button>
+            </div>
+        </div>
+        
+    </div>
+    
+    <!-- Modal: Vincular Documento -->
+    <div x-show="addDocModal" x-cloak class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div @click.away="addDocModal = false" class="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden animate-fade-in-up">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-xl">Vincular Documento</h3>
+                <button @click="addDocModal = false" class="text-slate-400 hover:text-red-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <form id="vincular-form" class="p-6 space-y-5">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Seleccione el Documento a Vincular:*</label>
+                    <select name="documento_id" required x-model="selectedDoc" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                        <option value="">-- Seleccionar de mis archivos --</option>
+                        {% for ud in user_docs %}
+                        <option value="{{ ud.id }}">{{ ud.file_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs text-slate-500 mt-1">Solo se muestran documentos en estado COMPLETED que no han sido vinculados a otro expediente.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Clasificar Tipología Documental:*</label>
+                    <select name="tipologia_id" required x-model="selectedTipo" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                        <option value="">-- Seleccionar Tipo --</option>
+                        {% for tip in tipologias %}
+                        <option value="{{ tip.id }}">{{ tip.nombre }} {% if tip.obligatoria %}(Requerido){% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                    <button type="button" @click="addDocModal = false" class="px-6 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">Cancelar</button>
+                    <button type="button" @click="submitVincular()" :disabled="!selectedDoc || !selectedTipo" class="px-6 py-2.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 transition-colors shadow-md">
+                        Añadir al Expediente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        function submitVincular() {
+            const form = document.getElementById('vincular-form');
+            if (!form.checkValidity()) { form.reportValidity(); return; }
+            
+            const formData = new FormData(form);
+            Swal.showLoading();
+            fetch('/api/v1/agn/expedientes/{{ exp.id }}/vincular', {
+                method: 'POST',
+                body: formData
+            }).then(r => r.json()).then(data => {
+                if(data.status === 'success') {
+                    Swal.fire({icon: 'success', title: 'Documento Vinculado', html: Folio asignado: <b></b><br><br>Índice Electrónico actualizado exitosamente.}).then(() => {
+                        htmx.ajax('GET', '/api/v1/agn/expedientes/{{ exp.id }}/view', {target: '#expediente-inner-container'});
+                    });
+                } else {
+                    Swal.fire('Error', data.detail || 'Error al vincular', 'error');
+                }
+            }).catch(e => Swal.fire('Error', e.message, 'error'));
+        }
+
+        function cerrarExpediente() {
+            Swal.fire({
+                title: '¿Cerrar Expediente?',
+                text: "Esta acción es irreversible y generará el XML criptográfico final.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: 'Sí, Cerrar Definitivamente'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.showLoading();
+                    fetch('/api/v1/agn/expedientes/{{ exp.id }}/cerrar', { method: 'POST' })
+                    .then(r => r.json()).then(data => {
+                        if(data.status === 'success') {
+                            Swal.fire('Cerrado', 'Expediente sellado. Hash final: ' + data.xml_hash.substring(0, 15) + '...', 'success')
+                            .then(() => htmx.ajax('GET', '/api/v1/agn/expedientes/{{ exp.id }}/view', {target: '#expediente-inner-container'}));
+                        } else {
+                            Swal.fire('Error', data.detail || 'Error', 'error');
+                        }
+                    }).catch(e => Swal.fire('Error', e.message, 'error'));
+                }
+            })
+        }
+    </script>
+</div>
+

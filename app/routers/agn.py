@@ -1434,3 +1434,342 @@ async def create_agn_subserie(
     
     return {"status": "success", "id": new_id}
 
+
+
+@router.post("/api/v1/agn/expedientes/{expediente_id}/vincular")
+async def vincular_documento_expediente(
+    expediente_id: str,
+    documento_id: str = Form(...),
+    tipologia_id: str = Form(...),
+    session_data: dict = Depends(require_permission("documentos:crear")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    import fitz
+    import hashlib
+    import os
+    
+    # 1. Fetch document
+    doc_res = await db.execute(text("SELECT id, file_path, file_name FROM documents WHERE id = :did AND tenant_id = :t"), 
+                               {"did": documento_id, "t": session_data["tenant_id"]})
+    doc_row = doc_res.fetchone()
+    if not doc_row:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+        
+    file_path = doc_row.file_path
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="El archivo físico no existe en disco")
+        
+    # 2. Extract pages using PyMuPDF
+    pages = 1
+    if file_path.lower().endswith('.pdf'):
+        try:
+            with fitz.open(file_path) as pdf_doc:
+                pages = len(pdf_doc)
+        except Exception:
+            pages = 1
+            
+    # 3. Calculate Hash
+    sha256_hash = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    doc_hash = sha256_hash.hexdigest()
+    
+    # 4. Foliation Logic & Update (Atomic)
+    # Lock the expediente to prevent concurrent foliation issues
+    await db.execute(text("SELECT id FROM agn_expedientes WHERE id = :eid FOR UPDATE"), {"eid": expediente_id})
+    
+    max_res = await db.execute(text("SELECT COALESCE(MAX(folio_fin), 0) FROM documents WHERE agn_expediente_id = :eid"), {"eid": expediente_id})
+    max_folio = max_res.scalar()
+    
+    nuevo_folio_inicio = max_folio + 1
+    nuevo_folio_fin = max_folio + pages
+    
+    await db.execute(text('''
+        UPDATE documents 
+        SET agn_expediente_id = :eid, 
+            tipologia_id = :tid, 
+            folio = :f_ini, 
+            folio_fin = :f_fin,
+            hash_documento = :dhash
+        WHERE id = :did
+    '''), {
+        "eid": expediente_id,
+        "tid": tipologia_id,
+        "f_ini": nuevo_folio_inicio,
+        "f_fin": nuevo_folio_fin,
+        "dhash": doc_hash,
+        "did": documento_id
+    })
+    
+    # 5. Blockchain / Index Logic
+    # Get previous hash
+    prev_hash_res = await db.execute(text('''
+        SELECT firma_indice FROM agn_indice_electronico 
+        WHERE expediente_id = :eid 
+        ORDER BY fecha_accion DESC LIMIT 1
+    '''), {"eid": expediente_id})
+    prev_hash_row = prev_hash_res.fetchone()
+    prev_hash = prev_hash_row.firma_indice if prev_hash_row else "INITIAL"
+    
+    # New Index Node Hash = SHA256(prev_hash + doc_hash + action)
+    index_seed = f"{prev_hash}{doc_hash}VINCULAR_DOCUMENTO"
+    new_index_hash = hashlib.sha256(index_seed.encode()).hexdigest()
+    
+    await db.execute(text('''
+        INSERT INTO agn_indice_electronico (expediente_id, documento_id, accion, usuario_id, firma_indice)
+        VALUES (:eid, :did, 'VINCULAR_DOCUMENTO', :uid, :ihash)
+    '''), {
+        "eid": expediente_id,
+        "did": documento_id,
+        "uid": session_data["user_id"],
+        "ihash": new_index_hash
+    })
+    
+    await db.commit()
+    
+    return {"status": "success", "folio": f"{nuevo_folio_inicio:03d}-{nuevo_folio_fin:03d}", "hash": doc_hash}
+
+
+@router.get("/api/v1/agn/expedientes/explorer")
+async def get_expedientes_explorer(
+    request: Request,
+    session_data: dict = Depends(require_permission("documentos:leer")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    # Carga la lista de expedientes del tenant
+    tenant_id = session_data["tenant_id"]
+    res = await db.execute(text('''
+        SELECT e.id, e.codigo_expediente, e.nombre_expediente, e.fecha_apertura, (e.estado = 'ABIERTO') as estado_abierto,
+               (SELECT COUNT(d.id) FROM documents d WHERE d.agn_expediente_id = e.id) as doc_count
+        FROM agn_expedientes e
+        WHERE e.tenant_id = :t
+        ORDER BY e.created_at DESC
+    '''), {"t": tenant_id})
+    expedientes = [dict(row._mapping) for row in res.fetchall()]
+    
+    html = '''
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for exp in expedientes %}
+        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col gap-3 group relative"
+             @click="currentView = 'expediente'" hx-get="/api/v1/agn/expedientes/{{ exp.id }}/view" hx-target="#expediente-inner-container" >
+            <div class="flex justify-between items-start">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                </div>
+                {% if exp.estado_abierto %}
+                <span class="px-2.5 py-1 text-xs font-bold bg-green-100 text-green-700 rounded-full flex items-center gap-1">
+                    <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>Abierto
+                </span>
+                {% else %}
+                <span class="px-2.5 py-1 text-xs font-bold bg-red-100 text-red-700 rounded-full flex items-center gap-1">
+                    <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>Cerrado
+                </span>
+                {% endif %}
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-800 line-clamp-1" title="{{ exp.nombre_expediente }}">{{ exp.nombre_expediente }}</h4>
+                <p class="text-xs text-gray-500 font-mono mt-1">{{ exp.codigo_expediente }}</p>
+            </div>
+            <div class="mt-2 pt-3 border-t border-gray-100 flex justify-between items-center text-xs text-gray-500">
+                <span>{{ exp.fecha_apertura }}</span>
+                <span class="font-bold text-gray-700">{{ exp.doc_count }} docs</span>
+            </div>
+        </div>
+        {% endfor %}
+        {% if not expedientes %}
+        <div class="col-span-full py-12 text-center text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-2xl">
+            Aún no tienes Expedientes AGN. Haz clic en "Entidades Públicas" > "Crear Expediente" para crear uno.
+        </div>
+        {% endif %}
+    </div>
+    '''
+    
+    from fastapi.templating import Jinja2Templates
+    from jinja2 import Template
+    return HTMLResponse(Template(html).render(expedientes=expedientes))
+
+
+@router.get("/api/v1/agn/expedientes/{expediente_id}/view")
+async def get_expediente_inner_view(
+    expediente_id: str,
+    request: Request,
+    session_data: dict = Depends(require_permission("documentos:leer")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    # 1. Expediente Data
+    exp_res = await db.execute(text("SELECT * FROM agn_expedientes WHERE id = :eid AND tenant_id = :t"), 
+                               {"eid": expediente_id, "t": session_data["tenant_id"]})
+    exp_row = exp_res.fetchone()
+    if not exp_row:
+        return HTMLResponse("Expediente no encontrado o sin permisos", status_code=404)
+        
+    exp = dict(exp_row._mapping)
+    exp['estado_abierto'] = exp.get('estado') == 'ABIERTO'
+    
+    # 2. Documentos del Expediente
+    docs_res = await db.execute(text('''
+        SELECT d.*, t.nombre as tipo_nombre 
+        FROM documents d
+        LEFT JOIN agn_tipologias t ON d.tipologia_id = t.id
+        WHERE d.agn_expediente_id = :eid
+        ORDER BY d.folio ASC
+    '''), {"eid": expediente_id})
+    docs = []
+    for row in docs_res.fetchall():
+        d = dict(row._mapping)
+        d["fecha_str"] = d["created_at"].strftime("%Y-%m-%d") if d["created_at"] else ""
+        docs.append(d)
+        
+    # 3. Índice Electrónico
+    idx_res = await db.execute(text('''
+        SELECT accion, usuario_id, firma_indice, fecha_accion
+        FROM agn_indice_electronico
+        WHERE expediente_id = :eid
+        ORDER BY fecha_accion DESC
+    '''), {"eid": expediente_id})
+    eventos = []
+    for row in idx_res.fetchall():
+        ev = dict(row._mapping)
+        # Parse timestamp to nice string like "Hoy, 14:30" - simple fallback for now
+        ev["fecha_str"] = ev["fecha_accion"].strftime("%d %b, %H:%M") if ev["fecha_accion"] else ""
+        if ev["accion"] == 'APERTURA_EXPEDIENTE': ev["accion_str"] = "Apertura de Expediente"
+        elif ev["accion"] == 'VINCULAR_DOCUMENTO': ev["accion_str"] = "Documento Vinculado"
+        elif ev["accion"] == 'CERRAR_EXPEDIENTE': ev["accion_str"] = "Cierre de Expediente"
+        else: ev["accion_str"] = ev["accion"]
+        eventos.append(ev)
+        
+    # 4. Motor TRD (Completitud)
+    subserie_id = exp["subserie_id"]
+    requeridas_res = await db.execute(text('''
+        SELECT t.id, t.nombre, st.obligatoria 
+        FROM agn_tipologias t
+        LEFT JOIN agn_subserie_tipologia st ON st.tipologia_id = t.id AND st.subserie_id = :sid
+        WHERE st.obligatoria = TRUE OR t.tenant_id = :t
+    '''), {"sid": subserie_id, "t": session_data["tenant_id"]})
+    
+    tipologias = []
+    req_ids = []
+    for row in requeridas_res.fetchall():
+        t = dict(row._mapping)
+        # If it's mandatory for this subserie
+        if t["obligatoria"] is True:
+            req_ids.append(str(t["id"]))
+        tipologias.append(t)
+        
+    # Count how many of req_ids are in the docs
+    doc_tipos = [str(d["tipologia_id"]) for d in docs if d["tipologia_id"]]
+    completadas = 0
+    for rid in req_ids:
+        if rid in doc_tipos: completadas += 1
+        
+    requeridas = len(req_ids)
+    if requeridas == 0: 
+        completitud_pct = 100
+        requeridas = 1
+        completadas = 1
+    else:
+        completitud_pct = int((completadas / requeridas) * 100)
+        
+    # 5. User's loose documents (for the modal)
+    user_docs_res = await db.execute(text('''
+        SELECT id, file_name 
+        FROM documents 
+        WHERE tenant_id = :t 
+        AND status = 'COMPLETED' 
+        AND agn_expediente_id IS NULL
+        ORDER BY created_at DESC LIMIT 50
+    '''), {"t": session_data["tenant_id"]})
+    user_docs = [dict(r._mapping) for r in user_docs_res.fetchall()]
+
+    from fastapi.templating import Jinja2Templates
+    templates = Jinja2Templates(directory="app/templates")
+    return templates.TemplateResponse("pages/expediente_view.html", {
+        "request": request,
+        "exp": exp,
+        "docs": docs,
+        "eventos": eventos,
+        "tipologias": tipologias,
+        "user_docs": user_docs,
+        "completitud_pct": completitud_pct,
+        "completadas": completadas,
+        "requeridas": requeridas
+    })
+
+
+@router.post("/api/v1/agn/expedientes/{expediente_id}/cerrar")
+async def cerrar_expediente(
+    expediente_id: str,
+    request: Request,
+    session_data: dict = Depends(require_permission("documentos:editar")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    import hashlib
+    # 1. Lock Expediente
+    exp_res = await db.execute(text("SELECT id, subserie_id, (estado = 'ABIERTO') as estado_abierto, codigo_expediente FROM agn_expedientes WHERE id = :eid FOR UPDATE"), 
+                               {"eid": expediente_id})
+    exp = exp_res.fetchone()
+    if not exp:
+        raise HTTPException(status_code=404, detail="Expediente no encontrado")
+    if not exp.estado_abierto:
+        raise HTTPException(status_code=403, detail="El expediente ya se encuentra cerrado")
+        
+    # 2. Check Completitud
+    requeridas_res = await db.execute(text('''
+        SELECT tipologia_id 
+        FROM agn_subserie_tipologia 
+        WHERE subserie_id = :sid AND obligatoria = TRUE
+    '''), {"sid": exp.subserie_id})
+    req_ids = [str(r[0]) for r in requeridas_res.fetchall()]
+    
+    docs_res = await db.execute(text('''
+        SELECT id, tipologia_id, hash_documento, folio, folio_fin 
+        FROM documents 
+        WHERE agn_expediente_id = :eid
+        ORDER BY folio ASC
+    '''), {"eid": expediente_id})
+    docs = docs_res.fetchall()
+    doc_tipos = [str(d.tipologia_id) for d in docs if d.tipologia_id]
+    
+    for rid in req_ids:
+        if rid not in doc_tipos:
+            raise HTTPException(status_code=403, detail="El expediente no cumple el 100% de la completitud documental. Faltan tipologías obligatorias según la TRD.")
+            
+    # 3. Generate Final XML & Hash
+    xml_content = f"<?xml version='1.0' encoding='UTF-8'?>\n<IndiceElectronico>\n  <Expediente>{exp.codigo_expediente}</Expediente>\n"
+    for d in docs:
+        xml_content += f"  <Documento id='{d.id}'>\n    <Folio>{d.folio}-{d.folio_fin}</Folio>\n    <Hash>{d.hash_documento}</Hash>\n  </Documento>\n"
+    xml_content += "</IndiceElectronico>"
+    
+    final_hash = hashlib.sha256(xml_content.encode()).hexdigest()
+    
+    # Get previous hash
+    prev_hash_res = await db.execute(text("SELECT firma_indice FROM agn_indice_electronico WHERE expediente_id = :eid ORDER BY fecha_accion DESC LIMIT 1"), {"eid": expediente_id})
+    prev_hash_row = prev_hash_res.fetchone()
+    prev_hash = prev_hash_row.firma_indice if prev_hash_row else "INITIAL"
+    
+    index_seed = f"{prev_hash}{final_hash}CERRAR_EXPEDIENTE"
+    new_index_hash = hashlib.sha256(index_seed.encode()).hexdigest()
+    
+    # 4. TRD Projection
+    sub_res = await db.execute(text("SELECT retencion_ag FROM agn_subseries WHERE id = :sid"), {"sid": exp.subserie_id})
+    sub_row = sub_res.fetchone()
+    retencion_ag = sub_row.retencion_ag if (sub_row and sub_row.retencion_ag) else 1
+    
+    # 5. Commit all changes
+    await db.execute(text('''
+        INSERT INTO agn_indice_electronico (expediente_id, accion, usuario_id, firma_indice)
+        VALUES (:eid, 'CERRAR_EXPEDIENTE', :uid, :ihash)
+    '''), {"eid": expediente_id, "uid": session_data["user_id"], "ihash": new_index_hash})
+    
+    await db.execute(text('''
+        UPDATE agn_expedientes 
+        SET estado = 'CERRADO', 
+            fecha_cierre = CURRENT_DATE,
+            fecha_transferencia_central = CURRENT_DATE + ( :anios || ' years')::INTERVAL
+        WHERE id = :eid
+    '''), {"eid": expediente_id, "anios": str(retencion_ag)})
+    
+    await db.commit()
+    
+    return {"status": "success", "xml_hash": final_hash}
