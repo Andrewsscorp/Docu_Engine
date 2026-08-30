@@ -1817,7 +1817,6 @@ async def get_expediente_inner_view(
         return HTMLResponse("Expediente no encontrado o sin permisos", status_code=404)
         
     exp = dict(exp_row._mapping)
-    exp['estado_abierto'] = exp.get('estado') == 'ABIERTO'
     
     # 2. Documentos del Expediente
     docs_res = await db.execute(text('''
