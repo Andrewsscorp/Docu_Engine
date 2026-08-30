@@ -1715,7 +1715,7 @@ async def get_expediente_inner_view(
     requeridas_res = await db.execute(text('''
         SELECT t.id, t.nombre_oficial, st.obligatoria 
         FROM agn_tipologias t
-        LEFT JOIN agn_subserie_tipologia st ON st.tipologia_id = t.id AND st.subserie_id = :sid
+        LEFT JOIN agn_expediente_tipologia st ON st.tipologia_id = t.id AND st.expediente_id = :eid
         WHERE st.obligatoria = TRUE OR t.tenant_id = :t
     '''), {"eid": expediente_id, "t": session_data["tenant_id"]})
     
@@ -1800,9 +1800,9 @@ async def cerrar_expediente(
     # 2. Check Completitud
     requeridas_res = await db.execute(text('''
         SELECT tipologia_id 
-        FROM agn_subserie_tipologia 
-        WHERE subserie_id = :sid AND obligatoria = TRUE
-    '''), {"sid": exp.subserie_id})
+        FROM agn_expediente_tipologia 
+        WHERE expediente_id = :eid AND obligatoria = TRUE
+    '''), {"eid": exp.id})
     req_ids = [str(r[0]) for r in requeridas_res.fetchall()]
     
     docs_res = await db.execute(text('''
@@ -2231,7 +2231,7 @@ async def post_vincular_trd(
     db: AsyncSession = Depends(get_db_session)
 ):
     # Validar si ya existe
-    exist_res = await db.execute(text("SELECT id FROM agn_subserie_tipologia WHERE subserie_id = :sid AND tipologia_id = :tid"), {"eid": expediente_id, "tid": payload.id_tipologia})
+    exist_res = await db.execute(text("SELECT id FROM agn_expediente_tipologia WHERE expediente_id = :eid AND tipologia_id = :tid"), {"eid": expediente_id, "tid": payload.id_tipologia})
     if exist_res.fetchone():
         return JSONResponse({"status": "error", "message": "Esta tipolog├¡a ya pertenece a la Subserie."}, status_code=409)
         
