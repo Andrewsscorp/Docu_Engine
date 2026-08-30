@@ -1798,11 +1798,12 @@ async def get_control_tipologias_view(
             doc.id as documento_id,
             doc.file_name,
             doc.created_at as fecha_carga,
-            doc.user_id as autor_carga,
+            u.username as autor_carga,
             (CASE WHEN doc.id IS NOT NULL THEN 'CARGADO' ELSE 'FALTANTE' END) as estado_carga
         FROM agn_subserie_tipologia st
         INNER JOIN agn_tipologias t ON st.tipologia_id = t.id
         LEFT JOIN documents doc ON st.tipologia_id = doc.tipologia_id AND doc.agn_expediente_id = :eid AND (doc.status = 'COMPLETED' OR doc.status = 'ARCHIVED')
+        LEFT JOIN users u ON doc.uploaded_by = u.id
         WHERE st.subserie_id = :sid
         ORDER BY st.obligatoria DESC, st.orden_sugerido ASC NULLS LAST, t.nombre ASC
     '''), {"eid": expediente_id, "sid": exp["subserie_id"]})
