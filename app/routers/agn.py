@@ -2883,11 +2883,18 @@ async def post_importar_trd_subserie(
     exp_res = await db.execute(text("SELECT subserie_id FROM agn_expedientes WHERE id = :eid AND tenant_id = :t"), 
                                {"eid": expediente_id, "t": session_data["tenant_id"]})
     exp_row = exp_res.fetchone()
+    
+    import json
+    from fastapi import Response
+    
     if not exp_row or not exp_row.subserie_id:
-        return HTMLResponse("Expediente no encontrado o sin subserie asignada", status_code=404)
+        res = Response(status_code=204)
+        trigger_data = {"showSwal": {"title": "Sin Subserie", "text": "Este expediente está asignado directamente a una Serie. No hay tipologías maestras configuradas para heredar.", "icon": "warning"}}
+        res.headers["HX-Trigger"] = json.dumps(trigger_data)
+        return res
         
     # 2. Copiar tipologías de la subserie al expediente ignorando duplicados
-    await db.execute(text('''
+    res_insert = await db.execute(text('''
         INSERT INTO agn_expediente_tipologia (expediente_id, tipologia_id, obligatoria, orden_sugerido, usuario_creador)
         SELECT 
             :eid, 
@@ -2904,10 +2911,25 @@ async def post_importar_trd_subserie(
         "uid": session_data["user_id"]
     })
     
+    inserted_count = res_insert.rowcount
     await db.commit()
     
     # 3. Retornar la vista actualizada
-    return await get_control_tipologias_view(expediente_id, request, session_data, db)
+    response = await get_control_tipologias_view(expediente_id, request, session_data, db)
+    
+    if inserted_count == 0:
+        res_check = await db.execute(text("SELECT COUNT(*) FROM agn_subserie_tipologia WHERE subserie_id = :sid AND estado_regla = TRUE"), {"sid": exp_row.subserie_id})
+        total_mapped = res_check.scalar()
+        if total_mapped == 0:
+            trigger_data = {"showSwal": {"title": "TRD Vacía", "text": "La subserie asignada a este expediente no tiene tipologías documentales configuradas en el módulo maestro.", "icon": "warning"}}
+        else:
+            trigger_data = {"showSwal": {"title": "TRD al día", "text": "El expediente ya heredó todas las tipologías maestras de su subserie.", "icon": "info"}}
+        response.headers["HX-Trigger"] = json.dumps(trigger_data)
+    else:
+        trigger_data = {"showSwal": {"title": "TRD Heredada", "text": f"Se heredaron {inserted_count} tipologías maestras de la subserie correctamente.", "icon": "success"}}
+        response.headers["HX-Trigger"] = json.dumps(trigger_data)
+        
+    return response
 
 @router.delete("/expedientes/{expediente_id}/tipologias/{tipologia_id}")
 async def delete_expediente_tipologia(
