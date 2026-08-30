@@ -72,6 +72,19 @@ load_dotenv()
 
 app = FastAPI(title="DocuEngine Backend", version="1.0.0")
 
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi import Request
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    with open("422_debug.log", "w", encoding="utf-8") as lf:
+        lf.write(f"URL: {request.url}
+")
+        lf.write(f"Errors: {exc.errors()}
+")
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
 @app.middleware("http")
 async def catch_exceptions_middleware(request: Request, call_next):
     try:
