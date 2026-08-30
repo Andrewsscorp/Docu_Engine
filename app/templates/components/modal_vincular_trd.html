@@ -23,7 +23,7 @@
         },
         
         async cargarDisponibles() {
-            const res = await fetch('/api/v1/agn/subseries/{{ expediente.id }}/tipologias/disponibles');
+            const res = await fetch('/api/v1/agn/expedientes/{{ expediente.id }}/tipologias/disponibles');
             this.tipologias = await res.json();
             this.seleccion = '';
         },
