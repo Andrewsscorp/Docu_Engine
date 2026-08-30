@@ -142,7 +142,7 @@
                         </div>
                     </div>
                     {% if pendientes == 0 %}
-                    <button hx-post="/api/v1/agn/expedientes/{{ exp.id }}/cerrar" hx-swap="none" class="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold transition-colors">
+                    <button type="button" onclick="cerrarExpediente()" class="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold transition-colors">
                         Sellar Expediente 100%
                     </button>
                     {% else %}
