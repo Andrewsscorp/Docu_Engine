@@ -54,7 +54,10 @@
             </div>
             <button class="text-primary font-medium hover:underline text-sm">Ver todo</button>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        <div x-show="tab === 'carpetas'">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
             {% for folder in folders %}
             <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4 group"
                  
@@ -77,6 +80,13 @@
                 Aún no tienes carpetas. Haz clic en "Nueva Carpeta" para crear una.
             </div>
             {% endif %}
+            </div>
+        </div>
+        
+        <div x-show="tab === 'expedientes'" x-cloak>
+            <div id="expedientes-grid" class="mb-8">
+                <!-- HTMX will load the expedientes list here -->
+            </div>
         </div>
     </section>
 
