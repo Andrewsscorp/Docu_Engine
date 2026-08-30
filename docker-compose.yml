@@ -17,7 +17,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.ocr
-    container_name: docuengine_ocr_worker
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:superadmin_password@db:5432/docuengine
     depends_on:
