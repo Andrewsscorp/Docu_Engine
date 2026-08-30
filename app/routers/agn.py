@@ -2016,3 +2016,280 @@ async def get_ver_documento_forense(
         headers={"Content-Disposition": f"inline; filename={doc_row.file_name}"}
     )
 
+
+@router.get("/expedientes/{expediente_id}/control_tipologias")
+async def get_control_tipologias_view(
+    expediente_id: str,
+    request: Request,
+    session_data: dict = Depends(require_permission("documentos:leer")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    exp_res = await db.execute(text("SELECT id, codigo_expediente, nombre_expediente, subserie_id, (estado = 'ABIERTO') as estado_abierto FROM agn_expedientes WHERE id = :eid AND tenant_id = :t"), {"eid": expediente_id, "t": session_data["tenant_id"]})
+    exp_row = exp_res.fetchone()
+    if not exp_row:
+        return HTMLResponse("Expediente no encontrado", status_code=404)
+    exp = dict(exp_row._mapping)
+    
+    matrix_res = await db.execute(text('''
+        SELECT 
+            t.id as tipologia_id, 
+            t.nombre_oficial as oficial, 
+            t.formatos_permitidos,
+            st.obligatoria,
+            st.orden_sugerido,
+            doc.id as documento_id,
+            doc.file_name,
+            doc.created_at as fecha_carga,
+            u.username as autor_carga,
+            (CASE WHEN doc.id IS NOT NULL THEN 'CARGADO' ELSE 'FALTANTE' END) as estado_carga
+        FROM agn_subserie_tipologia st
+        INNER JOIN agn_tipologias t ON st.tipologia_id = t.id
+        LEFT JOIN documents doc ON st.tipologia_id = doc.tipologia_id AND doc.agn_expediente_id = :eid AND (doc.status = 'COMPLETED' OR doc.status = 'ARCHIVED')
+        LEFT JOIN users u ON doc.uploaded_by = u.id
+        WHERE st.subserie_id = :sid
+        ORDER BY st.obligatoria DESC, st.orden_sugerido ASC NULLS LAST, t.nombre_oficial ASC
+    '''), {"eid": expediente_id, "sid": exp["subserie_id"]})
+    
+    tipologias = []
+    obligatorias = []
+    opcionales = []
+    completadas_req = 0
+    total_req = 0
+    
+    for row in matrix_res.fetchall():
+        t = dict(row._mapping)
+        if t["fecha_carga"]:
+            t["fecha_str"] = t["fecha_carga"].strftime("%d %b %Y, %H:%M")
+        
+        if t["obligatoria"]:
+            total_req += 1
+            if t["estado_carga"] == 'CARGADO':
+                completadas_req += 1
+            obligatorias.append(t)
+        else:
+            opcionales.append(t)
+            
+    completitud = int((completadas_req / total_req * 100)) if total_req > 0 else 100
+    pendientes = total_req - completadas_req
+    
+    user_docs_res = await db.execute(text('''
+        SELECT id, file_name 
+        FROM documents 
+        WHERE tenant_id = :t 
+        AND status = 'COMPLETED' 
+        AND agn_expediente_id IS NULL
+        ORDER BY created_at DESC LIMIT 50
+    '''), {"t": session_data["tenant_id"]})
+    user_docs = [dict(r._mapping) for r in user_docs_res.fetchall()]
+
+    from fastapi.templating import Jinja2Templates
+    templates = Jinja2Templates(directory="app/templates")
+    return templates.TemplateResponse(request=request, name="pages/control_tipologias.html", context={
+        "request": request,
+        "exp": exp,
+        "obligatorias": obligatorias,
+        "opcionales": opcionales,
+        "completitud": completitud,
+        "total_req": total_req,
+        "completadas_req": completadas_req,
+        "pendientes": pendientes,
+        "user_docs": user_docs
+    })
+
+@router.get("/subseries/{subserie_id}/modal_trd")
+async def get_modal_trd(
+    subserie_id: str,
+    request: Request,
+    session_data: dict = Depends(require_permission("documentos:crear")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    sub_res = await db.execute(text("SELECT * FROM agn_subseries WHERE id = :sid"), {"sid": subserie_id})
+    sub = dict(sub_res.fetchone()._mapping)
+    
+    # Check if user has tipologias:crear permission
+    # In a real app we'd query the permissions, but since we rely on require_permission dependency, 
+    # we can do a quick check:
+    perm_res = await db.execute(text('''
+        SELECT 1 FROM users u
+        JOIN role_permissions rp ON u.role_id = rp.role_id
+        JOIN permissions p ON rp.permission_id = p.id
+        WHERE u.id = :uid AND p.name = 'tipologias:crear'
+    '''), {"uid": session_data["user_id"]})
+    has_perm = perm_res.fetchone() is not None
+    
+    from fastapi.templating import Jinja2Templates
+    templates = Jinja2Templates(directory="app/templates")
+    return templates.TemplateResponse(request=request, name="components/modal_vincular_trd.html", context={
+        "request": request,
+        "subserie": sub,
+        "puede_crear_tipologias": has_perm
+    })
+
+@router.get("/subseries/{subserie_id}/tipologias/disponibles")
+async def get_tipologias_disponibles(
+    subserie_id: str,
+    request: Request,
+    session_data: dict = Depends(require_permission("documentos:leer")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    # Trae tipolog├¡as maestras que NO est├®n vinculadas a esta subserie
+    res = await db.execute(text('''
+        SELECT t.id, t.nombre_oficial 
+        FROM agn_tipologias t
+        WHERE t.estado_activo = TRUE 
+          AND t.tenant_id = :t
+          AND t.id NOT IN (
+              SELECT tipologia_id FROM agn_subserie_tipologia WHERE subserie_id = :sid AND estado_regla = TRUE
+          )
+        ORDER BY t.nombre_oficial ASC
+    '''), {"t": session_data["tenant_id"], "sid": subserie_id})
+    
+    tipologias = [dict(r._mapping) for r in res.fetchall()]
+    # Formatear para Select2 o frontend JSON:
+    return JSONResponse([{"id": str(t["id"]), "text": t["nombre_oficial"]} for t in tipologias])
+
+class TRDLinkPayload(BaseModel):
+    id_tipologia: str
+    es_obligatorio: bool
+    orden: Optional[int] = None
+
+@router.post("/subseries/{subserie_id}/tipologias")
+async def post_vincular_trd(
+    subserie_id: str,
+    payload: TRDLinkPayload,
+    request: Request,
+    session_data: dict = Depends(require_permission("documentos:crear")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    # Validar si ya existe
+    exist_res = await db.execute(text("SELECT id FROM agn_subserie_tipologia WHERE subserie_id = :sid AND tipologia_id = :tid"), {"sid": subserie_id, "tid": payload.id_tipologia})
+    if exist_res.fetchone():
+        return JSONResponse({"status": "error", "message": "Esta tipolog├¡a ya pertenece a la Subserie."}, status_code=409)
+        
+    await db.execute(text('''
+        INSERT INTO agn_subserie_tipologia (subserie_id, tipologia_id, obligatoria, orden_sugerido, usuario_creador)
+        VALUES (:sid, :tid, :obl, :ord, :uid)
+    '''), {
+        "sid": subserie_id,
+        "tid": payload.id_tipologia,
+        "obl": payload.es_obligatorio,
+        "ord": payload.orden,
+        "uid": session_data["user_id"]
+    })
+    
+    # Log Auditoria (opcional aqu├¡ si lo centralizamos)
+    await db.commit()
+    return JSONResponse({"status": "success"}, status_code=201)
+
+from typing import List
+
+class NuevaTipologiaPayload(BaseModel):
+    nombre_oficial: str
+    soporte_origen: str
+    formatos_permitidos: List[str]
+    clasificacion: str
+    exige_firma: bool
+
+@router.post("/tipologias/diccionario")
+async def post_crear_tipologia_diccionario(
+    payload: NuevaTipologiaPayload,
+    request: Request,
+    session_data: dict = Depends(require_permission("tipologias:crear")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    import json
+    # Normalizaci├│n estricta (Sanitizaci├│n Sem├íntica)
+    nombre_limpio = payload.nombre_oficial.strip().upper()
+    
+    # Verificar si el nombre ya existe (Unicidad)
+    exist_res = await db.execute(text("SELECT id FROM agn_tipologias WHERE nombre_oficial = :nom"), {"nom": nombre_limpio})
+    if exist_res.fetchone():
+        return JSONResponse({"status": "error", "message": "Ya existe una tipolog├¡a con ese nombre oficial en el cat├ílogo."}, status_code=409)
+        
+    res = await db.execute(text('''
+        INSERT INTO agn_tipologias (
+            nombre_oficial, soporte_origen, formatos_permitidos, 
+            clasificacion, exige_firma, tenant_id, usuario_creador, estado_activo
+        )
+        VALUES (:nom, :sop, CAST(:form AS JSONB), :clas, :firma, :t, :uid, TRUE)
+        RETURNING id
+    '''), {
+        "nom": nombre_limpio,
+        "sop": payload.soporte_origen,
+        "form": json.dumps(payload.formatos_permitidos),
+        "clas": payload.clasificacion,
+        "firma": payload.exige_firma,
+        "t": session_data["tenant_id"],
+        "uid": session_data["user_id"]
+    })
+    
+    nuevo_id = str(res.scalar())
+    await db.commit()
+    
+    return JSONResponse({
+        "status": "success", 
+        "data": {
+            "id": nuevo_id,
+            "text": f"{nombre_limpio}"
+        }
+    }, status_code=201)
+
+@router.post("/expedientes/{expediente_id}/upload_direct")
+async def post_upload_direct_expediente(
+    expediente_id: str,
+    tipologia_id: str = Form(...),
+    file: UploadFile = File(...),
+    session_data: dict = Depends(require_permission("documentos:crear")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    import os
+    import hashlib
+    import fitz
+    
+    tenant_id = session_data["tenant_id"]
+    upload_dir = os.path.join("uploads", str(tenant_id))
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    file_content = await file.read()
+    file_hash = hashlib.sha256(file_content).hexdigest()
+    
+    disk_filename = f"{file_hash}_{file.filename}"
+    file_path = os.path.join(upload_dir, disk_filename)
+    
+    with open(file_path, "wb") as buffer:
+        buffer.write(file_content)
+        
+    pages = 1
+    if file_path.lower().endswith('.pdf'):
+        try:
+            doc_pdf = fitz.open(file_path)
+            pages = doc_pdf.page_count
+        except:
+            pass
+            
+    res_doc = await db.execute(text('''
+        INSERT INTO documents (tenant_id, file_name, file_path, uploaded_by, status, is_private, mime_type, file_size_bytes, file_hash, agn_expediente_id, tipologia_id, paginas_cantidad)
+        VALUES (:t, :n, :p, :u, 'COMPLETED', FALSE, :m, :s, :h, :eid, :tid, :pages)
+        RETURNING id
+    '''), {
+        "t": tenant_id, "n": file.filename, "p": file_path, "u": session_data["user_id"],
+        "m": file.content_type, "s": len(file_content), "h": file_hash, "eid": expediente_id, "tid": tipologia_id,
+        "pages": pages
+    })
+    
+    new_doc_id = str(res_doc.scalar())
+    
+    # ├ìndice Electr├│nico
+    index_seed = f"{expediente_id}|{new_doc_id}|{session_data['user_id']}"
+    new_index_hash = hashlib.sha256(index_seed.encode()).hexdigest()
+    
+    await db.execute(text('''
+        INSERT INTO agn_indice_electronico (expediente_id, documento_id, accion, usuario_id, firma_indice)
+        VALUES (:eid, :did, 'VINCULAR_DOCUMENTO', :uid, :ihash)
+    '''), {
+        "eid": expediente_id, "did": new_doc_id, "uid": session_data["user_id"], "ihash": new_index_hash
+    })
+    
+    await db.commit()
+    
+    return JSONResponse({"status": "success"})
