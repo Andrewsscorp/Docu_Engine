@@ -80,7 +80,7 @@
             }
             this.cargando = true;
             try {
-                const res = await fetch('/api/v1/agn/subseries/{{ expediente.id }}/tipologias', {
+                const res = await fetch('/api/v1/agn/expedientes/{{ expediente.id }}/tipologias', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
