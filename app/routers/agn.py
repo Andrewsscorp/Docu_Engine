@@ -2608,7 +2608,7 @@ async def descargar_plana_fuid(
     import csv
     
     output = io.StringIO()
-    writer = csv.writer(output)
+    writer = csv.writer(output, delimiter=';')
     writer.writerow(["NO_ORDEN", "CODIGO", "NOMBRE_UNIDAD", "FECHA_INICIAL", "FECHA_FINAL", "CAJA_CARPETA", "FOLIOS", "SOPORTE"])
     
     for r in filas:
@@ -2627,9 +2627,12 @@ async def descargar_plana_fuid(
             r.soporte
         ])
         
-    return PlainTextResponse(content=output.getvalue(), headers={
-        "Content-Disposition": f"attachment; filename=FUID_{subserie_id}_Plano.csv"
-    })
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue().encode('utf-8-sig')]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=FUID_{subserie_id}_Plano.csv"}
+    )
 
 @router.get("/fuid/descargar_pdf/{hash}")
 async def descargar_pdf_fuid(
