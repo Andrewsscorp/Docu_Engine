@@ -2520,16 +2520,20 @@ async def firmar_fuid(
             await db.execute(text("UPDATE agn_expedientes SET estado = 'ARCHIVO_CENTRAL' WHERE id = :eid"), {"eid": exp.exp_id})
             
         # 6. Audit
+        import json
+        payload_legal = json.dumps({
+            "subserie_id": subserie_id,
+            "hash_sha256": fuid_hash,
+            "expedientes_vinculados": len(exp_validos),
+            "user_agent": request.headers.get("user-agent", "unknown")
+        })
         await db.execute(text('''
-            INSERT INTO log_auditoria_sgdea (tenant_id, user_id, action, entity_type, entity_id, ip_address, user_agent, details)
-            VALUES (:t, :u, 'FIRMA_FUID_TRANSFERENCIA', 'fuid', :fid, :ip, :ua, :det)
+            INSERT INTO log_auditoria_sgdea (id_expediente, id_usuario, tipo_evento, ip_origen, payload_legal)
+            VALUES (NULL, :u, 'FIRMA_FUID_TRANSFERENCIA', :ip, CAST(:det AS JSONB))
         '''), {
-            "t": session_data["tenant_id"],
             "u": session_data["user_id"],
-            "fid": str(fuid_id),
             "ip": request.client.host if request.client else "unknown",
-            "ua": request.headers.get("user-agent", "unknown"),
-            "det": f'{{"hash": "{fuid_hash}", "expedientes_vinculados": {len(exp_validos)}}}'
+            "det": payload_legal
         })
         
         await db.commit()
@@ -2546,15 +2550,18 @@ async def descargar_plana_fuid(
     db: AsyncSession = Depends(get_db_session)
 ):
     # Audit log first
+    import json
+    payload_legal = json.dumps({
+        "subserie_id": subserie_id,
+        "user_agent": request.headers.get("user-agent", "unknown")
+    })
     await db.execute(text('''
-        INSERT INTO log_auditoria_sgdea (tenant_id, user_id, action, entity_type, entity_id, ip_address, user_agent, details)
-        VALUES (:t, :u, 'DESCARGA_METADATOS_PLANA', 'fuid_subserie', :sid, :ip, :ua, '{}')
+        INSERT INTO log_auditoria_sgdea (id_expediente, id_usuario, tipo_evento, ip_origen, payload_legal)
+        VALUES (NULL, :u, 'DESCARGA_METADATOS_PLANA', :ip, CAST(:det AS JSONB))
     '''), {
-        "t": session_data["tenant_id"],
         "u": session_data["user_id"],
-        "sid": subserie_id,
         "ip": request.client.host if request.client else "unknown",
-        "ua": request.headers.get("user-agent", "unknown")
+        "det": payload_legal
     })
     await db.commit()
     
