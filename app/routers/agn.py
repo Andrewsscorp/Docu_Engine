@@ -2730,3 +2730,32 @@ async def post_importar_trd_subserie(
     
     # 3. Retornar la vista actualizada
     return await get_control_tipologias_view(expediente_id, request, session_data, db)
+
+@router.delete("/expedientes/{expediente_id}/tipologias/{tipologia_id}")
+async def delete_expediente_tipologia(
+    expediente_id: str,
+    tipologia_id: str,
+    request: Request,
+    session_data: dict = Depends(require_permission("documentos:crear")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    await db.execute(text('''
+        DELETE FROM agn_expediente_tipologia 
+        WHERE expediente_id = :eid AND tipologia_id = :tid
+    '''), {"eid": expediente_id, "tid": tipologia_id})
+    await db.commit()
+    return await get_control_tipologias_view(expediente_id, request, session_data, db)
+
+@router.delete("/expedientes/{expediente_id}/tipologias")
+async def delete_all_expediente_tipologias(
+    expediente_id: str,
+    request: Request,
+    session_data: dict = Depends(require_permission("documentos:crear")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    await db.execute(text('''
+        DELETE FROM agn_expediente_tipologia 
+        WHERE expediente_id = :eid
+    '''), {"eid": expediente_id})
+    await db.commit()
+    return await get_control_tipologias_view(expediente_id, request, session_data, db)
