@@ -2889,6 +2889,7 @@ async def update_expediente(
     form_data = await request.form()
     nombre = form_data.get("nombre_expediente")
     resp_id = form_data.get("responsable_id")
+    soporte = form_data.get("soporte")
     
     tenant_id = session_data["tenant_id"]
     
@@ -2901,7 +2902,10 @@ async def update_expediente(
     if not row.estado_abierto or row.fase_archivo == 'TRANSFERENCIA':
         return JSONResponse(status_code=403, content={"error": "Inmutabilidad Activa: No se puede modificar un expediente cerrado o en transferencia según Ley 527."})
         
-    await db.execute(text("UPDATE agn_expedientes SET nombre_expediente = :n, responsable_id = :r WHERE id = :id"), {"n": nombre, "r": resp_id, "id": id})
+    if soporte:
+        await db.execute(text("UPDATE agn_expedientes SET nombre_expediente = :n, soporte = :s WHERE id = :id"), {"n": nombre, "s": soporte, "id": id})
+    else:
+        await db.execute(text("UPDATE agn_expedientes SET nombre_expediente = :n WHERE id = :id"), {"n": nombre, "id": id})
     await db.commit()
     
     return {"status": "success"}
