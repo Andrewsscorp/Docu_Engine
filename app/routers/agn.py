@@ -1658,7 +1658,7 @@ async def get_expediente_inner_view(
         ev["fecha_str"] = ev["fecha_accion"].strftime("%d %b, %H:%M") if ev["fecha_accion"] else ""
         if ev["accion"] == 'APERTURA_EXPEDIENTE': ev["accion_str"] = "Apertura de Expediente"
         elif ev["accion"] == 'VINCULAR_DOCUMENTO': ev["accion_str"] = "Documento Vinculado"
-        elif ev["accion"] == 'CERRAR_EXPEDIENTE': ev["accion_str"] = "Cierre de Expediente"
+        elif ev["accion"] == 'CIERRE_EXPEDIENTE': ev["accion_str"] = "Cierre de Expediente"
         else: ev["accion_str"] = ev["accion"]
         eventos.append(ev)
         
@@ -1898,7 +1898,28 @@ async def log_audit_sgdea_async(expediente_id: str, usuario_id: str, tipo_evento
     except Exception as e:
         print(f"Error asíncrono en log_audit_sgdea_async: {e}")
 
+
+@router.get("/expedientes/{expediente_id}/indice_xml")
+async def descargar_indice_xml(
+    expediente_id: str,
+    session_data: dict = Depends(require_permission("documentos:leer")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    res = await db.execute(text("SELECT indice_xml_path FROM agn_expedientes WHERE id = :eid AND tenant_id = :t"), {"eid": expediente_id, "t": session_data["tenant_id"]})
+    row = res.fetchone()
+    if not row or not row[0]:
+        raise HTTPException(status_code=404, detail="XML no encontrado")
+        
+    xml_path = row[0]
+    import os
+    if not os.path.exists(xml_path):
+        raise HTTPException(status_code=404, detail="Archivo XML fisico no encontrado")
+        
+    from fastapi.responses import FileResponse
+    return FileResponse(xml_path, media_type="application/xml", filename=f"{expediente_id}_indice_electronico.xml")
+
 @router.get("/expedientes/{expediente_id}/exportar")
+
 async def get_exportar_expediente_dip(
     expediente_id: str,
     request: Request,
