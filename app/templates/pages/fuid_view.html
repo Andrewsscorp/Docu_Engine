@@ -1,0 +1,149 @@
+﻿<div class="h-full flex flex-col bg-white">
+    <!-- Header Area -->
+    <div class="px-8 py-6 border-b border-slate-200">
+        <!-- Breadcrumbs -->
+        <nav class="flex text-sm text-slate-500 mb-4" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <span class="inline-flex items-center hover:text-indigo-600 transition-colors cursor-pointer">Reportes</span>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <svg class="w-4 h-4 text-slate-400 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        <span class="hover:text-indigo-600 transition-colors cursor-pointer">FUID</span>
+                    </div>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <svg class="w-4 h-4 text-slate-400 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        <span class="hover:text-indigo-600 transition-colors cursor-pointer">Serie: {{ subserie.serie_nombre }}</span>
+                    </div>
+                </li>
+                <li aria-current="page">
+                    <div class="flex items-center">
+                        <svg class="w-4 h-4 text-slate-400 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        <span class="text-slate-800 font-medium">Subserie: {{ subserie.nombre }}</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+        
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Formato Único de Inventario Documental – Detalle de Subserie</h1>
+            
+            <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-md shadow-indigo-200 transition-all flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                Firmar y Exportar FUID
+            </button>
+        </div>
+    </div>
+    
+    <!-- Toolbar -->
+    <div class="px-8 py-4 flex justify-between items-center border-b border-slate-100 bg-slate-50">
+        <div class="relative w-96">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+            </div>
+            <input type="text" class="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-colors" placeholder="Filtrar por código o nombre...">
+        </div>
+        
+        <div class="flex items-center gap-2">
+            <button class="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg border border-slate-200 bg-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
+            </button>
+            <button class="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg border border-slate-200 bg-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Table Area -->
+    <div class="flex-1 overflow-auto">
+        <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-50 sticky top-0 z-10">
+                <tr>
+                    <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-slate-500 tracking-wider">NO.<br>ORDEN</th>
+                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 tracking-wider">CÓDIGO</th>
+                    <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-slate-500 tracking-wider">NOMBRE DE LA UNIDAD<br>DE CONSERVACIÓN</th>
+                    <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-slate-500 tracking-wider">FECHAS EXTREMAS<br><span class="font-normal text-slate-400 normal-case">(inicial - final)</span></th>
+                    <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-slate-500 tracking-wider">CAJA/CARPETA</th>
+                    <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-slate-500 tracking-wider">FOLIOS</th>
+                    <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-slate-500 tracking-wider">SOPORTE</th>
+                    <th scope="col" class="px-6 py-4 text-center text-xs font-bold text-slate-500 tracking-wider">ACCIONES</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-slate-100">
+                {% for r in registros %}
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-5 whitespace-nowrap text-center text-sm font-mono text-slate-500">{{ r.no_orden }}</td>
+                    <td class="px-6 py-5 whitespace-nowrap text-sm font-mono font-bold text-slate-700">{{ r.codigo }}</td>
+                    <td class="px-6 py-5 text-sm text-slate-900 font-medium max-w-xs break-words">
+                        {{ r.nombre_unidad_conservacion }}
+                    </td>
+                    <td class="px-6 py-5 whitespace-nowrap text-center text-sm font-mono text-slate-500">
+                        {{ r.fecha_inicial_str }} <span class="mx-1 text-slate-300">|</span> {{ r.fecha_final_str }}
+                    </td>
+                    <td class="px-6 py-5 whitespace-nowrap text-center">
+                        {% if r.caja_carpeta == 'N/A' %}
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                            N/A
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200 font-mono">
+                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                            {{ r.caja_carpeta }}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-5 whitespace-nowrap text-center text-sm font-mono text-slate-700 font-medium">{{ r.folios }}</td>
+                    <td class="px-6 py-5 whitespace-nowrap text-center">
+                        {% if r.soporte == 'ELECTRÓNICO' %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider bg-emerald-100 text-emerald-700 border border-emerald-200">
+                            ELECTRÓNICO
+                        </span>
+                        {% elif r.soporte == 'FÍSICO' %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider bg-blue-100 text-blue-700 border border-blue-200">
+                            FÍSICO
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider bg-fuchsia-100 text-fuchsia-700 border border-fuchsia-200">
+                            HÍBRIDO
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-5 whitespace-nowrap text-center">
+                        <button hx-get="/api/v1/agn/expedientes/{{ r.exp_id }}/view" hx-target="#dashboard-main-container" hx-swap="innerHTML" class="text-slate-400 hover:text-indigo-600 transition-colors tooltip" title="Ver Expediente">
+                            <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not registros %}
+                <tr>
+                    <td colspan="8" class="px-6 py-12 text-center text-slate-500">
+                        <svg class="w-12 h-12 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        <p class="text-sm font-medium">No hay expedientes cerrados en esta subserie para incluir en el FUID.</p>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Footer / Pagination -->
+    <div class="px-8 py-4 border-t border-slate-200 bg-white flex justify-between items-center text-sm text-slate-500">
+        <div>
+            Mostrando <span class="font-medium text-slate-700">1</span> a <span class="font-medium text-slate-700">{{ registros|length }}</span> de <span class="font-medium text-slate-700">{{ registros|length }}</span> registros
+        </div>
+        <div class="flex items-center gap-1">
+            <button class="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50" disabled><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-600 text-white font-bold">1</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 font-medium">2</button>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 font-medium">3</button>
+            <span class="px-1">...</span>
+            <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 font-medium">15</button>
+            <button class="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+        </div>
+    </div>
+</div>
