@@ -2529,7 +2529,7 @@ async def firmar_fuid(
         })
         await db.execute(text('''
             INSERT INTO log_auditoria_sgdea (id_expediente, id_usuario, tipo_evento, ip_origen, payload_legal)
-            VALUES (NULL, :u, 'FIRMA_FUID_TRANSFERENCIA', :ip, CAST(:det AS JSONB))
+            VALUES ('00000000-0000-0000-0000-000000000000', :u, 'FIRMA_FUID_TRANSFERENCIA', :ip, CAST(:det AS JSONB))
         '''), {
             "u": session_data["user_id"],
             "ip": request.client.host if request.client else "unknown",
@@ -2557,7 +2557,7 @@ async def descargar_plana_fuid(
     })
     await db.execute(text('''
         INSERT INTO log_auditoria_sgdea (id_expediente, id_usuario, tipo_evento, ip_origen, payload_legal)
-        VALUES (NULL, :u, 'DESCARGA_METADATOS_PLANA', :ip, CAST(:det AS JSONB))
+        VALUES ('00000000-0000-0000-0000-000000000000', :u, 'DESCARGA_METADATOS_PLANA', :ip, CAST(:det AS JSONB))
     '''), {
         "u": session_data["user_id"],
         "ip": request.client.host if request.client else "unknown",
