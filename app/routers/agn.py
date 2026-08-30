@@ -1445,6 +1445,9 @@ async def vincular_documento_expediente(
     db: AsyncSession = Depends(get_db_session)
 ):
     import fitz
+    
+    if tipologia_id == "ANEXO":
+        tipologia_id = None
     import hashlib
     import os
     
@@ -1667,6 +1670,8 @@ async def get_expediente_inner_view(
     for row in docs_res.fetchall():
         d = dict(row._mapping)
         d["fecha_str"] = d["created_at"].strftime("%Y-%m-%d") if d["created_at"] else ""
+        if not d.get("tipo_nombre"):
+            d["tipo_nombre"] = "Archivo Adjunto / Anexo"
         docs.append(d)
         
     # 2.5 Completitud TRD
@@ -1755,12 +1760,14 @@ async def get_expediente_inner_view(
 
     from fastapi.templating import Jinja2Templates
     templates = Jinja2Templates(directory="app/templates")
+    dropdown_tipologias = [t for t in tipologias if t["obligatoria"] is False]
     return templates.TemplateResponse(request=request, name="pages/expediente_view.html", context={
         "request": request,
         "exp": exp,
         "docs": docs,
         "eventos": eventos,
         "tipologias": tipologias,
+        "dropdown_tipologias": dropdown_tipologias,
         "user_docs": user_docs,
         "completitud_pct": completitud_pct,
         "completadas": completadas,
@@ -2328,6 +2335,9 @@ async def post_upload_direct_expediente(
     
     disk_filename = f"{file_hash}_{file.filename}"
     file_path = os.path.join(upload_dir, disk_filename)
+    
+    if tipologia_id == "ANEXO":
+        tipologia_id = None
     
     with open(file_path, "wb") as buffer:
         buffer.write(file_content)
