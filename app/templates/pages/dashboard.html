@@ -160,7 +160,7 @@
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
         </button>
         <div>
-            <h1 class="text-[28px] font-bold text-textmain leading-tight" x-text="currentView === 'dashboard' ? 'Resumen de Documentos' : (currentView === 'explorer' ? 'Documentos' : (currentView === 'users' ? 'Gestion de Usuarios y Roles' : (currentView === 'notifications' ? 'Centro de Notificaciones' : (currentView === 'tags' ? 'Gestión de Etiquetas' : 'Panel de Ajustes'))))"></h1>
+            <h1 class="text-[28px] font-bold text-textmain leading-tight" x-text="currentView === 'dashboard' ? 'Resumen de Documentos' : (currentView === 'explorer' ? 'Documentos' : (currentView === 'users' ? 'Gestion de Usuarios y Roles' : (currentView === 'notifications' ? 'Centro de Notificaciones' : (currentView === 'tags' ? 'Gestión de Etiquetas' : (currentView === 'expediente' ? 'Expediente Electrónico' : 'Panel de Ajustes')))))"></h1>
             <p class="text-sm font-medium text-textmuted mt-0.5" x-show="currentView === 'dashboard'">Gestiona y accede rapidamente a todos tus documentos</p>
         </div>
     </div>
@@ -331,6 +331,17 @@
     </div>
     
     
+</section>
+
+<!-- EXPEDIENTE INNER VIEW -->
+<section x-show="currentView === 'expediente'" class="min-w-0 w-full flex-1 flex flex-col" x-transition.opacity.duration.300ms x-cloak>
+    <button @click="currentView = 'explorer'" class="mb-4 text-primary font-bold hover:underline flex items-center gap-1 w-max">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Volver al Explorador
+    </button>
+    <div id="expediente-inner-container">
+        <!-- HTMX will load the Expediente SGDEA Enterprise View here -->
+    </div>
 </section>
 
 <!-- EXPLORER VIEW -->
