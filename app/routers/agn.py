@@ -2559,7 +2559,7 @@ async def descargar_plana_fuid(
     })
     
     # We must log this action for EVERY expediente in the subserie
-    exp_res = await db.execute(text("SELECT id FROM agn_expedientes WHERE subserie_id = :sid AND fase_archivo = 'GESTION'"), {"sid": subserie_id})
+    exp_res = await db.execute(text("SELECT id FROM agn_expedientes WHERE subserie_id = :sid AND estado = 'CERRADO'"), {"sid": subserie_id})
     exp_validos = exp_res.fetchall()
     
     for r in exp_validos:
