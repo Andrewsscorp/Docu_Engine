@@ -174,7 +174,7 @@ from fastapi.responses import HTMLResponse
 async def upload_document(
     request: Request,
     file: UploadFile = File(...),
-    file_hash: str = Form(...),
+    file_hash: str = Form(None),
     group_id: str = Form(None),
     session_data: dict = Depends(require_permission("documentos:subir")),
     db: AsyncSession = Depends(get_db_session)
