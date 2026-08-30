@@ -1436,7 +1436,7 @@ async def create_agn_subserie(
 
 
 
-@router.post("/api/v1/agn/expedientes/{expediente_id}/vincular")
+@router.post("/expedientes/{expediente_id}/vincular")
 async def vincular_documento_expediente(
     expediente_id: str,
     documento_id: str = Form(...),
@@ -1531,7 +1531,7 @@ async def vincular_documento_expediente(
     return {"status": "success", "folio": f"{nuevo_folio_inicio:03d}-{nuevo_folio_fin:03d}", "hash": doc_hash}
 
 
-@router.get("/api/v1/agn/expedientes/explorer")
+@router.get("/expedientes/explorer")
 async def get_expedientes_explorer(
     request: Request,
     session_data: dict = Depends(require_permission("documentos:leer")),
@@ -1590,7 +1590,7 @@ async def get_expedientes_explorer(
     return HTMLResponse(Template(html).render(expedientes=expedientes))
 
 
-@router.get("/api/v1/agn/expedientes/{expediente_id}/view")
+@router.get("/expedientes/{expediente_id}/view")
 async def get_expediente_inner_view(
     expediente_id: str,
     request: Request,
@@ -1697,7 +1697,7 @@ async def get_expediente_inner_view(
     })
 
 
-@router.post("/api/v1/agn/expedientes/{expediente_id}/cerrar")
+@router.post("/expedientes/{expediente_id}/cerrar")
 async def cerrar_expediente(
     expediente_id: str,
     request: Request,
