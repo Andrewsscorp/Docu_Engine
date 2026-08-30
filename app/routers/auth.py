@@ -85,8 +85,14 @@ async def get_index(request: Request, db: AsyncSession = Depends(get_db_session)
 
 @router.get("/style.css")
 async def get_style():
-    with open("style.css", "r", encoding="utf-8") as f:
-        return Response(content=f.read(), media_type="text/css")
+    import os
+    if os.path.exists("app/static/style.css"):
+        with open("app/static/style.css", "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type="text/css")
+    elif os.path.exists("style.css"):
+        with open("style.css", "r", encoding="utf-8") as f:
+            return Response(content=f.read(), media_type="text/css")
+    return Response(content="/* style.css not found */", media_type="text/css")
 
 @router.get("/api/v1/csrf-token")
 def get_csrf(response: Response, csrf_protect: CsrfProtect = Depends()):
