@@ -2409,8 +2409,9 @@ async def get_fuid_subserie(
         
     from fastapi.templating import Jinja2Templates
     templates = Jinja2Templates(directory="app/templates")
-    return templates.TemplateResponse("pages/fuid_view.html", {
+    subserie_dict = dict(subserie._mapping) if subserie else {}
+    return templates.TemplateResponse(request=request, name="pages/fuid_view.html", context={
         "request": request,
-        "subserie": subserie,
+        "subserie": subserie_dict,
         "registros": registros
     })
