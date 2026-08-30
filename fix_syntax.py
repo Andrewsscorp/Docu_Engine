@@ -1,9 +1,9 @@
 ﻿with open("app/routers/agn.py", "r", encoding="utf-8") as f:
-    content = f.read()
-
-content = content.replace('xml_content += "  </ListaDocumentos>\n"', 'xml_content += "  </ListaDocumentos>\\n"')
-# Also fix the weird newline that got inserted!
-content = content.replace('xml_content += "  </ListaDocumentos>\n"', 'xml_content += "  </ListaDocumentos>\\n"')
+    lines = f.readlines()
 
 with open("app/routers/agn.py", "w", encoding="utf-8") as f:
-    f.write(content)
+    for line in lines:
+        if 'csv_content = "NO_ORDEN' in line and not line.strip().endswith('n"'):
+            f.write('    csv_content = "NO_ORDEN,CODIGO,NOMBRE_UNIDAD,FECHA_INICIAL,FECHA_FINAL,CAJA_CARPETA,FOLIOS,SOPORTE\\n"\n')
+        else:
+            f.write(line)

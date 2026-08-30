@@ -2437,7 +2437,11 @@ async def get_fuid_subserie(
 
 import hashlib
 from datetime import datetime
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, FileResponse
+import os
+from app.utils.pdf_generator import generar_pdf_fuid
+from fastapi.responses import FileResponse
+
 
 @router.post("/subseries/{subserie_id}/fuid/firmar")
 async def firmar_fuid(
@@ -2466,9 +2470,30 @@ async def firmar_fuid(
         if not exp_validos:
             return JSONResponse({"status": "error", "detail": "No hay expedientes con documentos validos en esta subserie para firmar."}, status_code=400)
             
-        # 3. Simulate PDF generation & Hash
-        content_to_hash = f"{subserie_id}-{session_data['user_id']}-{datetime.now().isoformat()}".encode('utf-8')
-        fuid_hash = hashlib.sha256(content_to_hash).hexdigest()
+        # 3. REAL PDF Generation & Hash
+        sub_res = await db.execute(text("SELECT nombre FROM agn_subseries WHERE id = :sid"), {"sid": subserie_id})
+        sub_nombre = sub_res.scalar()
+        
+        # Convert filas into simple dicts for the PDF generator
+        registros_pdf = []
+        for r in exp_validos:
+            d = dict(r._mapping)
+            d["no_orden"] = len(registros_pdf) + 1
+            d["nombre_unidad_conservacion"] = d.get("nombre_expediente", "Expediente")
+            d["fecha_inicial_str"] = "N/A"
+            d["fecha_final_str"] = "N/A"
+            d["caja_carpeta"] = "N/A"
+            d["soporte"] = "ELECTRÓNICO"
+            registros_pdf.append(d)
+            
+        pdf_bytes = generar_pdf_fuid(sub_nombre, registros_pdf)
+        fuid_hash = hashlib.sha256(pdf_bytes).hexdigest()
+        
+        # Save to disk
+        os.makedirs("fuid_archives", exist_ok=True)
+        pdf_path = os.path.join("fuid_archives", f"{fuid_hash}.pdf")
+        with open(pdf_path, "wb") as pdf_file:
+            pdf_file.write(pdf_bytes)
         
         # 4. Insert Transferencia
         transf_res = await db.execute(text('''
@@ -2480,7 +2505,7 @@ async def firmar_fuid(
             "consecutivo": f"FUID-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "user_id": session_data["user_id"],
             "hash": fuid_hash,
-            "ruta": f"/fuid_archives/{fuid_hash}.pdf",
+            "ruta": pdf_path,
             "t": session_data["tenant_id"]
         })
         fuid_id = transf_res.scalar()
@@ -2534,8 +2559,19 @@ async def descargar_plana_fuid(
     await db.commit()
     
     # Just returning a dummy string for the file content
-    csv_content = "NO_ORDEN,CODIGO,NOMBRE_UNIDAD,FECHA_INICIAL,FECHA_FINAL,CAJA_CARPETA,FOLIOS,SOPORTE
-"
+    csv_content = "NO_ORDEN,CODIGO,NOMBRE_UNIDAD,FECHA_INICIAL,FECHA_FINAL,CAJA_CARPETA,FOLIOS,SOPORTE\n"
     return PlainTextResponse(content=csv_content, headers={
         "Content-Disposition": f"attachment; filename=FUID_{subserie_id}_Plano.csv"
     })
+
+@router.get("/fuid/descargar_pdf/{hash}")
+async def descargar_pdf_fuid(
+    hash: str,
+    session_data: dict = Depends(require_permission("documentos:leer")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    pdf_path = os.path.join("fuid_archives", f"{hash}.pdf")
+    if not os.path.exists(pdf_path):
+        return JSONResponse({"status": "error", "detail": "PDF no encontrado"}, status_code=404)
+        
+    return FileResponse(pdf_path, media_type="application/pdf", filename=f"FUID_{hash[:8]}.pdf")
