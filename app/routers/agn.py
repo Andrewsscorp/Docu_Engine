@@ -2334,7 +2334,7 @@ async def post_upload_direct_expediente(
     file_hash = hashlib.sha256(file_content).hexdigest()
     
     disk_filename = f"{file_hash}_{file.filename}"
-    file_path = os.path.join(upload_dir, disk_filename)
+    file_path = os.path.join(upload_dir, disk_filename).replace("\\", "/")
     
     if tipologia_id == "ANEXO":
         tipologia_id = None

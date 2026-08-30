@@ -208,7 +208,7 @@ async def upload_document(
     except:
         pass # Ignore on Windows if not supported
         
-    file_path = os.path.join(upload_dir, f"{file_hash}_{file.filename}")
+    file_path = os.path.join(upload_dir, f"{file_hash}_{file.filename}").replace("\\", "/")
     
     # Read file content
     content = await file.read()
