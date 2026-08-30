@@ -2349,7 +2349,7 @@ async def get_fuid_subserie(
     db: AsyncSession = Depends(get_db_session)
 ):
     # 1. Fetch subserie details
-    sub_res = await db.execute(text("SELECT s.codigo, s.nombre, se.nombre as serie_nombre FROM agn_subseries s LEFT JOIN agn_series se ON s.serie_id = se.id WHERE s.id = :sid"), {"sid": subserie_id})
+    sub_res = await db.execute(text("SELECT s.id, s.codigo, s.nombre, se.nombre as serie_nombre FROM agn_subseries s LEFT JOIN agn_series se ON s.serie_id = se.id WHERE s.id = :sid"), {"sid": subserie_id})
     subserie = sub_res.fetchone()
     if not subserie:
         return HTMLResponse("Subserie no encontrada", status_code=404)
