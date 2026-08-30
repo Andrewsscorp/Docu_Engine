@@ -1,0 +1,133 @@
+﻿<div class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in-up" 
+    x-data="{
+        tipologias: [],
+        seleccion: '',
+        esObligatorio: false,
+        orden: 1,
+        cargando: false,
+        
+        init() {
+            this.cargarDisponibles();
+        },
+        
+        async cargarDisponibles() {
+            const res = await fetch('/api/v1/agn/subseries/{{ subserie.id }}/tipologias/disponibles');
+            this.tipologias = await res.json();
+            this.seleccion = '';
+        },
+        
+        async guardar(mantenerAbierto) {
+            if(!this.seleccion) {
+                Swal.fire('Error', 'Selecciona una tipología', 'error');
+                return;
+            }
+            this.cargando = true;
+            try {
+                const res = await fetch('/api/v1/agn/subseries/{{ subserie.id }}/tipologias', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        id_tipologia: this.seleccion,
+                        es_obligatorio: this.esObligatorio,
+                        orden: parseInt(this.orden) || null
+                    })
+                });
+                
+                if (res.status === 409) {
+                    Swal.fire('Conflicto', 'Esta tipología ya pertenece a la Subserie.', 'warning');
+                } else if (res.ok) {
+                    if (mantenerAbierto) {
+                        Swal.fire({toast:true, position:'top-end', icon:'success', title:'Guardado exitosamente', showConfirmButton:false, timer:2000});
+                        this.esObligatorio = false;
+                        this.orden = parseInt(this.orden) + 1;
+                        await this.cargarDisponibles();
+                    } else {
+                        document.getElementById('modal-trd-container').innerHTML = '';
+                        htmx.trigger('body', 'reloadControlTipologias');
+                        Swal.fire('Éxito', 'Reglas actualizadas', 'success');
+                    }
+                } else {
+                    Swal.fire('Error', 'Ocurrió un error en el servidor', 'error');
+                }
+            } catch(e) {
+                console.error(e);
+            }
+            this.cargando = false;
+        },
+        
+        cerrar() {
+            document.getElementById('modal-trd-container').innerHTML = '';
+        }
+    }">
+    
+    <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col" @click.away="cerrar()">
+        <!-- Header -->
+        <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100 bg-slate-50">
+            <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2 uppercase tracking-wide">
+                <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                Vincular Tipología a Subserie (TRD)
+            </h3>
+            <button @click="cerrar()" class="text-slate-400 hover:text-red-500 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <!-- Body -->
+        <div class="p-6 space-y-6">
+            <div class="bg-indigo-50/50 p-4 rounded-xl flex items-start gap-3 border border-indigo-100">
+                <svg class="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <p class="text-sm text-slate-600">Está configurando la retención documental para la subserie activa <b>({{ subserie.nombre }})</b>. Seleccione la tipología documental aplicable desde el catálogo maestro.</p>
+            </div>
+            
+            <div class="space-y-1">
+                <label class="text-sm font-bold text-slate-700">Seleccionar Tipología del Catálogo Maestro <span class="text-red-500">*</span></label>
+                <div class="relative">
+                    <select x-model="seleccion" class="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-slate-700 font-medium focus:ring-2 focus:ring-indigo-500 outline-none appearance-none shadow-sm">
+                        <option value="" disabled selected>Ej. Actas de Reunión, Resoluciones, Contratos...</option>
+                        <template x-for="t in tipologias" :key="t.id">
+                            <option :value="t.id" x-text="t.text"></option>
+                        </template>
+                    </select>
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between pt-2">
+                <div class="flex items-center gap-3">
+                    <label class="text-sm font-bold text-slate-700">¿Documento Obligatorio para Cierre?</label>
+                    <button type="button" @click="esObligatorio = !esObligatorio" 
+                            class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                            :class="esObligatorio ? 'bg-indigo-600' : 'bg-gray-200'">
+                        <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                              :class="esObligatorio ? 'translate-x-5' : 'translate-x-0'"></span>
+                    </button>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <label class="text-sm font-bold text-slate-700">Orden de Visualización</label>
+                    <input type="number" x-model="orden" class="w-20 px-3 py-2 text-center border border-gray-200 rounded-lg text-slate-700 font-bold focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer Buttons -->
+        <div class="px-6 py-5 border-t border-gray-100 bg-slate-50 flex justify-end gap-3">
+            <button @click="cerrar()" type="button" class="px-5 py-2.5 bg-white border border-gray-200 text-slate-600 font-bold rounded-xl hover:bg-gray-50 transition-colors shadow-sm">
+                Cancelar
+            </button>
+            <button @click="guardar(true)" :disabled="cargando" type="button" class="px-5 py-2.5 bg-white border-2 border-indigo-100 text-indigo-600 font-bold rounded-xl hover:bg-indigo-50 transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Guardar y crear otra
+            </button>
+            <button @click="guardar(false)" :disabled="cargando" type="button" class="px-6 py-2.5 bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-xl transition-colors flex items-center gap-2 shadow-lg shadow-emerald-200 disabled:opacity-50">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                Guardar Reglas
+            </button>
+        </div>
+    </div>
+</div>
