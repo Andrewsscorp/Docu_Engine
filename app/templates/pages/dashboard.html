@@ -341,9 +341,9 @@
 
 <!-- EXPEDIENTE INNER VIEW -->
 <section x-show="currentView === 'expediente'" class="min-w-0 w-full flex-1 flex flex-col" x-transition.opacity.duration.300ms x-cloak>
-    <button @click="currentView = 'explorer'" class="mb-4 text-primary font-bold hover:underline flex items-center gap-1 w-max">
+    <button @click="currentView = 'expedientes_module'" class="mb-4 text-primary font-bold hover:underline flex items-center gap-1 w-max transition-transform hover:-translate-x-1">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-        Volver al Explorador
+        Volver a Expedientes
     </button>
     <div id="expediente-inner-container">
         <!-- HTMX will load the Expediente SGDEA Enterprise View here -->
@@ -1133,6 +1133,25 @@
             timerProgressBar: true
         });
     });
+
+window.openAgnModal = function() {
+    Swal.fire({
+        width: '800px',
+        padding: 0,
+        showConfirmButton: false,
+        customClass: { popup: 'rounded-2xl' },
+        didOpen: () => {
+            Swal.showLoading();
+            fetch('/api/v1/agn/modal')
+                .then(r => r.text())
+                .then(html => {
+                    Swal.getPopup().innerHTML = html;
+                    if (window.htmx) { htmx.process(Swal.getPopup()); }
+                    if (window.Alpine) { Alpine.initTree(Swal.getPopup()); }
+                });
+        }
+    });
+};
 </script>
 </body>
 
