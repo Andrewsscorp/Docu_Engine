@@ -2551,32 +2551,83 @@ async def descargar_plana_fuid(
     session_data: dict = Depends(require_permission("documentos:leer")),
     db: AsyncSession = Depends(get_db_session)
 ):
-    # Audit log first
+    # 1. Query the expedientes (same logic as get_fuid_subserie)
+    try:
+        fuid_res = await db.execute(text("SELECT * FROM vista_fuid_detalle_subserie WHERE subserie_id = :sid ORDER BY no_orden ASC"), {"sid": subserie_id})
+        filas = fuid_res.fetchall()
+    except Exception as e:
+        await db.rollback()
+        await db.execute(text("SELECT set_config('app.current_tenant', :tenant, false)"), {"tenant": session_data["tenant_id"]})
+        if session_data.get("user_id"):
+            await db.execute(text("SELECT set_config('app.current_user_id', :uid, false)"), {"uid": session_data["user_id"]})
+        
+        fallback_sql = """
+        SELECT 
+            ROW_NUMBER() OVER (
+                PARTITION BY exp.subserie_id 
+                ORDER BY exp.codigo_expediente ASC
+            ) AS no_orden,
+            exp.codigo_expediente AS codigo,
+            exp.nombre_expediente AS nombre_unidad_conservacion,
+            (SELECT MIN(created_at) FROM documents doc WHERE doc.agn_expediente_id = exp.id AND doc.status IN ('COMPLETED', 'ARCHIVED')) AS fecha_inicial,
+            (SELECT MAX(created_at) FROM documents doc WHERE doc.agn_expediente_id = exp.id AND doc.status IN ('COMPLETED', 'ARCHIVED')) AS fecha_final,
+            'N/A' AS caja_carpeta,
+            COALESCE((SELECT SUM(paginas_cantidad) FROM documents doc WHERE doc.agn_expediente_id = exp.id AND doc.status IN ('COMPLETED', 'ARCHIVED')), 0) AS folios,
+            'ELECTRÓNICO' AS soporte,
+            exp.subserie_id,
+            exp.tenant_id,
+            exp.id AS exp_id
+        FROM agn_expedientes exp
+        WHERE exp.subserie_id = :sid AND exp.estado = 'CERRADO'
+        ORDER BY exp.codigo_expediente ASC
+        """
+        fuid_res = await db.execute(text(fallback_sql), {"sid": subserie_id})
+        filas = fuid_res.fetchall()
+
+    # 2. Audit log first
     import json
     payload_legal = json.dumps({
         "subserie_id": subserie_id,
         "user_agent": request.headers.get("user-agent", "unknown")
     })
     
-    # We must log this action for EVERY expediente in the subserie
-    exp_res = await db.execute(text("SELECT id FROM agn_expedientes WHERE subserie_id = :sid AND estado = 'CERRADO'"), {"sid": subserie_id})
-    exp_validos = exp_res.fetchall()
-    
-    for r in exp_validos:
+    for r in filas:
         await db.execute(text('''
             INSERT INTO log_auditoria_sgdea (id_expediente, id_usuario, tipo_evento, ip_origen, payload_legal)
             VALUES (:eid, :u, 'DESCARGA_METADATOS_PLANA', :ip, CAST(:det AS JSONB))
         '''), {
-            "eid": r.id,
+            "eid": r.exp_id,
             "u": session_data["user_id"],
             "ip": request.client.host if request.client else "unknown",
             "det": payload_legal
         })
     await db.commit()
     
-    # Just returning a dummy string for the file content
-    csv_content = "NO_ORDEN,CODIGO,NOMBRE_UNIDAD,FECHA_INICIAL,FECHA_FINAL,CAJA_CARPETA,FOLIOS,SOPORTE\n"
-    return PlainTextResponse(content=csv_content, headers={
+    # 3. Generate CSV
+    import io
+    import csv
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["NO_ORDEN", "CODIGO", "NOMBRE_UNIDAD", "FECHA_INICIAL", "FECHA_FINAL", "CAJA_CARPETA", "FOLIOS", "SOPORTE"])
+    
+    for r in filas:
+        # Format dates if present
+        fi = r.fecha_inicial.strftime("%Y-%m-%d") if r.fecha_inicial else "N/A"
+        ff = r.fecha_final.strftime("%Y-%m-%d") if r.fecha_final else "N/A"
+        
+        writer.writerow([
+            r.no_orden,
+            r.codigo,
+            r.nombre_unidad_conservacion,
+            fi,
+            ff,
+            r.caja_carpeta,
+            r.folios,
+            r.soporte
+        ])
+        
+    return PlainTextResponse(content=output.getvalue(), headers={
         "Content-Disposition": f"attachment; filename=FUID_{subserie_id}_Plano.csv"
     })
 
