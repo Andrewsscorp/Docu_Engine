@@ -2548,7 +2548,7 @@ async def descargar_plana_fuid(
     # Audit log first
     await db.execute(text('''
         INSERT INTO log_auditoria_sgdea (tenant_id, user_id, action, entity_type, entity_id, ip_address, user_agent, details)
-        VALUES (:t, :u, 'EXPORTACION_METADATOS_PLANA', 'fuid_subserie', :sid, :ip, :ua, '{}')
+        VALUES (:t, :u, 'DESCARGA_METADATOS_PLANA', 'fuid_subserie', :sid, :ip, :ua, '{}')
     '''), {
         "t": session_data["tenant_id"],
         "u": session_data["user_id"],
