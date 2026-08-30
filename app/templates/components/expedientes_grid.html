@@ -1,4 +1,4 @@
-<div id="expedientes-grid-wrapper" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" x-bind:class="viewMode === 'list' ? 'grid-cols-1 md:grid-cols-1 lg:grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'">
+<div id="expedientes-grid-wrapper" class="grid gap-4" x-bind:class="viewMode === 'list' ? 'grid-cols-1 md:grid-cols-1 lg:grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'">
     {% include 'components/expedientes_grid_items.html' %}
     
     {% if not expedientes and page == 1 %}

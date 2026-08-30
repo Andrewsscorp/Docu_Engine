@@ -1,4 +1,4 @@
-﻿{% for exp in expedientes %}
+{% for exp in expedientes %}
 <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col gap-3 group relative"
      @click="currentView = 'expediente'; htmx.ajax('GET', '/api/v1/agn/expedientes/{{ exp.id }}/view', '#expediente-inner-container');">
      
