@@ -1531,63 +1531,56 @@ async def vincular_documento_expediente(
     return {"status": "success", "folio": f"{nuevo_folio_inicio:03d}-{nuevo_folio_fin:03d}", "hash": doc_hash}
 
 
-@router.get("/expedientes/explorer")
-async def get_expedientes_explorer(
+@router.get("/expedientes/module", response_class=HTMLResponse)
+async def get_expedientes_module(
     request: Request,
+    q: str = "",
+    status: str = "",
     session_data: dict = Depends(require_permission("documentos:leer")),
     db: AsyncSession = Depends(get_db_session)
 ):
-    # Carga la lista de expedientes del tenant
+    from fastapi.templating import Jinja2Templates
+    templates = Jinja2Templates(directory="app/templates")
+    
     tenant_id = session_data["tenant_id"]
-    res = await db.execute(text('''
+    
+    # Query with filters
+    query_str = '''
         SELECT e.id, e.codigo_expediente, e.nombre_expediente, e.fecha_apertura, (e.estado = 'ABIERTO') as estado_abierto,
                (SELECT COUNT(d.id) FROM documents d WHERE d.agn_expediente_id = e.id) as doc_count
         FROM agn_expedientes e
         WHERE e.tenant_id = :t
-        ORDER BY e.created_at DESC
-    '''), {"t": tenant_id})
+    '''
+    params = {"t": tenant_id}
+    
+    if q:
+        query_str += " AND (e.codigo_expediente ILIKE :q OR e.nombre_expediente ILIKE :q)"
+        params["q"] = f"%{q}%"
+        
+    if status == 'abierto':
+        query_str += " AND e.estado = 'ABIERTO'"
+    elif status == 'cerrado':
+        query_str += " AND e.estado = 'CERRADO'"
+        
+    query_str += " ORDER BY e.created_at DESC"
+    
+    res = await db.execute(text(query_str), params)
     expedientes = [dict(row._mapping) for row in res.fetchall()]
     
-    html = '''
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for exp in expedientes %}
-        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col gap-3 group relative"
-             @click="currentView = 'expediente'" hx-get="/api/v1/agn/expedientes/{{ exp.id }}/view" hx-target="#expediente-inner-container" >
-            <div class="flex justify-between items-start">
-                <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-                </div>
-                {% if exp.estado_abierto %}
-                <span class="px-2.5 py-1 text-xs font-bold bg-green-100 text-green-700 rounded-full flex items-center gap-1">
-                    <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>Abierto
-                </span>
-                {% else %}
-                <span class="px-2.5 py-1 text-xs font-bold bg-red-100 text-red-700 rounded-full flex items-center gap-1">
-                    <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>Cerrado
-                </span>
-                {% endif %}
-            </div>
-            <div>
-                <h4 class="font-bold text-gray-800 line-clamp-1" title="{{ exp.nombre_expediente }}">{{ exp.nombre_expediente }}</h4>
-                <p class="text-xs text-gray-500 font-mono mt-1">{{ exp.codigo_expediente }}</p>
-            </div>
-            <div class="mt-2 pt-3 border-t border-gray-100 flex justify-between items-center text-xs text-gray-500">
-                <span>{{ exp.fecha_apertura }}</span>
-                <span class="font-bold text-gray-700">{{ exp.doc_count }} docs</span>
-            </div>
-        </div>
-        {% endfor %}
-        {% if not expedientes %}
-        <div class="col-span-full py-12 text-center text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-2xl">
-            Aún no tienes Expedientes AGN. Haz clic en "Entidades Públicas" > "Crear Expediente" para crear uno.
-        </div>
-        {% endif %}
-    </div>
-    '''
+    # Check if requested just the grid (htmx search) or the full module
+    if request.headers.get("hx-target") == "expedientes-results-grid":
+        return templates.TemplateResponse(
+            request=request, 
+            name="components/expedientes_grid.html", 
+            context={"expedientes": expedientes}
+        )
     
-    from fastapi.templating import Jinja2Templates
-    from jinja2 import Template
-    return HTMLResponse(Template(html).render(expedientes=expedientes))
+    # Full module response
+    return templates.TemplateResponse(
+        request=request, 
+        name="components/expedientes_module.html", 
+        context={"request": request, "expedientes": expedientes, "q": q, "status": status}
+    )
 
 
 @router.get("/expedientes/{expediente_id}/view")
