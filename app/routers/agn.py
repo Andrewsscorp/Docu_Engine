@@ -1682,8 +1682,7 @@ async def get_expedientes_module(
         bc_row = res_bc.fetchone()
         if bc_row:
             bc = dict(bc_row._mapping)
-            import datetime
-            breadcrumb = f"Fondo > {bc['dep_nombre']} > {bc['serie_nombre']} > {bc['subserie_nombre']} > Vigencia {datetime.datetime.now().year}"
+            breadcrumb = f"Fondo > {bc['dep_nombre']} > {bc['serie_nombre']} > {bc['subserie_nombre']}"
     elif serie_id:
         bc_query = '''
             SELECT s.nombre as serie_nombre, d.nombre as dep_nombre
@@ -1695,8 +1694,7 @@ async def get_expedientes_module(
         bc_row = res_bc.fetchone()
         if bc_row:
             bc = dict(bc_row._mapping)
-            import datetime
-            breadcrumb = f"Fondo > {bc['dep_nombre']} > {bc['serie_nombre']} > Vigencia {datetime.datetime.now().year}"
+            breadcrumb = f"Fondo > {bc['dep_nombre']} > {bc['serie_nombre']}"
     
     query_str = f'''
         SELECT e.id, e.codigo_expediente, e.nombre_expediente, e.fecha_apertura, e.estado_abierto, e.fase_archivo,
