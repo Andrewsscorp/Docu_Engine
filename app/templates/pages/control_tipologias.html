@@ -1,0 +1,169 @@
+﻿<div class="h-full flex flex-col bg-slate-50 animate-fade-in-up" x-data="{
+    tipologiaActiva: '',
+    modalVincular: false,
+    abrirModal(tid) {
+        this.tipologiaActiva = tid;
+        this.modalVincular = true;
+    }
+}">
+    <!-- Header -->
+    <div class="bg-white px-8 py-6 border-b border-gray-200">
+        <button hx-get="/api/v1/agn/expedientes/{{ exp.id }}/view" hx-target="#expediente-inner-container" class="mb-4 text-indigo-600 font-bold hover:underline flex items-center gap-1 w-max text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Volver a los Documentos del Expediente
+        </button>
+        <div class="flex justify-between items-start">
+            <div>
+                <p class="text-sm font-bold text-gray-400 flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                    Expediente: {{ exp.codigo_expediente }}
+                </p>
+                <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Control de Tipologías Documentales</h2>
+            </div>
+            
+            <div class="w-64 text-right">
+                <div class="flex justify-between items-center mb-1 text-sm font-bold text-indigo-700">
+                    <span>Completitud del Expediente</span>
+                    <span>{{ completitud }}%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-indigo-600 h-2 rounded-full transition-all duration-1000" style="width: {{ completitud }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto p-8">
+        <div class="flex flex-col lg:flex-row gap-8">
+            
+            <!-- Left Column: Mandatory -->
+            <div class="flex-1 space-y-4">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
+                    <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    Documentos Obligatorios (TRD)
+                </h3>
+                
+                {% for req in obligatorias %}
+                    {% if req.estado_carga == 'CARGADO' %}
+                    <div class="bg-white border-l-4 border-l-green-500 border border-gray-200 rounded-xl p-4 shadow-sm flex justify-between items-center">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-800">{{ req.oficial }}</h4>
+                                <p class="text-xs text-gray-500">Subido: {{ req.fecha_str }} por {{ req.autor_carga|truncate(15) }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="bg-white border-l-4 border-l-red-500 border border-red-100 rounded-xl p-4 shadow-sm flex justify-between items-center group hover:border-red-300 transition-colors">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-800">{{ req.oficial }}</h4>
+                                <p class="text-xs text-red-500 font-medium">Faltante - Requerido para cierre</p>
+                            </div>
+                        </div>
+                        <button @click="abrirModal('{{ req.tipologia_id }}')" class="px-4 py-2 bg-slate-900 text-white rounded-lg font-bold text-sm hover:bg-slate-800 transition-colors flex items-center gap-2 shadow-md">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                            Cargar Documento
+                        </button>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Right Column: Optional & Summary -->
+            <div class="w-full lg:w-80 space-y-6">
+                <!-- Optionals -->
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Documentos Opcionales
+                    </h3>
+                    <div class="space-y-3">
+                        {% for op in opcionales %}
+                        <div class="bg-white border border-gray-100 rounded-xl p-3 shadow-sm flex justify-between items-center hover:border-gray-300 transition-colors cursor-pointer" @click="abrirModal('{{ op.tipologia_id }}')">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full {% if op.estado_carga == 'CARGADO' %}bg-green-50 text-green-600{% else %}bg-gray-50 text-gray-400{% endif %} flex items-center justify-center shrink-0">
+                                    {% if op.estado_carga == 'CARGADO' %}
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    {% else %}
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
+                                    {% endif %}
+                                </div>
+                                <h4 class="font-bold text-slate-600 text-sm line-clamp-1">{{ op.oficial }}</h4>
+                            </div>
+                            <button class="text-indigo-400 hover:text-indigo-600 shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Summary Card -->
+                <div class="bg-slate-900 rounded-2xl p-6 text-white shadow-xl">
+                    <h3 class="font-bold text-indigo-300 mb-4">Resumen del TRD</h3>
+                    <div class="space-y-3 mb-6">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-slate-400">Total Requeridos:</span>
+                            <span class="font-bold">{{ total_req }}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-slate-400">Cargados:</span>
+                            <span class="font-bold text-green-400">{{ completadas_req }}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-slate-400">Pendientes:</span>
+                            <span class="font-bold text-red-400">{{ pendientes }}</span>
+                        </div>
+                    </div>
+                    {% if pendientes == 0 %}
+                    <button hx-post="/api/v1/agn/expedientes/{{ exp.id }}/cerrar" hx-swap="none" class="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold transition-colors">
+                        Sellar Expediente 100%
+                    </button>
+                    {% else %}
+                    <button class="w-full py-3 bg-white text-slate-900 rounded-xl font-bold transition-colors cursor-not-allowed opacity-80" onclick="Swal.fire('Incompleto', 'Faltan tipologías obligatorias', 'error')">
+                        Validar Expediente
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal: Vincular Documento -->
+    <div x-show="modalVincular" x-cloak class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div @click.away="modalVincular = false" class="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-fade-in-up">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-lg">Satisfacer Requerimiento TRD</h3>
+                <button @click="modalVincular = false" class="text-slate-400 hover:text-red-500"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-slate-500 mb-4">Selecciona el documento pendiente de tu bandeja que corresponde a este requisito.</p>
+                <form hx-post="/api/v1/agn/expedientes/{{ exp.id }}/vincular" hx-ext="json-enc" class="space-y-4">
+                    <input type="hidden" name="tipologia_id" x-model="tipologiaActiva">
+                    
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-400">DOCUMENTO EN BANDEJA</label>
+                        <select name="documento_id" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="" disabled selected>-- Seleccione un documento --</option>
+                            {% for doc in user_docs %}
+                            <option value="{{ doc.id }}">{{ doc.file_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <button @click="modalVincular = false; Swal.fire('Enviando...', 'Foliando documento...', 'info')" type="submit" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-indigo-200">
+                        Vincular y Foliar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
