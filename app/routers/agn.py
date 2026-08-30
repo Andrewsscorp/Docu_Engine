@@ -1458,7 +1458,7 @@ async def vincular_documento_expediente(
     if not doc_row:
         raise HTTPException(status_code=404, detail="Documento no encontrado")
         
-    file_path = doc_row.file_path
+    file_path = os.path.join("uploads", str(session_data["tenant_id"]), doc_row.file_path).replace("\\", "/")
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="El archivo físico no existe en disco")
         
@@ -2171,9 +2171,10 @@ async def get_exportar_expediente_dip(
         metadata = []
         for d in docs:
             d_dict = dict(d._mapping)
-            if os.path.exists(d_dict["file_path"]):
+            full_path = os.path.join("uploads", str(session_data["tenant_id"]), d_dict["file_path"]).replace("\\", "/")
+            if os.path.exists(full_path):
                 # Write to zip
-                zip_file.write(d_dict["file_path"], arcname=f"documentos/{d_dict['file_name']}")
+                zip_file.write(full_path, arcname=f"documentos/{d_dict['file_name']}")
                 metadata.append(d_dict)
                 
         # Escribir metadatos
@@ -2209,11 +2210,15 @@ async def get_descargar_documento_forense(
     doc_res = await db.execute(text("SELECT agn_expediente_id, file_path, file_name, file_hash FROM documents WHERE id = :did AND tenant_id = :t"), 
                                {"did": doc_id, "t": session_data["tenant_id"]})
     doc_row = doc_res.fetchone()
-    if not doc_row or not doc_row.file_path or not os.path.exists(doc_row.file_path):
+    if not doc_row or not doc_row.file_path:
+        raise HTTPException(status_code=404, detail="Binario no encontrado en storage")
+    
+    full_path = os.path.join("uploads", str(session_data["tenant_id"]), doc_row.file_path).replace("\\", "/")
+    if not os.path.exists(full_path):
         raise HTTPException(status_code=404, detail="Binario no encontrado en storage")
         
     def iterfile():
-        with open(doc_row.file_path, mode="rb") as file_like:
+        with open(full_path, mode="rb") as file_like:
             yield from file_like
 
     if doc_row.agn_expediente_id:
@@ -2238,11 +2243,15 @@ async def get_ver_documento_forense(
     doc_res = await db.execute(text("SELECT agn_expediente_id, file_path, file_name, file_hash, folio FROM documents WHERE id = :did AND tenant_id = :t"), 
                                {"did": doc_id, "t": session_data["tenant_id"]})
     doc_row = doc_res.fetchone()
-    if not doc_row or not doc_row.file_path or not os.path.exists(doc_row.file_path):
+    if not doc_row or not doc_row.file_path:
+        raise HTTPException(status_code=404, detail="Binario no encontrado en storage")
+    
+    full_path = os.path.join("uploads", str(session_data["tenant_id"]), doc_row.file_path).replace("\\", "/")
+    if not os.path.exists(full_path):
         raise HTTPException(status_code=404, detail="Binario no encontrado en storage")
         
     def iterfile():
-        with open(doc_row.file_path, mode="rb") as file_like:
+        with open(full_path, mode="rb") as file_like:
             yield from file_like
 
     if doc_row.agn_expediente_id:
