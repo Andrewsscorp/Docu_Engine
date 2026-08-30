@@ -1819,8 +1819,7 @@ async def cerrar_expediente(
 """
         consecutivo += 1
         
-    xml_content += "  </ListaDocumentos>
-"
+    xml_content += "  </ListaDocumentos>\n"
     
     # Generate PKI Signature Hash
     raw_hash = hashlib.sha256(xml_content.encode()).hexdigest()
