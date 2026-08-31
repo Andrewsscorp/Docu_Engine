@@ -85,17 +85,17 @@
             <svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
             <span x-show="sidebarOpen" x-transition.opacity>Dashboard</span>
         </li>
-                  <li @click="currentView = 'explorer'" title="Documentos"
+                  <li @click="currentView = 'explorer'" title="Expedientes TRD"
               class="px-5 py-3.5 rounded-2xl cursor-pointer font-medium transition-all flex items-center gap-4 whitespace-nowrap overflow-hidden"
               :class="currentView === 'explorer' ? 'bg-gradient-to-r from-primary to-[#868CFF] text-white shadow-lg shadow-primary/40' : 'text-gray-400 hover:text-white hover:bg-white/5'">
               <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
-              <span x-show="sidebarOpen" x-transition.opacity>Documentos</span>
+              <span x-show="sidebarOpen" x-transition.opacity>Expedientes TRD</span>
           </li>
-          <li @click="currentView = 'expedientes_module'" title="Expedientes"
+          <li @click="currentView = 'expedientes_module'" title="Cuadro TRD"
               class="px-5 py-3.5 rounded-2xl cursor-pointer font-medium transition-all flex items-center gap-4 whitespace-nowrap overflow-hidden"
               :class="currentView === 'expedientes_module' ? 'bg-gradient-to-r from-primary to-[#868CFF] text-white shadow-lg shadow-primary/40' : 'text-gray-400 hover:text-white hover:bg-white/5'">
               <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-              <span x-show="sidebarOpen" x-transition.opacity>Expedientes</span>
+              <span x-show="sidebarOpen" x-transition.opacity>Cuadro TRD</span>
           </li>
         <!-- MENUS_DINAMICOS_LI -->
         <li id="btn-settings" @click="currentView = 'settings'" title="Ajustes"
@@ -166,7 +166,7 @@
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
         </button>
         <div>
-            <h1 class="text-[28px] font-bold text-textmain leading-tight" x-text="currentView === 'dashboard' ? 'Resumen de Documentos' : (currentView === 'explorer' ? 'Documentos' : (currentView === 'users' ? 'Gestion de Usuarios y Roles' : (currentView === 'notifications' ? 'Centro de Notificaciones' : (currentView === 'tags' ? 'Gestión de Etiquetas' : (currentView === 'expedientes_module' ? 'Expedientes SGDEA' : (currentView === 'expediente' ? 'Expediente Electrónico' : 'Panel de Ajustes')))))"></h1>
+            <h1 class="text-[28px] font-bold text-textmain leading-tight" x-text="currentView === 'dashboard' ? 'Resumen de Documentos' : (currentView === 'explorer' ? 'Explorador de Expedientes' : (currentView === 'users' ? 'Gestion de Usuarios y Roles' : (currentView === 'notifications' ? 'Centro de Notificaciones' : (currentView === 'tags' ? 'Gestión de Etiquetas' : (currentView === 'expedientes_module' ? 'Cuadro de Clasificación (TRD)' : (currentView === 'expediente' ? 'Expediente Electrónico' : 'Panel de Ajustes')))))"></h1>
             <p class="text-sm font-medium text-textmuted mt-0.5" x-show="currentView === 'dashboard'">Gestiona y accede rapidamente a todos tus documentos</p>
         </div>
     </div>
