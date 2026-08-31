@@ -59,5 +59,5 @@ async def get_agn_tree_html(
     
     # Sort children recursively (Optional, already sorted by SQL but nested ones might need it)
     
-    return templates.TemplateResponse("components/agn_tree.html", {"request": request, "tree": root_nodes})
+    return templates.TemplateResponse(request=request, name="components/agn_tree.html", context={"request": request, "tree": root_nodes})
 
