@@ -638,6 +638,7 @@ async def explorer_view(
     folder_filter: str = "",
     type_filter: str = "",
     date_filter: str = "",
+    agn_expediente_id: str = "",
     db: AsyncSession = Depends(get_db_session)
 ):
     cookie = request.cookies.get("sessionId")
@@ -687,6 +688,10 @@ async def explorer_view(
     if folder_filter:
         base_query += " AND d.folder_id = :f"
         params["f"] = folder_filter
+        
+    if agn_expediente_id:
+        base_query += " AND d.agn_expediente_id = :agn_exp"
+        params["agn_exp"] = agn_expediente_id
         
     if type_filter == "pdf":
         base_query += " AND d.mime_type ILIKE '%pdf%'"
@@ -771,6 +776,7 @@ async def explorer_view(
         "type_filter": type_filter,
         "date_filter": date_filter,
         "folder_filter": folder_filter,
+        "agn_expediente_id": agn_expediente_id,
         "view": view,
         "page": page,
         "has_more": len(docs) == limit,

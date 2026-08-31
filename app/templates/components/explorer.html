@@ -1,5 +1,20 @@
 ﻿<div x-data="{ vista: 'cuadricula', drawerAbierto: false, currentDocId: null, typeFilter: '', dateFilter: '', statusFilter: '', activeFolder: '' }" class="h-full flex flex-col">
+    
+<div class="flex gap-6 h-full w-full">
+    <!-- TRD Tree Panel (Left) -->
+    <div class="w-[300px] bg-white rounded-2xl shadow-sm border border-gray-100 p-4 shrink-0 flex flex-col h-full" hx-get="/api/v1/agn/tree_html" hx-trigger="load">
+        <div class="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
+            <svg class="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <span class="text-sm font-medium">Cargando TRD...</span>
+        </div>
+    </div>
+
+    <!-- Main Documents Panel (Right) -->
+    <div class="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
+
     <!-- Hidden inputs for filters -->
+    <input type="hidden" name="agn_expediente_id" id="agn_expediente_id" value="{{ agn_expediente_id }}">
+
     <input type="hidden" name="type_filter" x-model="typeFilter">
     <input type="hidden" name="date_filter" x-model="dateFilter">
     <input type="hidden" name="status" x-model="statusFilter">
@@ -15,7 +30,7 @@
       <div class="flex flex-1 flex-wrap gap-3 items-center">
         <div class="relative">
           <select x-model="dateFilter" @change="htmx.trigger('#explorer-search-input', 'search')" class="appearance-none bg-gray-50 border border-gray-200 rounded-lg py-2 pl-3 pr-10 text-sm text-gray-700 focus:outline-none focus:border-primary">
-            <option value="">Cualquier fecha</option>
+            <option value="{{ agn_expediente_id }}">Cualquier fecha</option>
             <option value="week">Última semana</option>
             <option value="month">Este mes</option>
             <option value="year">Este año</option>
@@ -24,7 +39,7 @@
         </div>
         <div class="relative">
           <select x-model="statusFilter" @change="htmx.trigger('#explorer-search-input', 'search')" class="appearance-none bg-gray-50 border border-gray-200 rounded-lg py-2 pl-3 pr-10 text-sm text-gray-700 focus:outline-none focus:border-primary">
-            <option value="">Todos los estados</option>
+            <option value="{{ agn_expediente_id }}">Todos los estados</option>
             <option value="COMPLETED">Listo</option>
             <option value="PENDING">Pendiente</option>
           </select>
@@ -96,7 +111,7 @@
                    hx-get="/api/v1/documents/explorer"
                    hx-trigger="keyup changed delay:500ms, search"
                    hx-target="#explorer-results"
-                   hx-include="[name='sort'], [name='view'], [name='group_id'], [name='status'], [name='type_filter'], [name='date_filter'], [name='folder_filter']"
+                   hx-include="[name='sort'], [name='view'], [name='group_id'], [name='status'], [name='type_filter'], [name='date_filter'], [name='folder_filter'], #agn_expediente_id"
                    value="{{ q }}"
                    autocomplete="off">
             <svg class="w-6 h-6 absolute left-4 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -112,7 +127,7 @@
                 </button>
             </div>
             
-            <select name="sort" class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-primary shadow-sm" hx-get="/api/v1/documents/explorer" hx-target="#explorer-results" hx-include="[name='q'], [name='view'], [name='group_id'], [name='status'], [name='type_filter'], [name='date_filter'], [name='folder_filter']">
+            <select name="sort" class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-primary shadow-sm" hx-get="/api/v1/documents/explorer" hx-target="#explorer-results" hx-include="[name='q'], [name='view'], [name='group_id'], [name='status'], [name='type_filter'], [name='date_filter'], [name='folder_filter'], #agn_expediente_id">
                 <option value="desc" {% if sort == 'desc' %}selected{% endif %}>MÃ¡s recientes</option>
                 <option value="asc" {% if sort == 'asc' %}selected{% endif %}>MÃ¡s antiguos</option>
             </select>
@@ -499,3 +514,6 @@
             });
         }
     </script>
+
+    </div>
+</div></div></div>

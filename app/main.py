@@ -146,6 +146,7 @@ app.include_router(notifications.router)
 app.include_router(etiquetas.router)
 app.include_router(tareas.router)
 app.include_router(agn.router)
+app.include_router(tree_router)
 
 
 @app.on_event("startup")
