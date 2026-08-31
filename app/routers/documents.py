@@ -182,6 +182,16 @@ async def upload_document(
     tenant_id = session_data["tenant_id"]
     user_id = session_data["user_id"]
     
+    
+    if file.content_type not in ALLOWED_MIMES:
+        raise HTTPException(status_code=400, detail=f"Formato no permitido: {file.content_type}")
+        
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="El archivo supera el limite de 50MB.")
+        
     from app import rbac
     hierarchy = rbac.get_role_hierarchy(tenant_id, session_data["role_id"])
     
@@ -1026,6 +1036,10 @@ async def asignar_documento(
 import os
 import uuid
 import hashlib
+
+MAX_FILE_SIZE = 50 * 1024 * 1024 # 50 MB
+ALLOWED_MIMES = {'application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/tiff'}
+
 import json
 import asyncio
 from werkzeug.utils import secure_filename
@@ -1083,6 +1097,16 @@ async def upload_inicial_documento(
     tenant_id = session_data["tenant_id"]
     user_id = session_data["user_id"]
     
+    
+    if archivo.content_type not in ALLOWED_MIMES:
+        return HTMLResponse(content=f"<div class='p-4 bg-red-100 text-red-700 rounded-lg'>Error: Formato no permitido ({archivo.content_type}). Solo PDF e Imagenes.</div>", status_code=400)
+    
+    archivo.file.seek(0, 2)
+    file_size = archivo.file.tell()
+    archivo.file.seek(0)
+    if file_size > MAX_FILE_SIZE:
+        return HTMLResponse(content="<div class='p-4 bg-red-100 text-red-700 rounded-lg'>Error: El archivo supera el limite de 50MB.</div>", status_code=400)
+        
     # 1. Sanitization: secure_filename
     safe_name = secure_filename(archivo.filename)
     # Ensure it's safe and give it a unique UUID on disk
