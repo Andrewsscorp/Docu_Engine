@@ -10,7 +10,9 @@ from typing import AsyncGenerator
 # IMPORTANTE: Nos conectamos usando el rol restringido (docuengine_api), NO como superusuario.
 import os
 DB_HOST = os.getenv("DB_HOST", "localhost")
-DATABASE_URL = f"postgresql+asyncpg://docuengine_api:api_secure_password_123@{DB_HOST}:5432/docuengine"
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError("Missing DATABASE_URL environment variable")
 
 # create_async_engine previene automáticamente inyecciones SQL si se usa `text()` con :parametros
 engine = create_async_engine(DATABASE_URL, echo=False)

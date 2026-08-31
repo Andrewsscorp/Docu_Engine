@@ -12,7 +12,10 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db_session
 
-SECRET_KEY = "dummy-secret-key-for-development"
+import os
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("Missing SECRET_KEY environment variable")
 session_signer = URLSafeTimedSerializer(SECRET_KEY)
 
 ph = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=4, hash_len=32, salt_len=16)

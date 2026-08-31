@@ -24,7 +24,10 @@ from argon2.exceptions import VerifyMismatchError
 from itsdangerous import URLSafeTimedSerializer
 
 # TODO: Obtener del .env de forma segura
-SECRET_KEY = "dummy-secret-key-for-development"
+import os
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("Missing SECRET_KEY environment variable")
 session_signer = URLSafeTimedSerializer(SECRET_KEY)
 from collections import defaultdict
 from datetime import datetime, timedelta
