@@ -32,6 +32,25 @@ from itsdangerous import URLSafeTimedSerializer
 
 # TODO: Obtener del .env de forma segura
 import os
+
+import logging
+import sys
+
+# ==============================================================
+# PARTE 15: OBSERVABILIDAD Y LOGGING ESTRUCTURADO
+# ==============================================================
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("docuengine_api.log", encoding="utf-8")
+    ]
+)
+logger = logging.getLogger("docuengine")
+logger.info("Iniciando DocuEngine SGDEA (Observabilidad Activada)")
+
+
 SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError("Missing SECRET_KEY environment variable")
@@ -47,6 +66,25 @@ import hashlib
 import json
 import base64
 import os
+
+import logging
+import sys
+
+# ==============================================================
+# PARTE 15: OBSERVABILIDAD Y LOGGING ESTRUCTURADO
+# ==============================================================
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("docuengine_api.log", encoding="utf-8")
+    ]
+)
+logger = logging.getLogger("docuengine")
+logger.info("Iniciando DocuEngine SGDEA (Observabilidad Activada)")
+
+
 import secrets
 from dotenv import load_dotenv
 from enum import Enum
@@ -439,6 +477,25 @@ from app.rbac import check_permission, get_role_hierarchy, rbac_l1_cache, log_au
 
 
 import os
+
+import logging
+import sys
+
+# ==============================================================
+# PARTE 15: OBSERVABILIDAD Y LOGGING ESTRUCTURADO
+# ==============================================================
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("docuengine_api.log", encoding="utf-8")
+    ]
+)
+logger = logging.getLogger("docuengine")
+logger.info("Iniciando DocuEngine SGDEA (Observabilidad Activada)")
+
+
 import io
 from fastapi import UploadFile, File
 from sqlalchemy.exc import IntegrityError
