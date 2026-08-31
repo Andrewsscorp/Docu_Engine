@@ -2957,7 +2957,8 @@ async def delete_expediente_tipologia(
 ):
     await db.execute(text('''
         DELETE FROM agn_expediente_tipologia 
-        WHERE expediente_id = :eid AND tipologia_id = :tid
+        WHERE expediente_id = :eid AND tipologia_id = :tid 
+        AND expediente_id IN (SELECT id FROM agn_expedientes WHERE tenant_id = :t)
     '''), {"eid": expediente_id, "tid": tipologia_id, "t": session_data["tenant_id"]})
     await db.commit()
     return await get_control_tipologias_view(expediente_id, request, session_data, db)
@@ -2971,7 +2972,8 @@ async def delete_all_expediente_tipologias(
 ):
     await db.execute(text('''
         DELETE FROM agn_expediente_tipologia 
-        WHERE expediente_id = :eid
+        WHERE expediente_id = :eid 
+        AND expediente_id IN (SELECT id FROM agn_expedientes WHERE tenant_id = :t)
     '''), {"eid": expediente_id, "t": session_data["tenant_id"]})
     await db.commit()
     return await get_control_tipologias_view(expediente_id, request, session_data, db)
