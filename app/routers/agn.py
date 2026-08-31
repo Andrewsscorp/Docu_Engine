@@ -1489,9 +1489,9 @@ async def vincular_documento_expediente(
     
     # 4. Foliation Logic & Update (Atomic)
     # Lock the expediente to prevent concurrent foliation issues
-    await db.execute(text("SELECT id FROM agn_expedientes WHERE id = :eid FOR UPDATE"), {"eid": expediente_id})
+    await db.execute(text("SELECT id FROM agn_expedientes WHERE id = :eid FOR UPDATE"), {"eid": expediente_id, "t": session_data["tenant_id"]})
     
-    max_res = await db.execute(text("SELECT COALESCE(MAX(folio_fin), 0) FROM documents WHERE agn_expediente_id = :eid"), {"eid": expediente_id})
+    max_res = await db.execute(text("SELECT COALESCE(MAX(folio_fin), 0) FROM documents WHERE agn_expediente_id = :eid"), {"eid": expediente_id, "t": session_data["tenant_id"]})
     max_folio = max_res.scalar()
     
     nuevo_folio_inicio = max_folio + 1
@@ -1520,7 +1520,7 @@ async def vincular_documento_expediente(
         SELECT firma_indice FROM agn_indice_electronico 
         WHERE expediente_id = :eid 
         ORDER BY fecha_accion DESC LIMIT 1
-    '''), {"eid": expediente_id})
+    '''), {"eid": expediente_id, "t": session_data["tenant_id"]})
     prev_hash_row = prev_hash_res.fetchone()
     prev_hash = prev_hash_row.firma_indice if prev_hash_row else "INITIAL"
     
@@ -1834,7 +1834,7 @@ async def get_expediente_inner_view(
         LEFT JOIN agn_tipologias t ON d.tipologia_id = t.id
         WHERE d.agn_expediente_id = :eid
         ORDER BY d.folio ASC
-    '''), {"eid": expediente_id})
+    '''), {"eid": expediente_id, "t": session_data["tenant_id"]})
     docs = []
     for row in docs_res.fetchall():
         d = dict(row._mapping)
@@ -1852,7 +1852,7 @@ async def get_expediente_inner_view(
         INNER JOIN agn_tipologias t ON st.tipologia_id = t.id
         LEFT JOIN documents doc ON st.tipologia_id = doc.tipologia_id AND doc.agn_expediente_id = :eid AND (doc.status = 'COMPLETED' OR doc.status = 'ARCHIVED')
         WHERE st.expediente_id = :eid
-    '''), {"eid": expediente_id})
+    '''), {"eid": expediente_id, "t": session_data["tenant_id"]})
     
     requeridas = 0
     completadas = 0
@@ -1872,7 +1872,7 @@ async def get_expediente_inner_view(
         FROM agn_indice_electronico
         WHERE expediente_id = :eid
         ORDER BY fecha_accion DESC
-    '''), {"eid": expediente_id})
+    '''), {"eid": expediente_id, "t": session_data["tenant_id"]})
     eventos = []
     for row in idx_res.fetchall():
         ev = dict(row._mapping)
@@ -1966,7 +1966,7 @@ async def cerrar_expediente(
         FROM agn_expedientes e
         LEFT JOIN agn_subseries s ON e.subserie_id = s.id
         WHERE e.id = :eid FOR UPDATE OF e
-    '''), {"eid": expediente_id})
+    '''), {"eid": expediente_id, "t": session_data["tenant_id"]})
     exp = exp_res.fetchone()
     if not exp:
         raise HTTPException(status_code=404, detail="Expediente no encontrado")
@@ -1988,7 +1988,7 @@ async def cerrar_expediente(
         LEFT JOIN agn_tipologias t ON d.tipologia_id = t.id
         WHERE d.agn_expediente_id = :eid AND d.status IN ('COMPLETED', 'ARCHIVED')
         ORDER BY d.folio ASC
-    '''), {"eid": expediente_id})
+    '''), {"eid": expediente_id, "t": session_data["tenant_id"]})
     docs = docs_res.fetchall()
     doc_tipos = [str(d.tipologia_id) for d in docs if d.tipologia_id]
     
@@ -2163,7 +2163,7 @@ async def get_exportar_expediente_dip(
         LEFT JOIN agn_tipologias t ON d.tipologia_id = t.id
         WHERE d.agn_expediente_id = :eid AND d.status IN ('COMPLETED', 'ARCHIVED')
         ORDER BY d.folio ASC
-    '''), {"eid": expediente_id})
+    '''), {"eid": expediente_id, "t": session_data["tenant_id"]})
     docs = docs_res.fetchall()
     
     # Crear ZIP en memoria
@@ -2182,7 +2182,7 @@ async def get_exportar_expediente_dip(
         zip_file.writestr("metadata_control.json", json.dumps(metadata, default=str, indent=2))
         
         # Obtener ultimo XML
-        idx_res = await db.execute(text("SELECT * FROM agn_indice_electronico WHERE expediente_id = :eid ORDER BY fecha_accion DESC LIMIT 1"), {"eid": expediente_id})
+        idx_res = await db.execute(text("SELECT * FROM agn_indice_electronico WHERE expediente_id = :eid ORDER BY fecha_accion DESC LIMIT 1"), {"eid": expediente_id, "t": session_data["tenant_id"]})
         idx = idx_res.fetchone()
         if idx:
             xml_content = f"<?xml version='1.0'?><indice><hash_estado>{idx.firma_indice}</hash_estado></indice>" # Mock simple
@@ -2352,7 +2352,7 @@ async def get_modal_trd(
     session_data: dict = Depends(require_permission("documentos:crear")),
     db: AsyncSession = Depends(get_db_session)
 ):
-    exp_res = await db.execute(text("SELECT * FROM agn_expedientes WHERE id = :eid"), {"eid": expediente_id})
+    exp_res = await db.execute(text("SELECT * FROM agn_expedientes WHERE id = :eid"), {"eid": expediente_id, "t": session_data["tenant_id"]})
     exp = dict(exp_res.fetchone()._mapping)
     
     # Check if user has tipologias:crear permission
@@ -2958,7 +2958,7 @@ async def delete_expediente_tipologia(
     await db.execute(text('''
         DELETE FROM agn_expediente_tipologia 
         WHERE expediente_id = :eid AND tipologia_id = :tid
-    '''), {"eid": expediente_id, "tid": tipologia_id})
+    '''), {"eid": expediente_id, "tid": tipologia_id, "t": session_data["tenant_id"]})
     await db.commit()
     return await get_control_tipologias_view(expediente_id, request, session_data, db)
 
@@ -2972,7 +2972,7 @@ async def delete_all_expediente_tipologias(
     await db.execute(text('''
         DELETE FROM agn_expediente_tipologia 
         WHERE expediente_id = :eid
-    '''), {"eid": expediente_id})
+    '''), {"eid": expediente_id, "t": session_data["tenant_id"]})
     await db.commit()
     return await get_control_tipologias_view(expediente_id, request, session_data, db)
 
@@ -3000,9 +3000,9 @@ async def update_expediente(
         return JSONResponse(status_code=403, content={"error": "Inmutabilidad Activa: No se puede modificar un expediente cerrado o en transferencia según Ley 527."})
         
     if soporte:
-        await db.execute(text("UPDATE agn_expedientes SET nombre_expediente = :n, soporte = :s WHERE id = :id"), {"n": nombre, "s": soporte, "id": id})
+        await db.execute(text("UPDATE agn_expedientes SET nombre_expediente = :n, soporte = :s WHERE id = :id AND tenant_id = :t"), {"n": nombre, "s": soporte, "id": id, "t": session_data["tenant_id"]})
     else:
-        await db.execute(text("UPDATE agn_expedientes SET nombre_expediente = :n WHERE id = :id"), {"n": nombre, "id": id})
+        await db.execute(text("UPDATE agn_expedientes SET nombre_expediente = :n WHERE id = :id AND tenant_id = :t"), {"n": nombre, "id": id, "t": session_data["tenant_id"]})
     await db.commit()
     
     return {"status": "success"}

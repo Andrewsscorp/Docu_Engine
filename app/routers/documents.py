@@ -586,8 +586,8 @@ async def download_document(
             target_id=doc_id,
             details={"file_name": doc.file_name, "client_ip": request.client.host if request.client else "unknown"}
         )
-        update_query = text("UPDATE documents SET download_count = COALESCE(download_count, 0) + 1 WHERE id = :id")
-        await db.execute(update_query, {"id": doc_id})
+        update_query = text("UPDATE documents SET download_count = COALESCE(download_count, 0) + 1 WHERE id = :id AND tenant_id = :t")
+        await db.execute(update_query, {"id": doc_id, "t": session_data["tenant_id"]})
         await db.commit()
     except Exception as e:
         import traceback; traceback.print_exc()
@@ -1032,7 +1032,7 @@ from werkzeug.utils import secure_filename
 from fastapi import BackgroundTasks
 
 # Mock OCR function as requested
-async def iniciar_extraccion_ocr(document_id: str):
+async def iniciar_extraccion_ocr(document_id: str, tenant_id: str):
     import asyncio
     from app.database import AsyncSessionLocal
     from sqlalchemy import text
@@ -1041,7 +1041,7 @@ async def iniciar_extraccion_ocr(document_id: str):
     await asyncio.sleep(2)
     try:
         async with AsyncSessionLocal() as session:
-            res = await session.execute(text("SELECT file_path, extracted_text FROM documents WHERE id = :id"), {"id": document_id})
+            res = await session.execute(text("SELECT file_path, extracted_text FROM documents WHERE id = :id AND tenant_id = :t"), {"id": document_id, "t": tenant_id})
             row = res.fetchone()
             if not row:
                 return
@@ -1050,7 +1050,7 @@ async def iniciar_extraccion_ocr(document_id: str):
             existing_text = row[1]
             
             if existing_text and len(existing_text) > 50:
-                await session.execute(text("UPDATE documents SET status = 'COMPLETED', ocr_confidence_score = 1.0 WHERE id = :id"), {"id": document_id})
+                await session.execute(text("UPDATE documents SET status = 'COMPLETED', ocr_confidence_score = 1.0 WHERE id = :id AND tenant_id = :t"), {"id": document_id, "t": tenant_id})
                 await session.commit()
                 return
 
@@ -1419,7 +1419,7 @@ async def post_reasignar(
             """), {"id_tarea": id_nueva_tarea, "uid": user_id, "msg": mensaje})
             
         # PASO 4: Actualizar etiqueta del documento
-        await db.execute(text("DELETE FROM documento_etiquetas WHERE id_documento = :did"), {"did": doc_id})
+        await db.execute(text("DELETE FROM documento_etiquetas WHERE id_documento = :did AND id_documento IN (SELECT id FROM documents WHERE tenant_id = :t)"), {"did": doc_id, "t": session_data["tenant_id"]})
         await db.execute(text("INSERT INTO documento_etiquetas (id_documento, id_etiqueta) VALUES (:did, :eid)"), 
             {"did": doc_id, "eid": etiqueta_id})
             
