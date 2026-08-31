@@ -1808,8 +1808,6 @@ async def post_cierre_expediente(
     return {"status": "success", "detail": "Expediente sellado correctamente (Inmutabilidad Activada)"}
 
     
-    # Full module response
-    return templates.TemplateResponse(request=request, name="components/expedientes_module.html", context=context)
 
 
 @router.get("/expedientes/{expediente_id}/view")
@@ -2622,7 +2620,7 @@ async def firmar_fuid(
             VALUES (:sid, :consecutivo, :user_id, :hash, :ruta, :t)
             RETURNING id
         '''), {
-            "eid": expediente_id, 
+            "sid": subserie_id, 
             "consecutivo": f"FUID-{datetime.now().strftime('%Y%m%d%H%M%S')}",
             "user_id": session_data["user_id"],
             "hash": fuid_hash,

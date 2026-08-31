@@ -42,6 +42,9 @@ from app.rbac import check_permission, get_role_hierarchy, log_audit_action
 templates = Jinja2Templates(directory="app/templates")
 from pydantic import BaseModel, Field
 from enum import Enum
+import hmac
+import hashlib
+import json
 
 class IdiomaEnum(str, Enum):
     es = 'es'

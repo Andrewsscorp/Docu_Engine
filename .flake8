@@ -1,0 +1,4 @@
+﻿[flake8]
+max-line-length = 120
+exclude = .venv,migrations,backups,scripts,tests
+ignore = E501, W503, E203, F401

@@ -1445,7 +1445,7 @@ async def post_reasignar(
             """), {"id_tarea": id_nueva_tarea, "uid": user_id, "msg": mensaje})
             
         # PASO 4: Actualizar etiqueta del documento
-        await db.execute(text("DELETE FROM documento_etiquetas WHERE id_documento = :did AND id_documento IN (SELECT id FROM documents WHERE tenant_id = :t)"), {"did": doc_id, "t": session_data["tenant_id"]})
+        await db.execute(text("DELETE FROM documento_etiquetas WHERE id_documento = :did AND id_documento IN (SELECT id FROM documents WHERE tenant_id = :t)"), {"did": doc_id, "t": tenant_id})
         await db.execute(text("INSERT INTO documento_etiquetas (id_documento, id_etiqueta) VALUES (:did, :eid)"), 
             {"did": doc_id, "eid": etiqueta_id})
             

@@ -18,7 +18,6 @@ from typing import Dict, Set
 rbac_l1_cache: Dict[str, Dict] = {}
 
 async def load_rbac_cache(db: AsyncSession = None):
-    global rbac_l1_cache
     
     from app.database import get_global_db_session
     

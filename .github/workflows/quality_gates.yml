@@ -1,0 +1,36 @@
+﻿name: SGDEA Quality Gates
+
+on:
+  push:
+    branches: [ main, rescue-v1 ]
+  pull_request:
+    branches: [ main, rescue-v1 ]
+
+jobs:
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 mypy bandit
+
+      - name: G1 - Static Analysis (Flake8)
+        run: flake8 app/
+
+      - name: G1 - Type Check (Mypy)
+        run: mypy app/
+
+      - name: G2 - Security Scan (Bandit SAST)
+        run: bandit -r app/ -ll -ii
+
+      - name: G2 - Secret Scan
+        run: python scripts/secret_scan.py
