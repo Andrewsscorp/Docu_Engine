@@ -17,19 +17,17 @@ async def get_agn_tree_html(
 ):
     tenant_id = session_data["tenant_id"]
     
-    # 1. Fetch all structural data for the tenant
-    secciones = (await db.execute(text("SELECT id, codigo, nombre FROM agn_secciones WHERE tenant_id = :t ORDER BY codigo"), {"t": tenant_id})).fetchall()
-    subsecciones = (await db.execute(text("SELECT id, seccion_id, codigo, nombre FROM agn_subsecciones WHERE tenant_id = :t ORDER BY codigo"), {"t": tenant_id})).fetchall()
+    # 1. Fetch structural data
+    deps = (await db.execute(text("SELECT id, codigo, nombre, tipo, parent_id FROM agn_dependencias WHERE tenant_id = :t ORDER BY codigo"), {"t": tenant_id})).fetchall()
     series = (await db.execute(text("SELECT id, seccion_id, subseccion_id, codigo, nombre FROM agn_series WHERE tenant_id = :t ORDER BY codigo"), {"t": tenant_id})).fetchall()
     subseries = (await db.execute(text("SELECT id, serie_id, codigo, nombre FROM agn_subseries WHERE tenant_id = :t ORDER BY codigo"), {"t": tenant_id})).fetchall()
     expedientes = (await db.execute(text("SELECT id, serie_id, subserie_id, codigo_expediente as codigo, nombre_expediente as nombre, estado FROM agn_expedientes WHERE tenant_id = :t ORDER BY codigo_expediente"), {"t": tenant_id})).fetchall()
 
     # 2. Build the nested tree
     # Helper index dictionaries
-    sec_dict = { s.id: {"id": s.id, "type": "seccion", "codigo": s.codigo, "nombre": s.nombre, "children": []} for s in secciones }
-    subsec_dict = { s.id: {"id": s.id, "type": "subseccion", "codigo": s.codigo, "nombre": s.nombre, "children": []} for s in subsecciones }
-    ser_dict = { s.id: {"id": s.id, "type": "serie", "codigo": s.codigo, "nombre": s.nombre, "children": []} for s in series }
-    subser_dict = { s.id: {"id": s.id, "type": "subserie", "codigo": s.codigo, "nombre": s.nombre, "children": []} for s in subseries }
+    dep_dict = { d.id: {"id": d.id, "type": d.tipo, "codigo": d.codigo, "nombre": d.nombre, "children": [], "parent_id": d.parent_id} for d in deps }
+    ser_dict = { s.id: {"id": s.id, "type": "serie", "codigo": s.codigo, "nombre": s.nombre, "children": [], "seccion_id": s.seccion_id, "subseccion_id": s.subseccion_id} for s in series }
+    subser_dict = { s.id: {"id": s.id, "type": "subserie", "codigo": s.codigo, "nombre": s.nombre, "children": [], "serie_id": s.serie_id} for s in subseries }
     
     # Link Expedientes to Series/Subseries
     for e in expedientes:
@@ -44,20 +42,22 @@ async def get_agn_tree_html(
         if s.serie_id and s.serie_id in ser_dict:
             ser_dict[s.serie_id]["children"].append(subser_dict[s.id])
             
-    # Link Series to Secciones/Subsecciones
+    # Link Series to Dependencias (Seccion or Subseccion)
     for s in series:
-        if s.subseccion_id and s.subseccion_id in subsec_dict:
-            subsec_dict[s.subseccion_id]["children"].append(ser_dict[s.id])
-        elif s.seccion_id and s.seccion_id in sec_dict:
-            sec_dict[s.seccion_id]["children"].append(ser_dict[s.id])
+        if s.subseccion_id and s.subseccion_id in dep_dict:
+            dep_dict[s.subseccion_id]["children"].append(ser_dict[s.id])
+        elif s.seccion_id and s.seccion_id in dep_dict:
+            dep_dict[s.seccion_id]["children"].append(ser_dict[s.id])
             
-    # Link Subsecciones to Secciones
-    for s in subsecciones:
-        if s.seccion_id and s.seccion_id in sec_dict:
-            sec_dict[s.seccion_id]["children"].append(subsec_dict[s.id])
-            
-    # The root elements are the Secciones
-    tree_data = list(sec_dict.values())
+    # Link Dependencias to each other (Subseccion -> Seccion -> Fondo)
+    root_nodes = []
+    for d in dep_dict.values():
+        if d["parent_id"] and d["parent_id"] in dep_dict:
+            dep_dict[d["parent_id"]]["children"].append(d)
+        else:
+            root_nodes.append(d)
     
-    return templates.TemplateResponse("components/agn_tree.html", {"request": request, "tree": tree_data})
+    # Sort children recursively (Optional, already sorted by SQL but nested ones might need it)
+    
+    return templates.TemplateResponse("components/agn_tree.html", {"request": request, "tree": root_nodes})
 
