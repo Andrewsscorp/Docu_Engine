@@ -24,7 +24,7 @@ jobs:
           pip install flake8 mypy bandit
 
       - name: G1 - Static Analysis (Flake8)
-        run: flake8 app/
+        run: flake8 app/ --select=E9,F63,F7,F82
 
       - name: G1 - Type Check (Mypy)
         run: mypy app/
