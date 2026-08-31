@@ -25,6 +25,8 @@ from app.rbac import check_permission, get_role_hierarchy, log_audit_action
 
 templates = Jinja2Templates(directory="app/templates")
 router = APIRouter()
+from app.services.fixity_service import FixityService
+
 
 async def generate_carousel_html(db, tenant_id, q=""):
     query_str = """
@@ -1553,3 +1555,14 @@ async def move_document(
     except Exception as e:
         await db.rollback()
         return HTMLResponse(f"<script>Swal.fire('Error', 'No se pudo mover: {str(e)}', 'error');</script>")
+
+
+@router.post("/fixity")
+async def trigger_fixity_check(
+    background_tasks: BackgroundTasks,
+    session_data: dict = Depends(require_permission("documentos:editar")),
+    db: AsyncSession = Depends(get_db_session)
+):
+    # Desplegar a una tarea de fondo (Scrubbing puede tardar varios minutos u horas en volumen)
+    background_tasks.add_task(FixityService.run_fixity_check, session_data["tenant_id"], db, session_data["user_id"])
+    return {"status": "success", "detail": "Fixity Check programado exitosamente en segundo plano. Los resultados se registrarán en la auditoría inmutable."}
