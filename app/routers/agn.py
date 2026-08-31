@@ -2067,6 +2067,7 @@ async def cerrar_expediente(
     await db.execute(text('''
         UPDATE agn_expedientes 
         SET estado = 'CERRADO', 
+            estado_abierto = FALSE, 
             fecha_cierre = :fc,
             fecha_transferencia_central = :ftc,
             indice_xml_path = :xml_path,
