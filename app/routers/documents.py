@@ -1098,6 +1098,7 @@ async def iniciar_extraccion_ocr(document_id: str, tenant_id: str):
 async def upload_inicial_documento(
     request: Request,
     archivo: UploadFile = File(...),
+    agn_expediente_id: str = Form(None),
     session_data: dict = Depends(require_permission("documentos:subir")),
     db: AsyncSession = Depends(get_db_session)
 ):
@@ -1202,8 +1203,8 @@ async def upload_inicial_documento(
 
 
     query = text("""
-        INSERT INTO documents (id, tenant_id, group_id, file_name, file_path, uploaded_by, status, is_private, mime_type, file_size_bytes, file_hash, thumbnail_path, extracted_text)
-        VALUES (:id, :t, :gid, :fn, :path, :uid, 'PENDING', FALSE, :mime, :size, :hash, :thumb, :text)
+        INSERT INTO documents (id, tenant_id, group_id, file_name, file_path, uploaded_by, status, is_private, mime_type, file_size_bytes, file_hash, thumbnail_path, extracted_text, agn_expediente_id)
+        VALUES (:id, :t, :gid, :fn, :path, :uid, 'PENDING', FALSE, :mime, :size, :hash, :thumb, :text, :exp_id)
         RETURNING id
     """)
     doc_id = str(uuid.uuid4())
@@ -1220,7 +1221,8 @@ async def upload_inicial_documento(
             "size": file_size,
             "hash": file_hash,
             "thumb": thumbnail_path,
-            "text": fast_route_text
+            "text": fast_route_text,
+            "exp_id": agn_expediente_id if agn_expediente_id else None
         })
     except IntegrityError as e:
         await db.rollback()
