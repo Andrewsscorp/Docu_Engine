@@ -137,6 +137,7 @@ async def catch_exceptions_middleware(request: Request, call_next):
         raise
 
 from app.routers import auth, rbac, documents, settings, editor, notifications, etiquetas, tareas, agn
+from app.routers.agn_tree import tree_router
 app.include_router(auth.router)
 app.include_router(rbac.router)
 app.include_router(documents.router)
