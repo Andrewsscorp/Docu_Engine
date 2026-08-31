@@ -1,4 +1,11 @@
 ﻿from app import security
+
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
+
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, File, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -73,7 +80,11 @@ def cached_translate(text: str, from_code: str = 'es', to_code: str = 'en'):
 
 load_dotenv()
 
-app = FastAPI(title="DocuEngine Backend", version="1.0.0")
+
+app = FastAPI(title="DocuEngine Backend", version="1.0.0", docs_url=None, redoc_url=None, openapi_url=None)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 
 
 
