@@ -2,6 +2,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from typing import Optional
+from uuid import UUID
 from backend.src.domain.entities.usuario import Usuario
 from backend.src.domain.interfaces.i_user_repository import IUserRepository
 
@@ -29,6 +30,6 @@ class PostgresUserRepository(IUserRepository):
             es_cuenta_servicio=row.es_cuenta_servicio
         )
 
-    async def update_last_login(self, user_id: str) -> None:
+    async def update_last_login(self, user_id: UUID) -> None:
         query = text("UPDATE usuarios SET ultimo_acceso = NOW() WHERE id = :id")
         await self.db.execute(query, {"id": user_id})

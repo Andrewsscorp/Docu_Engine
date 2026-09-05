@@ -1,6 +1,7 @@
 # i_user_repository.py
 from typing import Optional
 from abc import ABC, abstractmethod
+from uuid import UUID
 from backend.src.domain.entities.usuario import Usuario
 
 class IUserRepository(ABC):
@@ -9,5 +10,5 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
-    async def update_last_login(self, user_id: str) -> None:
+    async def update_last_login(self, user_id: UUID) -> None:
         pass
