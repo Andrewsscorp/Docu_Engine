@@ -1916,7 +1916,7 @@ async def get_exportar_expediente_dip(
         with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
             metadata = []
             for d_dict in docs_list:
-                full_path = os.path.join("uploads", str(t_id), d_dict["file_path"]).replace("\", "/")
+                full_path = os.path.join("uploads", str(t_id), d_dict["file_path"]).replace("\\", "/")
                 if os.path.exists(full_path):
                     zip_file.write(full_path, arcname=f"documentos/{d_dict['file_name']}")
                     metadata.append(d_dict)
