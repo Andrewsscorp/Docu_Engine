@@ -461,116 +461,12 @@ async def create_agn_expediente(
 @router.get("/modal/fondo")
 async def get_crear_fondo_modal(
     request: Request,
-    session_data: dict = Depends(require_permission("documentos:crear")),
+    session_data: dict = Depends(require_permission("documentos:crear"))
 ):
-    html = f"""
-    <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
-        <div class="flex items-center gap-3">
-            <button type="button" onclick="window.openAgnModal()" class="text-[#4f46e5] hover:text-[#4338ca] hover:bg-indigo-50 p-1.5 rounded-md transition-colors" title="Volver al Expediente">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-            </button>
-            <h2 class="text-xl font-bold text-[#1e293b] font-sans">CREAR NUEVO FONDO DOCUMENTAL</h2>
-        </div>
-        <button type="button" onclick="Swal.close()" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
-    </div>
-    <div class="p-6 bg-[#f8fafc]">
-        <form id="crear-fondo-form" hx-post="/api/v1/agn/fondos" hx-encoding="multipart/form-data" hx-swap="none" @htmx:after-request.camel="if($event.detail.successful) {{ Swal.fire({{title: 'Fondo Creado!', text: 'Guardado exitosamente', icon: 'success', timer: 1500, showConfirmButton: false}}).then(() => {{ window.openAgnModal(); }}) }}" @htmx:response-error.camel="Swal.fire('Error', JSON.parse($event.detail.xhr.response).detail || 'Ocurrió un error al guardar', 'error')">
-            <div class="mb-4">
-                <div class="flex items-center gap-1.5 mb-1">
-                    <label class="block text-xs font-bold text-gray-600">Código Oficial del Fondo</label>
-                    <div class="relative group flex items-center">
-                        <span class="flex items-center justify-center w-3 h-3 rounded-full border border-gray-400 text-gray-400 text-[8px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
-                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 text-center px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100] whitespace-normal leading-tight">
-                            Identificador alfanumérico único e irrepetible asignado a la entidad.
-                            <div class="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-gray-800"></div>
-                        </div>
-                    </div>
-                </div>
-                <input type="text" name="codigo" required placeholder="Ej. F-001" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors">
-            </div>
-            
-            <div class="mb-4">
-                <div class="flex items-center gap-1.5 mb-1">
-                    <label class="block text-xs font-bold text-gray-600">Nombre de la Entidad Productora</label>
-                    <div class="relative group flex items-center">
-                        <span class="flex items-center justify-center w-3 h-3 rounded-full border border-gray-400 text-gray-400 text-[8px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
-                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 text-center px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100] whitespace-normal leading-tight">
-                            Razón social legal y completa de la institución productora.
-                            <div class="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-gray-800"></div>
-                        </div>
-                    </div>
-                </div>
-                <input type="text" name="nombre" required placeholder="Ingrese el nombre completo de la entidad" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors">
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div x-data="{{ fileName: '' }}">
-                    <div class="flex items-center gap-1.5 mb-1">
-                    <label class="block text-xs font-bold text-gray-600">Acto Administrativo</label>
-                    <div class="relative group flex items-center">
-                        <span class="flex items-center justify-center w-3 h-3 rounded-full border border-gray-400 text-gray-400 text-[8px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
-                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 text-center px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100] whitespace-normal leading-tight">
-                            Ley, decreto o resolución que crea formalmente la entidad.
-                            <div class="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-gray-800"></div>
-                        </div>
-                    </div>
-                </div>
-                    <div class="relative">
-                        <input type="text" name="acto_administrativo" placeholder="Resolución, Decreto, etc." class="w-full px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors">
-                        <label class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 cursor-pointer">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
-                            <input type="file" x-ref="fileInput" name="archivo_acto" class="hidden" accept=".pdf" @change="fileName = $refs.fileInput.files[0] ? $refs.fileInput.files[0].name : ''">
-                        </label>
-                    </div>
-                    
-                    <template x-if="fileName">
-                        <div class="mt-2 flex items-center justify-between px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded text-xs text-indigo-700 shadow-sm animate-fade-in-down">
-                            <div class="flex items-center gap-2 truncate">
-                                <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                <span x-text="fileName" class="truncate font-medium"></span>
-                            </div>
-                            <button type="button" @click="$refs.fileInput.value = ''; fileName = ''" class="ml-2 text-indigo-400 hover:text-red-500 focus:outline-none transition-colors">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
-                        </div>
-                    </template>
-                </div>
-                <div>
-                    <div class="flex items-center gap-1.5 mb-1">
-                    <label class="block text-xs font-bold text-gray-600">Estado del Fondo</label>
-                    <div class="relative group flex items-center">
-                        <span class="flex items-center justify-center w-3 h-3 rounded-full border border-gray-400 text-gray-400 text-[8px] font-bold cursor-help hover:border-gray-600 hover:text-gray-600 transition-colors">?</span>
-                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 text-center px-2 py-1 bg-gray-800 text-white text-[10px] font-medium rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow z-[100] whitespace-normal leading-tight">
-                            Condición activa o liquidada para habilitar o restringir expedientes.
-                            <div class="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-gray-800"></div>
-                        </div>
-                    </div>
-                </div>
-                    <select name="estado" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors appearance-none">
-                        <option value="ABIERTO">Fondo Abierto (Activo)</option>
-                        <option value="CERRADO">Fondo Cerrado (Acumulado)</option>
-                    </select>
-                </div>
-            </div>
-            
-            
-            <div class="flex justify-end gap-3 pt-2">
-                <button type="button" onclick="window.openAgnModal()" class="px-5 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors">Cancelar</button>
-                <button type="submit" :disabled="!canSubmit" :class="canSubmit ? \'bg-green-600 hover:bg-green-700\' : \'bg-gray-400 cursor-not-allowed\'" class="px-5 py-2.5 text-sm font-semibold text-white bg-[#4f46e5] hover:bg-[#4338ca] rounded-lg shadow-sm flex items-center gap-2 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
-                    Guardar Fondo
-                </button>
-            </div>
-        </form>
-        
-
-    </div>
-    
-    """
-    return HTMLResponse(html)
-
+    return templates.TemplateResponse("modals/crear_fondo.html", {
+        "request": request,
+        "tenant_id": session_data["tenant_id"]
+    })
 
 @router.post("/fondos")
 async def create_agn_fondo(
@@ -583,56 +479,24 @@ async def create_agn_fondo(
     session_data: dict = Depends(require_permission("documentos:crear")),
     db: AsyncSession = Depends(get_db_session)
 ):
-    tenant_id = session_data["tenant_id"]
-    user_id = session_data["user_id"]
-    ip_address = request.client.host if request.client else "unknown"
+    from app.repositories.agn_repository import AGNRepository
+    from app.services.agn_service import AGNService
     
-    # Check UNIQUE code
-    check_q = text("SELECT id FROM agn_dependencias WHERE tenant_id = :t AND codigo = :c AND parent_id IS NULL")
-    res = await db.execute(check_q, {"t": tenant_id, "c": codigo})
-    if res.fetchone():
-        raise HTTPException(status_code=400, detail=f"El código '{codigo}' ya existe como Fondo en este sistema.")
+    repo = AGNRepository(db, session_data["tenant_id"])
+    service = AGNService(repo)
     
-    # Save file logic would go here, for now we just keep the filename or None
-    archivo_url = archivo_acto.filename if archivo_acto and archivo_acto.filename else None
-    
-    insert_q = text("""
-        INSERT INTO agn_dependencias (tenant_id, codigo, nombre, tipo, parent_id, acto_administrativo, archivo_acto_url, estado)
-        VALUES (:tenant, :codigo, :nombre, 'FONDO', NULL, :acto, :archivo, :estado)
-        RETURNING id
-    """)
-    
-    result = await db.execute(insert_q, {
-        "tenant": tenant_id,
-        "codigo": codigo,
-        "nombre": nombre,
-        "acto": acto_administrativo,
-        "archivo": archivo_url,
-        "estado": estado
-    })
-    
-    new_id = str(result.scalar())
-    
-    # Audit Logging
-    audit_q = text("""
-        INSERT INTO audit_rbac_logs (tenant_id, action, performed_by_user_id, details)
-        VALUES (:tenant, :action, :user_id, :details)
-    """)
-    await db.execute(audit_q, {
-        "tenant": tenant_id,
-        "action": "CREAR_FONDO_AGN",
-        "user_id": user_id,
-        "details": json.dumps({"ip_origen": ip_address, "fondo_id": new_id, "codigo": codigo, "nombre": nombre, "estado": estado})
-    })
+    new_id = await service.crear_fondo(
+        codigo=codigo,
+        nombre=nombre,
+        acto_administrativo=acto_administrativo,
+        archivo_acto=archivo_acto,
+        estado=estado,
+        user_id=session_data["user_id"],
+        ip_address=request.client.host if request.client else "unknown"
+    )
     
     await db.commit()
-    
     return JSONResponse({"status": "success", "id": new_id})
-
-
-class CerrarFondoRequest(BaseModel):
-    fecha_cierre: str
-    soporte_cierre: str
 
 @router.put("/fondos/{fondo_id}/cerrar")
 async def cerrar_fondo(
@@ -1472,21 +1336,29 @@ async def vincular_documento_expediente(
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="El archivo físico no existe en disco")
         
-    # 2. Extract pages using PyMuPDF
-    pages = 1
-    if file_path.lower().endswith('.pdf'):
-        try:
-            with fitz.open(file_path) as pdf_doc:
-                pages = len(pdf_doc)
-        except Exception:
-            pages = 1
-            
-    # 3. Calculate Hash
-    sha256_hash = hashlib.sha256()
-    with open(file_path, "rb") as f:
-        for byte_block in iter(lambda: f.read(4096), b""):
-            sha256_hash.update(byte_block)
-    doc_hash = sha256_hash.hexdigest()
+    from fastapi.concurrency import run_in_threadpool
+    
+    def process_file_sync(fpath):
+        import fitz
+        import hashlib
+        
+        pages_count = 1
+        if fpath.lower().endswith('.pdf'):
+            try:
+                with fitz.open(fpath) as pdf_doc:
+                    pages_count = len(pdf_doc)
+            except Exception:
+                pages_count = 1
+                
+        sha256_hash = hashlib.sha256()
+        with open(fpath, "rb") as f:
+            for byte_block in iter(lambda: f.read(4096), b""):
+                sha256_hash.update(byte_block)
+                
+        return pages_count, sha256_hash.hexdigest()
+
+    # 2 & 3. Extract pages & Calculate Hash in Threadpool to avoid blocking
+    pages, doc_hash = await run_in_threadpool(process_file_sync, file_path)
     
     # 4. Foliation Logic & Update (Atomic)
     # Lock the expediente to prevent concurrent foliation issues
@@ -2035,45 +1907,31 @@ async def get_exportar_expediente_dip(
     '''), {"eid": expediente_id, "t": session_data["tenant_id"]})
     docs = docs_res.fetchall()
     
-    # Crear ZIP en memoria
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-        metadata = []
-        for d in docs:
-            d_dict = dict(d._mapping)
-            full_path = os.path.join("uploads", str(session_data["tenant_id"]), d_dict["file_path"]).replace("\\", "/")
-            if os.path.exists(full_path):
-                # Write to zip
-                zip_file.write(full_path, arcname=f"documentos/{d_dict['file_name']}")
-                metadata.append(d_dict)
-                
-        # Escribir metadatos
-        zip_file.writestr("metadata_control.json", json.dumps(metadata, default=str, indent=2))
-        
-        # Obtener XML real
-        exp_res = await db.execute(text("SELECT indice_xml_path FROM agn_expedientes WHERE id = :eid AND tenant_id = :t"), {"eid": expediente_id, "t": session_data["tenant_id"]})
-        exp_row = exp_res.fetchone()
-        if exp_row and exp_row.indice_xml_path and os.path.exists(exp_row.indice_xml_path):
-            with open(exp_row.indice_xml_path, "r", encoding="utf-8") as xmlf:
-                xml_content = xmlf.read()
-            zip_file.writestr("indice_electronico.xml", xml_content)
-        else:
-            # Fallback a registro de base de datos
-            idx_res = await db.execute(text("SELECT * FROM agn_indice_electronico WHERE expediente_id = :eid ORDER BY fecha_accion DESC LIMIT 1"), {"eid": expediente_id, "t": session_data["tenant_id"]})
-            idx = idx_res.fetchone()
-            if idx:
-                xml_content = f"<?xml version='1.0'?><indice><hash_estado>{idx.firma_indice}</hash_estado></indice>"
-                zip_file.writestr("indice_electronico.xml", xml_content)
-            
-    # Registrar auditoria
-    ip_origen = request.client.host if request.client else "unknown"
-    background_tasks.add_task(log_audit_sgdea_async, expediente_id, session_data["user_id"], "EXPORTACION_EXPEDIENTE", ip_origen, {"total_docs": len(docs)})
+    # Crear ZIP en memoria (Offloaded to threadpool to prevent blocking)
+    from fastapi.concurrency import run_in_threadpool
+    import json
     
-    zip_buffer.seek(0)
+    def create_zip_sync(docs_list, t_id):
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+            metadata = []
+            for d_dict in docs_list:
+                full_path = os.path.join("uploads", str(t_id), d_dict["file_path"]).replace("\", "/")
+                if os.path.exists(full_path):
+                    zip_file.write(full_path, arcname=f"documentos/{d_dict['file_name']}")
+                    metadata.append(d_dict)
+            zip_file.writestr("metadatos.json", json.dumps(metadata, indent=2))
+        zip_buffer.seek(0)
+        return zip_buffer
+
+    docs_dicts = [dict(d._mapping) for d in docs]
+    zip_buffer = await run_in_threadpool(create_zip_sync, docs_dicts, session_data["tenant_id"])
+    
+    from fastapi.responses import StreamingResponse
     return StreamingResponse(
         zip_buffer,
         media_type="application/zip",
-        headers={"Content-Disposition": f"attachment; filename=DIP_{exp_code}.zip"}
+        headers={"Content-Disposition": f"attachment; filename=Expediente_{exp_code}.zip"}
     )
 
 @router.get("/documentos/{doc_id}/descargar_forense")
