@@ -3,7 +3,7 @@ import os
 import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from app.notifications import log_audit_sgdea_async
+from app.services.audit_service import log_audit_sgdea_async
 from datetime import datetime
 
 class FixityService:

@@ -31,17 +31,21 @@ class IniciarSesionUseCase:
         if not user.is_active():
             raise UserInactiveError("Usuario inactivo")
 
-        await self.user_repo.update_last_login(user.id)
+        await self.user_repo.update_last_login(str(user.id))
 
         requires_mfa = bool(user.mfa_secret)
         
         token = ""
         if not requires_mfa:
-            token_data = {"sub": user.username, "user_id": user.id, "tenant_id": user.tenant_id}
+            token_data = {
+                "sub": user.username,
+                "user_id": str(user.id),
+                "tenant_id": str(user.tenant_id),
+            }
             token = self.token_service.create_access_token(token_data, 60)
 
         return LoginResponseDTO(
             token=token,
             requires_mfa=requires_mfa,
-            user_id=user.id
+            user_id=str(user.id)
         )

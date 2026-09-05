@@ -10,8 +10,20 @@ from backend.src.domain.interfaces.i_security_services import IHashService, ITok
 class MockUserRepository(IUserRepository):
     def __init__(self):
         self.users = {
-            "admin": Usuario(id="1", username="admin", password_hash="hashed_123", estado="ACTIVO", tenant_id="T1"),
-            "inactivo": Usuario(id="2", username="inactivo", password_hash="hashed_123", estado="INACTIVO", tenant_id="T1")
+            "admin": Usuario(
+                id="00000000-0000-0000-0000-000000000001",
+                username="admin",
+                password_hash="hashed_123",
+                estado="ACTIVO",
+                tenant_id="00000000-0000-0000-0000-000000000010",
+            ),
+            "inactivo": Usuario(
+                id="00000000-0000-0000-0000-000000000002",
+                username="inactivo",
+                password_hash="hashed_123",
+                estado="INACTIVO",
+                tenant_id="00000000-0000-0000-0000-000000000010",
+            )
         }
         self.last_login_updated_for = None
         
@@ -48,7 +60,7 @@ async def test_login_exitoso(use_case):
     
     assert res.token == "fake-jwt-token"
     assert res.requires_mfa is False
-    assert repo.last_login_updated_for == "1"
+    assert repo.last_login_updated_for == "00000000-0000-0000-0000-000000000001"
 
 @pytest.mark.asyncio
 async def test_login_falla_credenciales_malas(use_case):

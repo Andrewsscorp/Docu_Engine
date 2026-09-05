@@ -6,7 +6,7 @@ from dateutil.relativedelta import relativedelta
 import hashlib
 import os
 import xml.etree.ElementTree as ET
-from app.notifications import log_audit_sgdea_async
+from app.services.audit_service import log_audit_sgdea_async
 from fastapi import BackgroundTasks
 
 class ExpedienteService:
